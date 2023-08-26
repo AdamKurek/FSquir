@@ -97,13 +97,13 @@ public partial class MainPage : ContentPage
                         //        new PointF(){X = (float)mousePosition.X + 10,Y = (float)mousePosition.Y+ 10}
                         //    }, 1));
 
-                        startingPoint = moved.position;
+                        startingPoint = moved.positionS;
                         moved.wasTouched = true;
                         break;
                     case GestureStatus.Running:
                         if (moved == null) { return; }
-                        moved.position.X = startingPoint.X + (float)e.TotalX;
-                        moved.position.Y = startingPoint.Y + (float)e.TotalY;
+                        moved.positionS.X = startingPoint.X + (float)e.TotalX;
+                        moved.positionS.Y = startingPoint.Y + (float)e.TotalY;
 
                         squir.Invalidate();
 
@@ -127,9 +127,9 @@ public partial class MainPage : ContentPage
                                 break;
                             }
                         }
-                        var wtf1 = moved.VisiblePoints;
+                        var wtf1 = moved.VisiblePointsS;
                         var wtf2 = drawables.allActivePoints(drawableindex);
-                        foreach (var pt in moved.VisiblePoints)
+                        foreach (var pt in moved.VisiblePointsS)
                         {
                             foreach (var oneOfMilion in drawables.allActivePoints(drawableindex)) {
                                 float cur = (float)DrawableStack.CalculateDistance(pt, oneOfMilion);

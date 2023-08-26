@@ -24,7 +24,7 @@ namespace Fillsquir.Controls
                 var drawable = drawables[i] as Fragment;
                 if (!drawable.wasTouched) { continue; }
                 if (i==ignoreIndex) { continue; }
-                foreach (var pt in drawable.VisiblePoints)
+                foreach (var pt in drawable.VisiblePointsS)
                 {
                     set.Add(pt);
                 }
