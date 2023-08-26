@@ -22,9 +22,11 @@ namespace Fillsquir.Interfaces
         {
             if (Width <= 0 || Height <= 0)
                 return;
+            ResizePrecize(Width, Height);
             canvasWidth = Width;
             canvasHeight = Height;
         }
+        protected virtual void ResizePrecize(float Width, float Height) { } 
 
         public void Draw(ICanvas canvas, RectF dirtyRect)
         {

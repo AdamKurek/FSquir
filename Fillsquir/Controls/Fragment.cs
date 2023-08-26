@@ -1,4 +1,4 @@
-﻿#define nDebugVisuals
+﻿#define DebugVisuals
 
 using Fillsquir.Controls;
 using Fillsquir.Interfaces;
@@ -40,7 +40,12 @@ public class Fragment : GeometryElement
     int index;
     int rows = 4;
 
-    
+    protected override void ResizePrecize(float Width, float Height)
+    {
+        position.X = position.X * (Width / canvasWidth);
+        position.Y = position.Y * ( Height / canvasHeight);
+
+    }
 
     public int IndexX { get { return index % rows; } }
     public int IndexY { get { return index - (IndexX * rows) ; } }
