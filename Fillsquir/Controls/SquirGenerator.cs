@@ -75,13 +75,13 @@ namespace Fillsquir.Controls
                 PointF midpointStart = new PointF((pointStart.X + center.X) / 2, (pointStart.Y + center.Y) / 2);
                 PointF midpointEnd = new PointF((pointEnd.X + center.X) / 2, (pointEnd.Y + center.Y) / 2);
 
-                if (numShapes == mainShape.Length) // same number of shapes as original points, generate quads
+              //  if (numShapes == mainShape.Length) // same number of shapes as original points, generate quads
                 {
-                    shapes.Add(new PointF[] { center, midpointStart, pointEnd, midpointEnd });
+                  //  shapes.Add(new PointF[] { center, midpointStart, pointEnd,  });
                 }
-                else
+                //else
                 {
-                    shapes.Add(new PointF[] { center, pointStart, pointEnd });
+                    shapes.Add(new PointF[] { center, pointStart, midpointEnd });
                 }
             }
 

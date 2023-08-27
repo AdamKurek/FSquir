@@ -3,12 +3,6 @@ using Fillsquir.Interfaces;
 
 public class Squir : GeometryElement 
 {
-    //TODO fix hardcoded sizes
-    
-
-    private float big = 1000;
-    private float small = 0;
-
 
     public PointF[] PointsP;
     public List<PointF[]> shapes;

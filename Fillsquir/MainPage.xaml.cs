@@ -26,6 +26,7 @@ public partial class MainPage : ContentPage
     PointF startingPoint = new();
     Point mousePosition = new();
     Fragment moved;
+    CommonArea commonArea = new();
 #if DebugClickingLines
 #endif
     private void InitializeSquir(int dots)
@@ -53,7 +54,7 @@ public partial class MainPage : ContentPage
                 // gest
 
             }
-
+            drawables.AddCover(commonArea); // keep it on top somehow
             DropGestureRecognizer dropGestureRecognizer = new DropGestureRecognizer();
             squir.GestureRecognizers.Add(dropGestureRecognizer);
             squir.Drawable = drawables;
@@ -125,13 +126,6 @@ public partial class MainPage : ContentPage
                     case GestureStatus.Started:
                         moved = drawables.getNearestFragment(mousePosition);
 
-                        //drawables.AddDrawable(
-                        //    new Fragment(new PointF[]
-                        //    {
-                        //        new PointF(){X = (float)mousePosition.X,Y = (float)mousePosition.Y},
-                        //        new PointF(){X = (float)mousePosition.X + 10,Y = (float)mousePosition.Y+ 10}
-                        //    }, 1));
-
                         startingPoint = moved.positionS;
                         moved.wasTouched = true;
                         break;
@@ -141,11 +135,6 @@ public partial class MainPage : ContentPage
                         moved.positionS.Y = startingPoint.Y + (float)e.TotalY;
 
                         squir.Invalidate();
-
-
-                        // Content.TranslationX = Math.Max(Math.Min(0, x + e.TotalX), -Math.Abs(Content.Width - Application.Current.MainPage.Width));
-                        // Content.TranslationY = Math.Max(Math.Min(0, y + e.TotalY), -Math.Abs(Content.Height - Application.Current.MainPage.Height));
-
                         break;
 
                     case GestureStatus.Completed:
@@ -177,13 +166,22 @@ public partial class MainPage : ContentPage
                             }
                             i++;
                         }
-                        if (min < 50)
+                        if (min < 10)
                         {
                             moved.SetPositionToPointLocation(assignedPoint, finalIndex);
                         }
+                        commonArea.FiguresP = new();
+                        
+                        var ccc = new List<PointF[]>();
+                        foreach(var a in drawables.drawables.Skip(1))
+                        {
+                            ccc.Add(((Fragment)a).PointsP);
+                        }
+                        var xdjd = FSMath.CommonArea(((Squir)drawables[0]).PointsP, ccc)[0];
+                        foreach(var xddd in xdjd)
+                        commonArea.FiguresP.Add(xddd);
 
-
-                        var common = FSMath.SutherlandHodgman((drawables[0] as Squir).VisiblePoints, moved.VisiblePointsS);
+                        //commonArea.FiguresP.Add(FSMath.SutherlandHodgman(((Squir)drawables[0]).PointsP, moved.PointsP));
 
                         //drawables.AddDrawable(ass);
                         Invalidate();

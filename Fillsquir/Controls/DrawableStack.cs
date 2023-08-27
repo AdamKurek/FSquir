@@ -12,6 +12,7 @@ namespace Fillsquir.Controls
         private float screenWidth = 1000;
         private float screenHeight = 1000;
         public List<GeometryElement> drawables = new();
+        public GeometryElement cover;
         public HashSet<PointF> allActivePoints(int ignoreIndex)//todo make  update on move
         {
             var set = new HashSet<PointF>();
@@ -43,6 +44,10 @@ namespace Fillsquir.Controls
             drawables.Add(drawable);
             drawable.Resize(screenWidth, screenHeight);
             //(drawable as GeometryElement).Resize()
+        }
+        public void AddCover(GeometryElement drawable)
+        {
+            cover = drawable;
         }
 
 #if DebugClickingLines
@@ -80,7 +85,7 @@ namespace Fillsquir.Controls
                 drawable.Draw(canvas, dirtyRect);
             }
             this[0].Draw(canvas, dirtyRect);
-
+            cover?.Draw(canvas, dirtyRect);
 #if DebugClicking
             foreach (var circle in clickPoints)
             {
@@ -114,6 +119,7 @@ namespace Fillsquir.Controls
             {
                 drawable.Resize(width, height);
             }
+            cover?.Resize(width, height);
         }
 
         internal Fragment getNearestFragment(Point mousePosition)

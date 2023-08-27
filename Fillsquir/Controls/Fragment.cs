@@ -1,4 +1,4 @@
-﻿#define NDebugVisuals
+﻿#define nDebugVisuals
 
 using Fillsquir.Controls;
 using Fillsquir.Interfaces;
@@ -144,13 +144,23 @@ public class Fragment : GeometryElement
             var VP = VisiblePointsS;
             PathF path = new();
 
-            for (int i = 0; i < PointsP.Length - 1; i++)
+            for (int i = 0; i < PointsP.Length; i++)
             {
                 path.LineTo(VP[i]);
             }
             canvas.FillPath(path);
 #if DebugVisuals
+            foreach (var pt in VisiblePointsS)
+            {
+                canvas.FillColor = Colors.Azure;
+
+                canvas.FillCircle(pt.X, pt.Y, 2);
+            }
+            canvas.StrokeColor = Colors.BurlyWood;
+
             canvas.DrawCircle(MidpointS.X, MidpointS.Y, RadiusP* (scaleX>scaleY? scaleX:scaleY));//clickbox
+            canvas.StrokeColor = Colors.DarkViolet;
+
             canvas.DrawRectangle(new RectF() { Height = sizeP.Y*scaleY, Width = sizeP.X* scaleX, X =positionS.X ,Y= positionS.Y});
             canvas.StrokeColor = Colors.Red;
             canvas.FillColor = Colors.Red;
