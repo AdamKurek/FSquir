@@ -1,5 +1,5 @@
-﻿#define DebugClicking
-#define DebugClickingLines
+﻿#define nDebugClicking
+#define nDebugClickingLines
 
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;

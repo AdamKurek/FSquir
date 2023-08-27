@@ -1,5 +1,5 @@
-﻿#define DebugClicking
-#define DebugClickingLines
+﻿#define nDebugClicking
+#define nDebugClickingLines
 using Fillsquir.Controls;
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Controls;
@@ -181,13 +181,10 @@ public partial class MainPage : ContentPage
                         {
                             moved.SetPositionToPointLocation(assignedPoint, finalIndex);
                         }
-                        PointF[] ptssss = new PointF[4];
-                        ptssss[0] = assignedPoint.Offset(-12, -12);
-                        ptssss[1] = assignedPoint.Offset(-12, 12);
-                        ptssss[2] = assignedPoint.Offset(12,12);
-                        ptssss[3] = assignedPoint.Offset(-12, 12);
-                        var ass = new Fragment(ptssss, i);
-                        ass.wasTouched = true;
+
+
+                        var common = FSMath.SutherlandHodgman((drawables[0] as Squir).VisiblePoints, moved.VisiblePointsS);
+
                         //drawables.AddDrawable(ass);
                         Invalidate();
                         break;

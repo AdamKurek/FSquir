@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Maui.Graphics;
 
 namespace Fillsquir.Controls
 {
@@ -33,7 +34,7 @@ namespace Fillsquir.Controls
             }
 
             // Connect last and first points to close the polygon
-            var a=figure.GetEnumerator();
+            var a = figure.GetEnumerator();
             a.MoveNext();
             if (DoSegmentsIntersect(point, outsidePoint, prevPoint, a.Current))
             {
@@ -84,5 +85,69 @@ namespace Fillsquir.Controls
             if (result == 0) return 0;  // Collinear
             return (result > 0) ? 1 : -1; // Clockwise or Counterclockwise
         }
+
+        // common area
+        public static PointF[] SutherlandHodgman(PointF[] subjectPolygon, PointF[] clipPolygon)
+        {
+            List<PointF> outputList = new List<PointF>(subjectPolygon);
+
+            for (int i = 0; i < clipPolygon.Length; i++)
+            {
+                PointF clipEdgeStart = clipPolygon[i];
+                PointF clipEdgeEnd = clipPolygon[(i + 1) % clipPolygon.Length];
+
+                List<PointF> inputList = new List<PointF>(outputList);
+                outputList.Clear();
+
+                if (inputList.Count == 0)
+                {
+                    break;
+                }
+
+                PointF prevPoint = inputList[inputList.Count - 1];
+                foreach (PointF currentPoint in inputList)
+                {
+                    if (IsInside(clipEdgeStart, clipEdgeEnd, currentPoint))
+                    {
+                        if (!IsInside(clipEdgeStart, clipEdgeEnd, prevPoint))
+                        {
+                            outputList.Add(Intersection(clipEdgeStart, clipEdgeEnd, prevPoint, currentPoint));
+                        }
+                        outputList.Add(currentPoint);
+                    }
+                    else if (IsInside(clipEdgeStart, clipEdgeEnd, prevPoint))
+                    {
+                        outputList.Add(Intersection(clipEdgeStart, clipEdgeEnd, prevPoint, currentPoint));
+                    }
+                    prevPoint = currentPoint;
+                }
+            }
+
+            return outputList.ToArray();
+        }
+
+        public static bool IsInside(PointF clipEdgeStart, PointF clipEdgeEnd, PointF point)
+        {
+            return (clipEdgeEnd.Y - clipEdgeStart.Y) * (point.X - clipEdgeStart.X) -
+                   (clipEdgeEnd.X - clipEdgeStart.X) * (point.Y - clipEdgeStart.Y) >= 0;
+        }
+
+        public static PointF Intersection(PointF clipEdgeStart, PointF clipEdgeEnd, PointF lineStart, PointF lineEnd)
+        {
+            float A1 = lineEnd.Y - lineStart.Y;
+            float B1 = lineStart.X - lineEnd.X;
+            float C1 = A1 * lineStart.X + B1 * lineStart.Y;
+
+            float A2 = clipEdgeEnd.Y - clipEdgeStart.Y;
+            float B2 = clipEdgeStart.X - clipEdgeEnd.X;
+            float C2 = A2 * clipEdgeStart.X + B2 * clipEdgeStart.Y;
+
+            float det = A1 * B2 - A2 * B1;
+            float x = (B2 * C1 - B1 * C2) / det;
+            float y = (A1 * C2 - A2 * C1) / det;
+
+            return new PointF(x, y);
+        }
     }
 }
+
