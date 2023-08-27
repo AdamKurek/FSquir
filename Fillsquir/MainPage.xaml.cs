@@ -1,4 +1,5 @@
-﻿#define nDebugClicking
+﻿#define DebugClicking
+#define DebugClickingLines
 using Fillsquir.Controls;
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Controls;
@@ -25,6 +26,8 @@ public partial class MainPage : ContentPage
     PointF startingPoint = new();
     Point mousePosition = new();
     Fragment moved;
+#if DebugClickingLines
+#endif
     private void InitializeSquir(int dots)
     {
 
@@ -79,9 +82,41 @@ public partial class MainPage : ContentPage
             panGesture.PanUpdated += (s, e) =>
             {
                 // Handle the pan
-#if DebugClicking
 
-                drawables.AddDot(mousePosition, true);
+#if DebugClickingLines
+                switch (e.StatusType)
+                {
+                    case GestureStatus.Started:
+                        drawables.testLine = new();
+                        drawables.testLine.p.X = mousePosition.X;
+                        drawables.testLine.p.Y = mousePosition.Y;
+                        break;
+                    case GestureStatus.Running:
+
+                        drawables.testLine.q.X = mousePosition.X;
+                        drawables.testLine.q.Y = mousePosition.Y;
+                        bool crossing = FSMath.DoSegmentsIntersect(drawables.testLine.q, drawables.testLine.p, ((Squir)drawables[0]).VisiblePoints[0], ((Squir)drawables[0]).VisiblePoints[1]);
+
+
+                        drawables.isCrossing = crossing;
+                        break;
+
+                    case GestureStatus.Completed:
+                        drawables.testLine = null;
+                        break;
+                }
+                Invalidate();
+
+
+#endif
+
+#if DebugClicking
+                bool inisde = false;
+                if (FSMath.IsPointInShape(mousePosition, ((Squir)drawables[0]).VisiblePoints))
+                {
+                    inisde = true;
+                }
+                drawables.AddDot(mousePosition, inisde);
                 squir.Invalidate();
                 return;
 #endif

@@ -1,4 +1,4 @@
-﻿#define DebugVisuals
+﻿#define NDebugVisuals
 
 using Fillsquir.Controls;
 using Fillsquir.Interfaces;
@@ -88,7 +88,6 @@ public class Fragment : GeometryElement
 
             this.index = index;
         }
-
         {
             UntouchedPointsS = new PointF[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
@@ -102,11 +101,9 @@ public class Fragment : GeometryElement
 
     protected override void DrawMainShape(ICanvas canvas, RectF dirtyRect)
     {
-        float scale = prop1 / prop2;
         //todo draw using path not lines
         if (!wasTouched)
         {
-
             {
                 positionS.X = canvasWidth * IndexX / 4;
                 positionS.Y = canvasHeight * (prop1 / prop2);
@@ -115,7 +112,7 @@ public class Fragment : GeometryElement
 
             //float scaleX = (canvasWidth / (defaultCanvasWidth / prop1 * prop2));
             //float Xoffset = (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
-            canvas.StrokeColor = Colors.Aqua;
+            canvas.StrokeColor = Colors.AliceBlue;
             canvas.FillColor = Colors.Aqua;
 
             //for (int i = 0; i < Points.Length - 1; i++)
@@ -142,7 +139,7 @@ public class Fragment : GeometryElement
             return;
         }
         {
-            canvas.StrokeColor = Colors.Aqua;
+            canvas.StrokeColor = Colors.AliceBlue;
             canvas.FillColor = Colors.Aqua;
             var VP = VisiblePointsS;
             PathF path = new();

@@ -1,7 +1,7 @@
 ﻿using Fillsquir.Controls;
 using Fillsquir.Interfaces;
 
-public class Squir : GeometryElement
+public class Squir : GeometryElement 
 {
     //TODO fix hardcoded sizes
     
@@ -10,8 +10,7 @@ public class Squir : GeometryElement
     private float small = 0;
 
 
-    public PointF[] Points;//
-    private HashSet<PointF> Midpoints;
+    public PointF[] PointsP;
     public List<PointF[]> shapes;
     float Xoffset => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
 
@@ -20,10 +19,10 @@ public class Squir : GeometryElement
     {
         get
         {
-            var pts = new PointF[Points.Length];
-            for (int i = 0; i < Points.Length; i++)
+            var pts = new PointF[PointsP.Length];
+            for (int i = 0; i < PointsP.Length; i++)
             {
-                pts[i] = new((Points[i].X * scaleX) + Xoffset, Points[i].Y * scaleY);
+                pts[i] = new((PointsP[i].X * scaleX) + Xoffset, PointsP[i].Y * scaleY);
             }
             return pts;
         }
@@ -44,18 +43,12 @@ public class Squir : GeometryElement
 
         var centre = new PointF(500, 500);
 
-        Points = SquirGenerator.GenerateOrderedMainShapeOnCircle(centre, 100, 500, 8);
+        PointsP = SquirGenerator.GenerateOrderedMainShapeOnCircle(centre, 100, 500, 8);
         shapes = new();
         { 
-            int i = 0;
-            foreach (var shape in SquirGenerator.GenerateShapes(8, Points))
+            foreach (var shape in SquirGenerator.GenerateShapes(8, PointsP))
             {
                 shapes.Add(shape);
-                //Fragment f = new(shape, i);
-                //foreach(var pt in f.Points)
-                //{
-
-                //}
             }
         }
         //Midpoints = new PointF[]
@@ -78,11 +71,11 @@ public class Squir : GeometryElement
         
         canvas.StrokeColor = Colors.Aqua;
         canvas.FillColor = Colors.Aqua;
-        for (int i = 0; i < Points.Length - 1; i++)
+        for (int i = 0; i < PointsP.Length - 1; i++)
         {
             canvas.DrawLine(VisiblePoints[i], VisiblePoints[i+1]);
         }
-        canvas.DrawLine(VisiblePoints[0], VisiblePoints[Points.Count()-1]);
+        canvas.DrawLine(VisiblePoints[0], VisiblePoints[PointsP.Count()-1]);
 
         //PathF path = new PathF(Points[0]);
         //for (int i = 1; i < Points.Length; i++)

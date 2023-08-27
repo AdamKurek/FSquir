@@ -1,4 +1,5 @@
-﻿#define nDebugClicking
+﻿#define DebugClicking
+#define DebugClickingLines
 
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
@@ -43,6 +44,19 @@ namespace Fillsquir.Controls
             drawable.Resize(screenWidth, screenHeight);
             //(drawable as GeometryElement).Resize()
         }
+
+#if DebugClickingLines
+        public class Line
+        {
+            public Point p;
+            public Point q;
+        }
+        public Line testLine;
+        public bool isCrossing;
+
+
+#endif
+
 #if DebugClicking
         public struct Drawpoint
         {
@@ -73,8 +87,22 @@ namespace Fillsquir.Controls
                 if(!circle.inBounds)
                     canvas.StrokeColor = Colors.IndianRed;
 
-                canvas.DrawCircle(circle.point.X, circle.point.Y, 10);
+                canvas.DrawCircle(circle.point.X, circle.point.Y, 1);
+                canvas.StrokeColor = Colors.AliceBlue;
+
             }
+#endif
+
+#if DebugClickingLines
+            if(isCrossing)
+            {
+                canvas.StrokeColor= Colors.Magenta;
+            }else
+            {
+                canvas.StrokeColor= Colors.Yellow;  
+            }
+            if(testLine is not null)
+            canvas.DrawLine(testLine.q, testLine.p);
 #endif
         }
 
