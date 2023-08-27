@@ -50,6 +50,7 @@ namespace Fillsquir.Controls
                 for (int i = 0; i < shape.Length -1; i++){
                     canvas.DrawLine(shape[i], shape[i + 1]);
                 }canvas.DrawLine(shape[0], shape[shape.Count() - 1]);
+
             }
         }
 

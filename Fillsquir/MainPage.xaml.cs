@@ -126,14 +126,14 @@ public partial class MainPage : ContentPage
                     case GestureStatus.Started:
                         moved = drawables.getNearestFragment(mousePosition);
 
-                        startingPoint = moved.positionS;
+                        startingPoint = moved.PositionS;
                         moved.wasTouched = true;
                         break;
                     case GestureStatus.Running:
                         if (moved == null) { return; }
-                        moved.positionS.X = startingPoint.X + (float)e.TotalX;
-                        moved.positionS.Y = startingPoint.Y + (float)e.TotalY;
-
+                        moved.PositionS.X = startingPoint.X + (float)e.TotalX;
+                        moved.PositionS.Y = startingPoint.Y + (float)e.TotalY;
+                        UpdateCover();
                         squir.Invalidate();
                         break;
 
@@ -170,24 +170,11 @@ public partial class MainPage : ContentPage
                         {
                             moved.SetPositionToPointLocation(assignedPoint, finalIndex);
                         }
-                        commonArea.FiguresP = new();
-                        
-                        var ccc = new List<PointF[]>();
-                        foreach(var a in drawables.drawables.Skip(1))
-                        {
-                            ccc.Add(((Fragment)a).PointsP);
-                        }
-                        var xdjd = FSMath.CommonArea(((Squir)drawables[0]).PointsP, ccc)[0];
-                        foreach(var xddd in xdjd)
-                        commonArea.FiguresP.Add(xddd);
+                        UpdateCover();
 
-                        //commonArea.FiguresP.Add(FSMath.SutherlandHodgman(((Squir)drawables[0]).PointsP, moved.PointsP));
-
-                        //drawables.AddDrawable(ass);
                         Invalidate();
                         break;
                 }
-                // moved = null;
             };
             squir.GestureRecognizers.Add(pointGesture);
             squir.GestureRecognizers.Add(panGesture);
@@ -203,7 +190,19 @@ public partial class MainPage : ContentPage
         //squir.Invalidate();resize
     }
 
+    void UpdateCover()                  
+    {
+        var FiguresAsPointlists = new List<PointF[]>();
+        foreach (var a in drawables.drawables.Skip(1))
+        {
+            FiguresAsPointlists.Add(((Fragment)a).VisiblePointsP);
+        }
 
+        //var u1 = ((Fragment)drawables.drawables[1]).VisiblePointsP;
+        //var u2 = ((Squir)drawables[0]).PointsP;
+        
+        commonArea.FiguresP = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
+    }
 
     void squir_DragInteraction(object sender, TouchEventArgs e)
     {

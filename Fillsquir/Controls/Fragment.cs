@@ -11,7 +11,16 @@ public class Fragment : GeometryElement
     public PointF[] PointsP;
 
     private readonly PointF[] UntouchedPointsS;
-    public PointF positionS;
+    public PointF PositionS;
+    public PointF PositionP { get
+        {
+            PointF ret = new PointF();
+            ret.X = (PositionS.X - dravingMoveX )/ scaleX;
+            ret.Y = PositionS.Y/scaleY;
+            return ret;
+        }
+    }
+
     public PointF sizeP;
     //private PointF MoveToFill;
     private float MoveToFillXP;
@@ -22,12 +31,12 @@ public class Fragment : GeometryElement
             PointF midpoint = new PointF();
             if (wasTouched) 
             {
-                midpoint.X = positionS.X + (sizeP.X / 2);
-                midpoint.Y = positionS.Y + (sizeP.Y / 4);
+                midpoint.X = PositionS.X + (sizeP.X / 2);
+                midpoint.Y = PositionS.Y + (sizeP.Y / 4);
                 return midpoint;
             }
-            midpoint.X = positionS.X + canvasWidth * scaleX / 8;
-            midpoint.Y = positionS.Y + canvasHeight * scaleY / 8;
+            midpoint.X = PositionS.X + canvasWidth * scaleX / 8;
+            midpoint.Y = PositionS.Y + canvasHeight * scaleY / 8;
 
             return midpoint;
 
@@ -42,16 +51,16 @@ public class Fragment : GeometryElement
 
     protected override void ResizePrecize(float Width, float Height)
     {
-        positionS.X = positionS.X * (Width / canvasWidth);
-        positionS.Y = positionS.Y * ( Height / canvasHeight);
+        PositionS.X = PositionS.X * (Width / canvasWidth);
+        PositionS.Y = PositionS.Y * (Height / canvasHeight);
 
     }
 
     public int IndexX { get { return index % rows; } }
     public int IndexY { get { return index - (IndexX * rows) ; } }
-
-    private float Xoffset => positionS.X - (MoveToFillXP * scaleX);
-    private float Yoffset => positionS.Y - (MoveToFillYP *scaleY);
+    float dravingMoveX => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
+    private float Xoffset => PositionS.X - (MoveToFillXP * scaleX);
+    private float Yoffset => PositionS.Y - (MoveToFillYP *scaleY);
     private PointF[] visiblePointsS;
     public PointF[] VisiblePointsS
     {
@@ -65,7 +74,17 @@ public class Fragment : GeometryElement
             return pts;
         }
     }
-    
+
+    public PointF[] VisiblePointsP {
+            get{
+                var pts = new PointF[PointsP.Length];
+                for (int i = 0; i < PointsP.Length; i++)
+                {
+                    pts[i] = new PointF(PointsP[i].X + PositionP.X - MoveToFillXP, PointsP[i].Y + PositionP.Y - MoveToFillYP);
+                }
+                return pts;
+            }
+        }
 
     public Fragment(PointF[] Points, int index)
     {
@@ -105,9 +124,9 @@ public class Fragment : GeometryElement
         if (!wasTouched)
         {
             {
-                positionS.X = canvasWidth * IndexX / 4;
-                positionS.Y = canvasHeight * (prop1 / prop2);
-                positionS.Y += canvasWidth * scaleY / 8 * (index / 4);
+                PositionS.X = canvasWidth * IndexX / 4;
+                PositionS.Y = canvasHeight * (prop1 / prop2);
+                PositionS.Y += canvasWidth * scaleY / 8 * (index / 4);
             }
 
             //float scaleX = (canvasWidth / (defaultCanvasWidth / prop1 * prop2));
@@ -125,12 +144,12 @@ public class Fragment : GeometryElement
             //PointF endOfLastLine = new PointF(Points[0].X * scaleX / 8 + position.X, Points[0].Y * scaleY / 8 + position.Y);
             for (int i = 0; i < PointsP.Length - 1; i++)
             {
-                PointF start = new PointF(UntouchedPointsS[i].X * scaleX / 8 + positionS.X, UntouchedPointsS[i].Y * scaleY / 8 + positionS.Y);
-                PointF end = new PointF(UntouchedPointsS[i + 1].X * scaleX / 8 + positionS.X, UntouchedPointsS[i + 1].Y * scaleY / 8 + positionS.Y);
+                PointF start = new PointF(UntouchedPointsS[i].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i].Y * scaleY / 8 + PositionS.Y);
+                PointF end = new PointF(UntouchedPointsS[i + 1].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i + 1].Y * scaleY / 8 + PositionS.Y);
                 canvas.DrawLine(start, end);
             }
-            PointF startOfLastLine = new PointF(UntouchedPointsS[PointsP.Length - 1].X * scaleX / 8 + positionS.X, UntouchedPointsS[PointsP.Length - 1].Y * scaleY / 8 + positionS.Y);
-            PointF endOfLastLine = new PointF(UntouchedPointsS[0].X * scaleX / 8 + positionS.X, UntouchedPointsS[0].Y * scaleY / 8 + positionS.Y);
+            PointF startOfLastLine = new PointF(UntouchedPointsS[PointsP.Length - 1].X * scaleX / 8 + PositionS.X, UntouchedPointsS[PointsP.Length - 1].Y * scaleY / 8 + PositionS.Y);
+            PointF endOfLastLine = new PointF(UntouchedPointsS[0].X * scaleX / 8 + PositionS.X, UntouchedPointsS[0].Y * scaleY / 8 + PositionS.Y);
             canvas.DrawLine(startOfLastLine, endOfLastLine);
 
 #if DebugVisuals
@@ -178,8 +197,8 @@ public class Fragment : GeometryElement
 
     public void SetPositionToPointLocation(PointF VisiblePointToAdjust, int finalIndex) {
         //position = VisiblePoints[finalIndex] - moveto;
-        positionS.X = (VisiblePointToAdjust.X - (PointsP[finalIndex].X * scaleX) + (MoveToFillXP * scaleX)) ;// - (Points[finalIndex].X * scaleX)+ Xoffset;
-        positionS.Y = VisiblePointToAdjust.Y - (PointsP[finalIndex].Y * scaleY) + (MoveToFillYP* scaleY);// - (Points[finalIndex].Y * scaleY)+ Yoffset;
+        PositionS.X = (VisiblePointToAdjust.X - (PointsP[finalIndex].X * scaleX) + (MoveToFillXP * scaleX)) ;// - (Points[finalIndex].X * scaleX)+ Xoffset;
+        PositionS.Y = VisiblePointToAdjust.Y - (PointsP[finalIndex].Y * scaleY) + (MoveToFillYP* scaleY);// - (Points[finalIndex].Y * scaleY)+ Yoffset;
             /*
             movetofillx
             position

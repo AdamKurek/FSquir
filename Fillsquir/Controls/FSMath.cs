@@ -244,7 +244,7 @@ namespace Fillsquir.Controls
             list.Add(points);
             return list;
         }
-        public static List<List<PointF[]>> CommonArea(PointF[] p1, List<PointF[]> p2)
+        public static List<PointF[]> CommonArea(PointF[] p1, List<PointF[]> p2)
         {
             Paths64 subject = new Paths64();
             Paths64 clip = new Paths64();
@@ -262,10 +262,10 @@ namespace Fillsquir.Controls
             Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.NonZero);
 
             // Convert the common area from Paths64 to List<List<PointF[]>> for the return value
-            List<List<PointF[]>> result = new List<List<PointF[]>>();
+            List<PointF[]> result = new List<PointF[]>();
             foreach (var path in commonArea)
             {
-                result.Add(Path64ToPointFArrayList(path));
+                result.AddRange(Path64ToPointFArrayList(path));
             }
             return result;
         }
