@@ -12,14 +12,21 @@ namespace Fillsquir.Controls
 {
     internal static class FSMath
     {
-        public static bool IsPointInShape(Point point, ICollection<PointF> figure)
+        
+        public static bool IsPointInShape(Point point, ICollection<PointF> figure)//incluzive
         {
-            if (figure.Count < 3) // A valid polygon needs at least 3 vertices
+            if (figure.Count < 3) 
             {
                 return false;
             }
-
-            PointF outsidePoint = new PointF(-9999, -9999); // Point outside the shape
+            foreach(var f in figure)
+            {
+                  if (f.X == point.X && f.Y == point.Y)
+                {
+                    return true;
+                }
+            }
+            PointF outsidePoint = new PointF(-9999, -9999); 
             int intersectCount = 0;
 
             PointF prevPoint = new PointF(float.NaN, float.NaN);
@@ -244,7 +251,7 @@ namespace Fillsquir.Controls
             list.Add(points);
             return list;
         }
-        public static List<PointF[]> CommonArea(PointF[] p1, List<PointF[]> p2)
+        public static (List<PointF[]>, double) CommonArea(PointF[] p1, List<PointF[]> p2)
         {
             Paths64 subject = new Paths64();
             Paths64 clip = new Paths64();
@@ -259,15 +266,17 @@ namespace Fillsquir.Controls
             }
 
             // Find the common area
-            Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.NonZero);
-
+            Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.Positive);//cosider EvenOdd rule
+            
+            double area = 0;
             // Convert the common area from Paths64 to List<List<PointF[]>> for the return value
             List<PointF[]> result = new List<PointF[]>();
             foreach (var path in commonArea)
             {
                 result.AddRange(Path64ToPointFArrayList(path));
+                area += Math.Abs(Clipper.Area(path));
             }
-            return result;
+            return (result, area);
         }
         public static bool IsInside(PointF clipEdgeStart, PointF clipEdgeEnd, PointF point)
         {

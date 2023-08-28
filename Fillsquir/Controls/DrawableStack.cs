@@ -13,6 +13,7 @@ namespace Fillsquir.Controls
         private float screenHeight = 1000;
         public List<GeometryElement> drawables = new();
         public GeometryElement cover;
+        public GeometryElement Gui { get; set; }
         public HashSet<PointF> allActivePoints(int ignoreIndex)//todo make  update on move
         {
             var set = new HashSet<PointF>();
@@ -86,6 +87,7 @@ namespace Fillsquir.Controls
             }
             this[0].Draw(canvas, dirtyRect);
             cover?.Draw(canvas, dirtyRect);
+            Gui?.Draw(canvas, dirtyRect);
 #if DebugClicking
             foreach (var circle in clickPoints)
             {

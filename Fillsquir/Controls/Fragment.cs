@@ -131,7 +131,7 @@ public class Fragment : GeometryElement
 
             //float scaleX = (canvasWidth / (defaultCanvasWidth / prop1 * prop2));
             //float Xoffset = (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
-            canvas.StrokeColor = Colors.AliceBlue;
+            canvas.StrokeColor = Colors.LightBlue;
             canvas.FillColor = Colors.Aqua;
 
             //for (int i = 0; i < Points.Length - 1; i++)
@@ -173,7 +173,7 @@ public class Fragment : GeometryElement
             {
                 canvas.FillColor = Colors.Azure;
 
-                canvas.FillCircle(pt.X, pt.Y, 2);
+                canvas.FillCircle(pt.X, pt.Y, 3);
             }
             canvas.StrokeColor = Colors.BurlyWood;
 

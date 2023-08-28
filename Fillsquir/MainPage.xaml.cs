@@ -55,6 +55,7 @@ public partial class MainPage : ContentPage
 
             }
             drawables.AddCover(commonArea); // keep it on top somehow
+            drawables.Gui = new PercentageDisplay();
             DropGestureRecognizer dropGestureRecognizer = new DropGestureRecognizer();
             squir.GestureRecognizers.Add(dropGestureRecognizer);
             squir.Drawable = drawables;
@@ -134,6 +135,7 @@ public partial class MainPage : ContentPage
                         moved.PositionS.X = startingPoint.X + (float)e.TotalX;
                         moved.PositionS.Y = startingPoint.Y + (float)e.TotalY;
                         UpdateCover();
+                        //UpdateGui(50.0f);
                         squir.Invalidate();
                         break;
 
@@ -171,7 +173,7 @@ public partial class MainPage : ContentPage
                             moved.SetPositionToPointLocation(assignedPoint, finalIndex);
                         }
                         UpdateCover();
-
+                        //UpdateGui();
                         Invalidate();
                         break;
                 }
@@ -200,8 +202,13 @@ public partial class MainPage : ContentPage
 
         //var u1 = ((Fragment)drawables.drawables[1]).VisiblePointsP;
         //var u2 = ((Squir)drawables[0]).PointsP;
-        
-        commonArea.FiguresP = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
+        (commonArea.FiguresP, var percentage) = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
+        UpdateGui(percentage);
+    }
+
+    void UpdateGui(double percentage)
+    {
+        (drawables.Gui as PercentageDisplay).Percentage = percentage;
     }
 
     void squir_DragInteraction(object sender, TouchEventArgs e)

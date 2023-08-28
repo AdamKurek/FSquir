@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define DebugVisualsCommonArea
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,19 +40,80 @@ namespace Fillsquir.Controls
         {
         }
 
+        //how do i make this work
+        public void AddFigure(PointF[] figure)
+        {
+            FiguresP.Add(figure);
+        }
+
 
         protected override void DrawMainShape(ICanvas canvas, RectF dirtyRect)
         {
-            //todo draw using path not lines
 
-            canvas.StrokeColor = Colors.DarkOrange;
-                canvas.FillColor = Colors.LightGoldenrodYellow;
-            foreach(var shape in  VisibleFiguresS) { 
-                for (int i = 0; i < shape.Length -1; i++){
-                    canvas.DrawLine(shape[i], shape[i + 1]);
-                }canvas.DrawLine(shape[0], shape[shape.Count() - 1]);
+            foreach (var shape in VisibleFiguresS)
+            {
+                int parents = 0;
+                foreach (var parent in VisibleFiguresS)
+                {
+                    bool InParent = true;
+                    foreach (var point in shape)
+                    {
 
+                        if (!FSMath.IsPointInShape(point, parent))
+                        {
+                            InParent = false;
+                            break;
+                        }
+                    }
+                    if (InParent)
+                    {
+                        parents++;
+                    }
+                }
+
+                if (parents % 2 == 0)
+                {
+
+                    canvas.StrokeColor = Colors.Yellow;
+                    canvas.FillColor = Colors.Black;
+                }
+                else
+                {
+
+                    canvas.StrokeColor = Colors.DarkOrange;
+                    canvas.FillColor = Colors.LightGoldenrodYellow;
+                }
+
+                PathF path = new();
+                foreach (var point in shape)
+                {
+                    path.LineTo(point);
+                }
+                canvas.DrawPath(path);
+                canvas.FillPath(path);
+
+#if DebugVisualsCommonArea
+                canvas.StrokeColor = Colors.Gray;
+                canvas.FillColor = Colors.AntiqueWhite;
+                foreach (var pt in shape)
+                {
+                    canvas.FillCircle(pt.X, pt.Y, 3);
+
+                }
+#endif
             }
+        }
+
+        private bool BaseColour = true;
+        private bool reverseColours(bool baseColour)
+        {
+            if(baseColour)
+            {
+                BaseColour = false;
+                return false;
+            }
+            BaseColour = true;
+            return true;
         }
 
     }
