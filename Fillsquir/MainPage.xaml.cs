@@ -19,10 +19,9 @@ public partial class MainPage : ContentPage
     }
 
 
-
     Squir drawa;
     DrawableStack drawables;
-
+    double SquirArea; 
     PointF startingPoint = new();
     Point mousePosition = new();
     Fragment moved;
@@ -40,6 +39,7 @@ public partial class MainPage : ContentPage
             //    picture.DrawLine(0, 0, 70, 10);
             //    picture.DrawLine(0, 10, 10, 0);
             drawa = new Squir(1000, 1000);
+            SquirArea = FSMath.CalculateArea(drawa.PointsP);
             drawables = new DrawableStack();
             drawables.AddDrawable(drawa);
             // drawa.Resize(squir.Width, squir.Height);
@@ -83,8 +83,6 @@ public partial class MainPage : ContentPage
 
             panGesture.PanUpdated += (s, e) =>
             {
-                // Handle the pan
-
 #if DebugClickingLines
                 switch (e.StatusType)
                 {
@@ -203,12 +201,12 @@ public partial class MainPage : ContentPage
         //var u1 = ((Fragment)drawables.drawables[1]).VisiblePointsP;
         //var u2 = ((Squir)drawables[0]).PointsP;
         (commonArea.FiguresP, var percentage) = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
-        UpdateGui(percentage);
+        UpdateGui(((CommonArea)drawables.cover).Area*100);
     }
 
     void UpdateGui(double percentage)
     {
-        (drawables.Gui as PercentageDisplay).Percentage = percentage;
+        (drawables.Gui as PercentageDisplay).Percentage = percentage/SquirArea;
     }
 
     void squir_DragInteraction(object sender, TouchEventArgs e)
@@ -224,6 +222,8 @@ public partial class MainPage : ContentPage
             //drawa.Resize(squir.Width, squir.Height);
             drawables.Resize((float)squir.Width, (float)squir.Height);
         }
+        drawables.cover.Resize((float)squir.Width, (float)squir.Height);
+        drawables.Gui.Resize((float)squir.Width, (float)squir.Height);
     }
 
 

@@ -128,6 +128,28 @@ namespace Fillsquir.Controls
             return outputList.ToArray();
         }
 
+        public static double CalculateArea(PointF[] figure)
+        {
+#if DEBUG
+            if (figure.Length < 3)
+            {
+                throw new ArgumentException("Figure must have at least 3 points", "figure");
+            }
+#endif
+            double area = 0;
+
+            for (int i = 0; i < figure.Length - 1; i++)
+            {
+                area += (figure[i].X * figure[i + 1].Y) - (figure[i].Y * figure[i + 1].X);
+            }
+
+            area += (figure[figure.Length - 1].X * figure[0].Y) - (figure[figure.Length - 1].Y * figure[0].X);
+
+            area = Math.Abs(area) / 2;
+
+            return area;
+        }
+
         /*public static List<PointF[]> CommonArea(PointF[] p1, PointF[] p2)
         {
             List<List<PointF>> subj = new List<List<PointF>>(1), clip = new List<List<PointF>>(1), solution = new List<List<PointF>>();

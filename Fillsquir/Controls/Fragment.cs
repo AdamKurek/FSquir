@@ -112,7 +112,7 @@ public class Fragment : GeometryElement
             for (int i = 0; i < PointsP.Length; i++)
             {
                 UntouchedPointsS[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) + (2000) - (0.5f * sizeP.X));// + (0.5f * canvasWidth);// ;
-                UntouchedPointsS[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) + (1000) - (0.5f * sizeP.Y)) ;// +(0.5f * canvasHeight);// ;
+                UntouchedPointsS[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) + 1000 - (0.5f * sizeP.Y)) ;// +(0.5f * canvasHeight);// ;
             }
         }
     }

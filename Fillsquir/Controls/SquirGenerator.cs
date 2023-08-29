@@ -100,24 +100,77 @@ namespace Fillsquir.Controls
 
 
 
-
+            //shapes[0] = new PointF[]{ new PointF { X =0,Y = 0 }, new PointF { X = 1000, Y = 0 }, new PointF { X = 1000, Y = 10000 } };
             return shapes;
         }
 
-        private static void EnsureTriangleSize(ref PointF[] triangle)//use ref if use it
+        /*
+        public static void ExtendToParallel(PointF[] trianglePoints, PointF[] parallelPoints)
         {
-            var directionVector = new PointF(triangle[1].X - triangle[0].X, triangle[1].Y - triangle[0].Y);
-            var direction = Math.Atan2(directionVector.Y, directionVector.X);
-            var directionVector2 = new PointF(triangle[2].X - triangle[0].X, triangle[2].Y - triangle[0].Y);
-            var direction2 = Math.Atan2(directionVector2.Y, directionVector2.X);
-            direction = direction%Math.PI;
-            direction2 = direction2% Math.PI;
-        //now i can chceck if angles are simular
-        //if they are i need to move one of the points 
-            if(Math.Abs(direction - direction2) < 1)
+            // Calculate the angles of the triangle
+            double angleA = CalculateAngle(trianglePoints[0], trianglePoints[1], trianglePoints[2]);
+            double angleB = CalculateAngle(trianglePoints[1], trianglePoints[2], trianglePoints[0]);
+            double angleC = CalculateAngle(trianglePoints[2], trianglePoints[0], trianglePoints[1]);
+
+            // Check if any angle is less than 1/2 of a radian
+            if (angleA < Math.PI / 2 || angleB < Math.PI / 2 || angleC < Math.PI / 2)
             {
-                triangle[2] = new PointF(triangle[2].X + 10f, triangle[2].Y - 5f);
+                // Find the longest line in the parallelPoints array
+                double maxLength = 0;
+                int maxIndex = 0;
+                for (int i = 0; i < parallelPoints.Length - 1; i++)
+                {
+                    double length = CalculateDistance(parallelPoints[i], parallelPoints[i + 1]);
+                    if (length > maxLength)
+                    {
+                        maxLength = length;
+                        maxIndex = i;
+                    }
+                }
+
+                // Calculate the parallel line from the middle point of the triangle
+                PointF middlePoint = CalculateMiddlePoint(trianglePoints);
+                PointF startPoint = parallelPoints[maxIndex];
+                PointF endPoint = parallelPoints[maxIndex + 1];
+                double lineAngle = CalculateAngle(startPoint, endPoint);
+                double extendLength = maxLength - CalculateDistance(startPoint, endPoint);
+                PointF extendedPoint = ExtendLine(middlePoint, lineAngle, extendLength);
+
+                // Update the middle point with the extended point
+                trianglePoints[1] = extendedPoint;
             }
         }
+
+        private static double CalculateAngle(PointF pointA, PointF pointB, PointF pointC)
+        {
+            double a = CalculateDistance(pointB, pointC);
+            double b = CalculateDistance(pointA, pointC);
+            double c = CalculateDistance(pointA, pointB);
+
+            return Math.Acos((Math.Pow(a, 2) + Math.Pow(b, 2) - Math.Pow(c, 2)) / (2 * a * b));
+        }
+
+        private static double CalculateDistance(PointF pointA, PointF pointB)
+        {
+            double dx = pointA.X - pointB.X;
+            double dy = pointA.Y - pointB.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        private static PointF CalculateMiddlePoint(PointF[] points)
+        {
+            PointF middlePoint = new PointF();
+            middlePoint.X = (points[0].X + points[1].X + points[2].X) / 3;
+            middlePoint.Y = (points[0].Y + points[1].Y + points[2].Y) / 3;
+            return middlePoint;
+        }
+
+        private static PointF ExtendLine(PointF startPoint, double angle, double length)
+        {
+            double dx = Math.Cos(angle) * length;
+            double dy = Math.Sin(angle) * length;
+            return new PointF(startPoint.X + (float)dx, startPoint.Y + (float)dy);
+        }
+        */
     }
 }

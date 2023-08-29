@@ -1,4 +1,4 @@
-﻿#define DebugVisualsCommonArea
+﻿#define nDebugVisualsCommonArea
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +13,41 @@ namespace Fillsquir.Controls
         private float big = 1000;
         private float small = 0;
 
-
+        public double Area
+        {
+            get{
+                var area = 0.0;
+                foreach (var shape in FiguresP)
+                {
+                    int parents = 0;
+                    foreach (var parent in FiguresP)//optimize
+                    {
+                        bool InParent = true;
+                        foreach (var point in shape)
+                        {
+                            if (!FSMath.IsPointInShape(point, parent))
+                            {
+                                InParent = false;
+                                break;
+                            }
+                        }
+                        if (InParent)
+                        {
+                            parents++;
+                        }
+                    }
+                    if (parents % 2 == 0)
+                    {
+                        area -= FSMath.CalculateArea(shape);
+                    }
+                    else
+                    {
+                        area += FSMath.CalculateArea(shape);
+                    }
+                }
+                return area;
+            }
+        }
         public List<PointF[]> FiguresP = new();
         float Xoffset => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
 
@@ -53,7 +87,7 @@ namespace Fillsquir.Controls
             foreach (var shape in VisibleFiguresS)
             {
                 int parents = 0;
-                foreach (var parent in VisibleFiguresS)
+                foreach (var parent in VisibleFiguresS)//optimize
                 {
                     bool InParent = true;
                     foreach (var point in shape)
