@@ -81,11 +81,43 @@ namespace Fillsquir.Controls
                 }
                 //else
                 {
-                    shapes.Add(new PointF[] { center, pointStart, midpointEnd });
+
+                    var triangle = new PointF[] { center, pointStart, midpointEnd };
+                    FSMath.EnsureTriangleDirection(ref triangle);
+                    //make sure triangle is higher than 30 units
+                    //EnsureTriangleShape(ref triangle);
+                    shapes.Add(triangle);
                 }
             }
 
+            //    shapes = new List<PointF[]>();
+            //shapes.Add(new PointF[] {  new PointF((float)519.32, (float)730.7), new PointF((float)419.2, (float)501.60), new PointF((float)463.8, (float)546.3) });
+            //shapes.Add(new PointF[] { new PointF((float)800.2, (float)501.60), new PointF((float)519.32, (float)730.7), new PointF((float)463.8, (float)546.3) });
+            //shapes.Add(new PointF[] { new PointF((float)0.0, (float)0), new PointF((float)150, (float)0), new PointF((float)100, (float)-10) });
+
+            // why all the shapes in a loop don't count as shapes and only the last one is counted?
+            // can you run trough entire code and see if you can find the problem?
+
+
+
+
             return shapes;
+        }
+
+        private static void EnsureTriangleSize(ref PointF[] triangle)//use ref if use it
+        {
+            var directionVector = new PointF(triangle[1].X - triangle[0].X, triangle[1].Y - triangle[0].Y);
+            var direction = Math.Atan2(directionVector.Y, directionVector.X);
+            var directionVector2 = new PointF(triangle[2].X - triangle[0].X, triangle[2].Y - triangle[0].Y);
+            var direction2 = Math.Atan2(directionVector2.Y, directionVector2.X);
+            direction = direction%Math.PI;
+            direction2 = direction2% Math.PI;
+        //now i can chceck if angles are simular
+        //if they are i need to move one of the points 
+            if(Math.Abs(direction - direction2) < 1)
+            {
+                triangle[2] = new PointF(triangle[2].X + 10f, triangle[2].Y - 5f);
+            }
         }
     }
 }

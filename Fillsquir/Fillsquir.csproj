@@ -50,6 +50,7 @@
 
 	<ItemGroup>
 	  <PackageReference Include="Clipper2" Version="1.2.2" />
+	  <PackageReference Include="Mobge.Math" Version="1.0.0.3" />
 	</ItemGroup>
 
 </Project>

@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Clipper2Lib;
-using Microsoft.Maui.Graphics;
-using Path = System.Collections.Generic.List<Microsoft.Maui.Graphics.PointF>;
-using Paths = System.Collections.Generic.List<System.Collections.Generic.List<Microsoft.Maui.Graphics.PointF>>;
+﻿using Clipper2Lib;
 
 namespace Fillsquir.Controls
 {
@@ -278,6 +270,34 @@ namespace Fillsquir.Controls
             }
             return (result, area);
         }
+
+        public static (List<PointF[]>, double) CommonArea2(PointF[] p1, List<PointF[]> p2)
+        {
+            Paths64 subject = new Paths64();
+            Paths64 clip = new Paths64();
+
+            // Convert PointF[] to Path64 and add to subject
+            subject.Add(PointFArrayToPath64(p1));
+
+            // Convert each PointF[] in the list to Path64 and add to clip
+            foreach (var figure in p2)
+            {
+                clip.Add(PointFArrayToPath64(figure));
+            }
+
+            // Find the common area
+            Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.Positive);//cosider EvenOdd rule
+
+            double area = 0;
+            // Convert the common area from Paths64 to List<List<PointF[]>> for the return value
+            List<PointF[]> result = new List<PointF[]>();
+            foreach (var path in commonArea)
+            {
+                result.AddRange(Path64ToPointFArrayList(path));
+                area += Math.Abs(Clipper.Area(path));
+            }
+            return (result, area);
+        }
         public static bool IsInside(PointF clipEdgeStart, PointF clipEdgeEnd, PointF point)
         {
             return (clipEdgeEnd.Y - clipEdgeStart.Y) * (point.X - clipEdgeStart.X) -
@@ -300,6 +320,61 @@ namespace Fillsquir.Controls
 
             return new PointF(x, y);
         }
+
+#if YourDumb
+        internal static void EnsureTriangleIsWrongDirection(ref PointF[] triangle)
+        {
+#if DEBUG
+            if (triangle.Length != 3)
+            {
+                throw new ArgumentException("Triangle must have 3 points", "triangle");
+            }
+#endif
+            var p1 = triangle[0];
+            var p2 = triangle[1];
+            var p3 = triangle[2];
+
+            var crossProduct = (p2.X - p1.X) * (p3.Y - p1.Y) - (p2.Y - p1.Y) * (p3.X - p1.X);
+
+            if (crossProduct < 0)
+            {
+                // The points are in a clockwise direction, so no need to change
+                return;
+            }
+
+            // If the points are in a counter-clockwise direction, swap two points to make it clockwise
+            var temp = triangle[1];
+            triangle[1] = triangle[2];
+            triangle[2] = temp;
+        }
+#endif
+
+        internal static void EnsureTriangleDirection(ref PointF[] triangle)
+        {
+#if DEBUG
+            if (triangle.Length != 3)
+            {
+                throw new ArgumentException("Triangle must have 3 points", "triangle");
+            }
+#endif
+            var p1 = triangle[0];
+            var p2 = triangle[1];
+            var p3 = triangle[2];
+
+            var crossProduct = (p2.X - p1.X) * (p3.Y - p1.Y) - (p2.Y - p1.Y) * (p3.X - p1.X);
+
+            if (crossProduct > 0)
+            {
+                // The points are in a counter-clockwise direction, so no need to change
+                return;
+            }
+
+            // If the points are in a clockwise direction, swap two points to make it counter-clockwise
+            var temp = triangle[1];
+            triangle[1] = triangle[2];
+            triangle[2] = temp;
+        }
+
     }
 }
 
