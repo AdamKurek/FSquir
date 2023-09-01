@@ -1,4 +1,3 @@
-﻿#define nDebugClicking
 #define nDebugClickingLines
 using Fillsquir.Controls;
 
@@ -27,14 +26,8 @@ public partial class MainPage : ContentPage
 #endif
     private void InitializeSquir(int dots)
     {
-
-        // Create a 10x10 template for the pattern
         using (PictureCanvas picture = new PictureCanvas(0, 0, 0, 0))   //wtf
         {
-
-            //    picture.StrokeColor = Colors.Silver;
-            //    picture.DrawLine(0, 0, 70, 10);
-            //    picture.DrawLine(0, 10, 10, 0);
             drawa = new Squir(1000, 1000);
             SquirArea = FSMath.CalculateArea(drawa.PointsP);
             drawables = new DrawableStack();
@@ -45,10 +38,6 @@ public partial class MainPage : ContentPage
             {
                 var fragment = new Fragment(fragmentpoints[i], i);
                 drawables.AddDrawable((Fragment)fragment);
-                //GraphicsView graphicsView = new GraphicsView();
-                //FragmentsGrid.Add(graphicsView, i, 0);
-                //graphicsView.Drawable = fragment;
-                // gest
 
             }
             drawables.AddCover(commonArea); // keep it on top somehow
@@ -61,6 +50,10 @@ public partial class MainPage : ContentPage
             var pointGesture = new PointerGestureRecognizer();
             //i need recognizer that will give me position from where user taps on phone
             var recoginizer = new TapGestureRecognizer();
+            //how do i trigger tapped event?
+            //recoginizer.Tapped +=
+            //no, i want to trigger event of this recognizer from other function, can i do it?
+            //yes, i can, i just need to call recoginizer.SendTapped
 
             recoginizer.Tapped += (s, e) =>
             {
@@ -71,19 +64,11 @@ public partial class MainPage : ContentPage
                 //so use some library like xamarin.forms that is called 
 
                 var point = e.GetPosition(((View)s));
-#if DebugString
-                (drawables.Gui as PercentageDisplay).debugString = point.ToString();
-#endif
+
                 //fix syntaxof 2 lines below
                 mousePosition.X = point.Value.X;
                 mousePosition.Y = point.Value.Y;
-
-                //great, here i'm getting coordinates of the tap, however i'm getting these only if i tap, and not hen i move finger
-                //i need to get coordinates of the finger when i move it
-                
-
-
-
+                Invalidate();
             };  
 
             //recoginizer.NumberOfTapsRequired = 1;
@@ -138,6 +123,9 @@ public partial class MainPage : ContentPage
                 
                 //how do i get position where user taps on phone
 
+#if DebugString
+                //(drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
+#endif
                 
 
 #if DebugClickingLines

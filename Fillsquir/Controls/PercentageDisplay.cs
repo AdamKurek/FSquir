@@ -1,4 +1,3 @@
-﻿#define nDebugString
 using Fillsquir.Interfaces;
 using System;
 using System.Collections.Generic;
