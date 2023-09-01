@@ -248,8 +248,8 @@ namespace Fillsquir.Controls
             {
                 // Clipper's Point64 constructor takes longs, so we need to convert the PointF's floats to longs.
                 // We can do this by rounding the float to the nearest integer, since PointF uses single-precision floating point numbers.
-                long x = (long)Math.Round(point.X);
-                long y = (long)Math.Round(point.Y);
+                long x = (long)Math.Round(point.X * 16384);
+                long y = (long)Math.Round(point.Y * 16384);
                 path.Add(new Point64(x, y));
             }
             return path;
@@ -260,38 +260,37 @@ namespace Fillsquir.Controls
             PointF[] points = new PointF[path.Count];
             for (int i = 0; i < path.Count; i++)
             {
-                points[i] = new PointF((float)path[i].X, (float)path[i].Y);
+                points[i] = new PointF((float)path[i].X / 16384, (float)path[i].Y / 16384);
             }
             list.Add(points);
             return list;
         }
-        public static (List<PointF[]>, double) CommonArea(PointF[] p1, List<PointF[]> p2)
+        public static List<PointF[]> CommonArea(PointF[] p1, List<PointF[]> p2)
         {
             Paths64 subject = new Paths64();
             Paths64 clip = new Paths64();
-
-            // Convert PointF[] to Path64 and add to subject
             subject.Add(PointFArrayToPath64(p1));
-
-            // Convert each PointF[] in the list to Path64 and add to clip
             foreach (var figure in p2)
             {
                 clip.Add(PointFArrayToPath64(figure));
             }
-
-            // Find the common area
-            Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.Positive);//cosider EvenOdd rule
-            
-            double area = 0;
-            // Convert the common area from Paths64 to List<List<PointF[]>> for the return value
+            Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.NonZero);
             List<PointF[]> result = new List<PointF[]>();
             foreach (var path in commonArea)
             {
                 result.AddRange(Path64ToPointFArrayList(path));
-                area += Math.Abs(Clipper.Area(path));
             }
-            return (result, area);
+            return result;
         }
+        //can you add function that does the same thing but actually works?
+        //I think the problem is that the clipper library is not working properly
+        //better alternative is to use the polygon class
+        //https://docs.microsoft.com/en-us/dotnet/api/system.windows.media.pathgeometry?view=net-5.0
+        //here is example code
+       
+            
+
+
 
         public static (List<PointF[]>, double) CommonArea2(PointF[] p1, List<PointF[]> p2)
         {

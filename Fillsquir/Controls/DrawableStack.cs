@@ -70,7 +70,7 @@ namespace Fillsquir.Controls
             public bool inBounds;
         }
         public List<Drawpoint> clickPoints = new List<Drawpoint> { };
-        public void AddDot(Point point, bool inBounds)
+        public void AddDot(Point point, bool inBounds = false)
         {
             Drawpoint drawpoint = new Drawpoint();
             drawpoint.point.X = (float)point.X;

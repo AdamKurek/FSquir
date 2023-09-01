@@ -1,10 +1,6 @@
 ﻿#define nDebugClicking
 #define nDebugClickingLines
 using Fillsquir.Controls;
-using Fillsquir.Interfaces;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Graphics;
-using System.Net.WebSockets;
 
 namespace Fillsquir;
 
@@ -26,6 +22,7 @@ public partial class MainPage : ContentPage
     Point mousePosition = new();
     Fragment moved;
     CommonArea commonArea = new();
+    GameSettings gameSettings = new();
 #if DebugClickingLines
 #endif
     private void InitializeSquir(int dots)
@@ -62,9 +59,55 @@ public partial class MainPage : ContentPage
 
             var panGesture = new PanGestureRecognizer();
             var pointGesture = new PointerGestureRecognizer();
+            //i need recognizer that will give me position from where user taps on phone
+            var recoginizer = new TapGestureRecognizer();
+
+            recoginizer.Tapped += (s, e) =>
+            {
+                //can i somehow make it so i get coordinates even if i hold finger on screen?
+                //yes , i can, but i need to use pan gesture recognizer
+                //but then i need to get coordinates using pan gesture recognizer
+                //but pan gesture recognizer gives me movement of the finger, not coordinates of the finger
+                //so use some library like xamarin.forms that is called 
+
+                var point = e.GetPosition(((View)s));
+#if DebugString
+                (drawables.Gui as PercentageDisplay).debugString = point.ToString();
+#endif
+                //fix syntaxof 2 lines below
+                mousePosition.X = point.Value.X;
+                mousePosition.Y = point.Value.Y;
+
+                //great, here i'm getting coordinates of the tap, however i'm getting these only if i tap, and not hen i move finger
+                //i need to get coordinates of the finger when i move it
+                
+
+
+
+            };  
+
+            //recoginizer.NumberOfTapsRequired = 1;
+            //recoginizer.Tapped += (s, e) =>
+            //{
+            //    var point = e.GetPosition(((View)s));
+            //    (drawables[0] as Squir).PointsP[0].X = (float)point.Value.X;
+            //    (drawables[0] as Squir).PointsP[0].Y = (float)point.Value.Y;
+
+            //    //fix syntaxof 2 lines below
+            //    mousePosition.X = point.Value.X;
+            //    mousePosition.Y = point.Value.Y;
+            //};
+           // var rr= new Gesturerecognizer();
+           //how do i get position where user taps on phone
 
             pointGesture.PointerEntered += (s, e) =>
             {
+                
+                //fix syntaxof 2 lines below
+                // mousePosition.X = point.Value
+
+                // mousePosition.X = point.X;
+                // mousePosition.Y = point.Y;
                 //    var st = e.GetPosition(this);
                 //    startingPoint.X = (float)st.Value.X;
                 //    startingPoint.Y = (float)st.Value.Y;
@@ -72,17 +115,31 @@ public partial class MainPage : ContentPage
             };
 
             pointGesture.PointerMoved += (s, e) => {
-                mousePosition = (Point)e.GetPosition(this);
-                Console.WriteLine(mousePosition);
 
+                //i want it to work only on windows what directive do i use 
+                //use 
+#if windows
+                mousePosition = (Point)e.GetPosition(this);
+#endif
+#if DebugString
+                (drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
+#endif
+
+
+                return;
+                // nie działa
                 // moved.position.X = startingPoint.X + (float)st.Value.X;
                 // moved.position.Y = startingPoint.Y + (float)st.Value.Y;
                 // squir.Invalidate();
             };
-
-
+            
             panGesture.PanUpdated += (s, e) =>
             {
+                
+                //how do i get position where user taps on phone
+
+                
+
 #if DebugClickingLines
                 switch (e.StatusType)
                 {
@@ -107,7 +164,7 @@ public partial class MainPage : ContentPage
                 }
                 Invalidate();
 
-
+                return;
 #endif
 
 #if DebugClicking
@@ -123,6 +180,7 @@ public partial class MainPage : ContentPage
                 switch (e.StatusType)
                 {
                     case GestureStatus.Started:
+                        
                         moved = drawables.getNearestFragment(mousePosition);
 
                         startingPoint = moved.PositionS;
@@ -178,6 +236,7 @@ public partial class MainPage : ContentPage
             };
             squir.GestureRecognizers.Add(pointGesture);
             squir.GestureRecognizers.Add(panGesture);
+            squir.GestureRecognizers.Add(recoginizer);
             //squir.Drawable = new drawab
             //Microsoft.Maui.Graphics
             //squir.Drawable.Draw(picture, RectF.Zero);
@@ -189,7 +248,6 @@ public partial class MainPage : ContentPage
 
         //squir.Invalidate();resize
     }
-
     void UpdateCover()                  
     {
         var FiguresAsPointlists = new List<PointF[]>();
@@ -200,7 +258,7 @@ public partial class MainPage : ContentPage
 
         //var u1 = ((Fragment)drawables.drawables[1]).VisiblePointsP;
         //var u2 = ((Squir)drawables[0]).PointsP;
-        (commonArea.FiguresP, var percentage) = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
+        commonArea.FiguresP = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
         UpdateGui(((CommonArea)drawables.cover).Area*100);
     }
 

@@ -1,5 +1,6 @@
 ﻿using Fillsquir.Controls;
 using Fillsquir.Interfaces;
+using Microsoft.Maui.Graphics;
 
 public class Squir : GeometryElement 
 {

@@ -10,7 +10,16 @@ public class Fragment : GeometryElement
 
     public PointF[] PointsP;
 
-    private readonly PointF[] UntouchedPointsS;
+    private PointF[] UntouchedPointsS { get {
+            var Up = new PointF[PointsP.Length];
+            for (int i = 0; i < PointsP.Length; i++)
+            {
+                Up[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X));// + (0.5f * canvasWidth);// ;
+                Up[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y));// +(0.5f * canvasHeight);// ;
+            }
+            return Up;
+        }
+    }
     public PointF PositionS;
     public PointF PositionP { get
         {
@@ -35,8 +44,8 @@ public class Fragment : GeometryElement
                 midpoint.Y = PositionS.Y + (sizeP.Y / 4);
                 return midpoint;
             }
-            midpoint.X = PositionS.X + canvasWidth * scaleX / 8;
-            midpoint.Y = PositionS.Y + canvasHeight * scaleY / 8;
+            midpoint.X = PositionS.X;
+            midpoint.Y = PositionS.Y;
 
             return midpoint;
 
@@ -48,7 +57,7 @@ public class Fragment : GeometryElement
     public bool wasTouched = false;
     int index;
     int rows = 4;
-
+    int cols = 2;
     protected override void ResizePrecize(float Width, float Height)
     {
         PositionS.X = PositionS.X * (Width / canvasWidth);
@@ -108,12 +117,7 @@ public class Fragment : GeometryElement
             this.index = index;
         }
         {
-            UntouchedPointsS = new PointF[PointsP.Length];
-            for (int i = 0; i < PointsP.Length; i++)
-            {
-                UntouchedPointsS[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) + (2000) - (0.5f * sizeP.X));// + (0.5f * canvasWidth);// ;
-                UntouchedPointsS[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) + 1000 - (0.5f * sizeP.Y)) ;// +(0.5f * canvasHeight);// ;
-            }
+            
         }
     }
 
@@ -124,9 +128,12 @@ public class Fragment : GeometryElement
         if (!wasTouched)
         {
             {
-                PositionS.X = canvasWidth * IndexX / 4;
-                PositionS.Y = canvasHeight * (prop1 / prop2);
-                PositionS.Y += canvasWidth * scaleY / 8 * (index / 4);
+                var cellWidth = canvasWidth / rows;
+                PositionS.X = (cellWidth * IndexX) + (cellWidth /2) ;
+                var SQHeight = canvasHeight * (prop1 / prop2);
+                var MovePerColl = (canvasHeight - SQHeight) / cols;
+                var afterMove = 1/2f * MovePerColl;
+                PositionS.Y = SQHeight + ((index/rows)*MovePerColl) + afterMove;
             }
 
             //float scaleX = (canvasWidth / (defaultCanvasWidth / prop1 * prop2));
@@ -180,10 +187,10 @@ public class Fragment : GeometryElement
             canvas.DrawCircle(MidpointS.X, MidpointS.Y, RadiusP* (scaleX>scaleY? scaleX:scaleY));//clickbox
             canvas.StrokeColor = Colors.DarkViolet;
 
-            canvas.DrawRectangle(new RectF() { Height = sizeP.Y*scaleY, Width = sizeP.X* scaleX, X =positionS.X ,Y= positionS.Y});
+            canvas.DrawRectangle(new RectF() { Height = sizeP.Y*scaleY, Width = sizeP.X* scaleX, X =PositionS.X ,Y= PositionS.Y});
             canvas.StrokeColor = Colors.Red;
             canvas.FillColor = Colors.Red;
-            canvas.DrawRectangle(new RectF() { Height = 1000 * scaleY, Width = 1000 * scaleX, X = positionS.X, Y = positionS.Y });
+            canvas.DrawRectangle(new RectF() { Height = 1000 * scaleY, Width = 1000 * scaleX, X = PositionS.X, Y = PositionS.Y });
 #endif
         }
         //PathF path = new PathF(Points[0]);
@@ -216,11 +223,11 @@ public class Fragment : GeometryElement
    
     public float scaleToMiddleX(float from)
     {
-            return from * scaleX;
+            return from * canvasWidth / defaultCanvasWidth;
     }
     public float scaleToMiddleY(float from)
     {
-            return from  * scaleY;
+            return from  * canvasWidth / defaultCanvasWidth;
 
 
     }

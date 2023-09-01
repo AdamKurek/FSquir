@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Fillsquir.Interfaces;
+using Microsoft.Maui.Graphics;
 
 namespace Fillsquir.Controls
 {
@@ -122,7 +123,8 @@ namespace Fillsquir.Controls
                 foreach (var point in shape)
                 {
                     path.LineTo(point);
-                }
+                }path.LineTo(shape[0]);
+
                 canvas.DrawPath(path);
                 canvas.FillPath(path);
 

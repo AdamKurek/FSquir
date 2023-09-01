@@ -1,10 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fillsquir.MainPage">
 
-    <Grid >
-        
+    <Grid
+            BackgroundColor="Black"
+        >
+    
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
 
@@ -15,11 +17,12 @@
         
         <GraphicsView 
             x:Name="squir"
+            BackgroundColor="Black"
             Grid.Row="0"
-            Grid.ColumnSpan="4"
-            BackgroundColor="Red"
-            DragInteraction="squir_DragInteraction"
             
+            Grid.ColumnSpan="4"
+            DragInteraction="squir_DragInteraction"
+                
             SizeChanged="squir_SizeChanged">
         </GraphicsView>
 
