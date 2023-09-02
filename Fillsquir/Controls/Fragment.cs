@@ -3,41 +3,42 @@
 using Fillsquir.Controls;
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
+using SkiaSharp;
 using System;
 using System.Runtime.ExceptionServices;
 public class Fragment : GeometryElement
 {
 
-    public PointF[] PointsP;
+    public SKPoint[] PointsP;
 
-    private PointF[] UntouchedPointsS { get {
-            var Up = new PointF[PointsP.Length];
+    private SKPoint[] UntouchedPointsS { get {
+            var Up = new SKPoint[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
             {
-                Up[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X));// + (0.5f * canvasWidth);// ;
-                Up[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y));// +(0.5f * canvasHeight);// ;
+                Up[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X)) * scaleX / 8 + PositionS.X;// + (0.5f * canvasWidth);// ;
+                Up[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y)) * scaleY / 8 + PositionS.Y;// +(0.5f * canvasHeight);// ;
             }
             return Up;
         }
     }
-    public PointF PositionS;
-    public PointF PositionP { get
+    public SKPoint PositionS;
+    public SKPoint PositionP { get
         {
-            PointF ret = new PointF();
+            SKPoint ret = new SKPoint();
             ret.X = (PositionS.X - dravingMoveX )/ scaleX;
             ret.Y = PositionS.Y/scaleY;
             return ret;
         }
     }
 
-    public PointF sizeP;
-    //private PointF MoveToFill;
+    public SKPoint sizeP;
+    //private SKPoint MoveToFill;
     private float MoveToFillXP;
     private float MoveToFillYP;
 
 
-    public PointF MidpointS { get {
-            PointF midpoint = new PointF();
+    public SKPoint MidpointS { get {
+            SKPoint midpoint = new SKPoint();
             if (wasTouched) 
             {
                 midpoint.X = PositionS.X + (sizeP.X / 2);
@@ -70,47 +71,47 @@ public class Fragment : GeometryElement
     float dravingMoveX => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
     private float Xoffset => PositionS.X - (MoveToFillXP * scaleX);
     private float Yoffset => PositionS.Y - (MoveToFillYP *scaleY);
-    private PointF[] visiblePointsS;
-    public PointF[] VisiblePointsS
+    private SKPoint[] visiblePointsS;
+    public SKPoint[] VisiblePointsS
     {
         get
         {
-            var pts = new PointF[PointsP.Length];
+            var pts = new SKPoint[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
             {
-                pts[i] = new PointF((PointsP[i].X * scaleX) + Xoffset, (PointsP[i].Y * scaleY) + Yoffset);
+                pts[i] = new SKPoint((PointsP[i].X * scaleX) + Xoffset, (PointsP[i].Y * scaleY) + Yoffset);
             }
             return pts;
         }
     }
 
-    public PointF[] VisiblePointsP {
+    public SKPoint[] VisiblePointsP {
             get{
-                var pts = new PointF[PointsP.Length];
+                var pts = new SKPoint[PointsP.Length];
                 for (int i = 0; i < PointsP.Length; i++)
                 {
-                    pts[i] = new PointF(PointsP[i].X + PositionP.X - MoveToFillXP, PointsP[i].Y + PositionP.Y - MoveToFillYP);
+                    pts[i] = new SKPoint(PointsP[i].X + PositionP.X - MoveToFillXP, PointsP[i].Y + PositionP.Y - MoveToFillYP);
                 }
                 return pts;
             }
         }
 
-    public Fragment(PointF[] Points, int index)
+    public Fragment(SKPoint[] Points, int index)
     {
         {
             float xMin = float.MaxValue, yMin = float.MaxValue, xMax = 0, yMax = 0;
             this.PointsP = Points;
 
-            foreach (PointF point in PointsP)
+            foreach (SKPoint point in PointsP)
             {
                 if (point.X < xMin) { xMin = point.X; }
                 if (point.X > xMax) { xMax = point.X; }
                 if (point.Y < yMin) { yMin = point.Y; }
                 if (point.Y > yMax) { yMax = point.Y; }
             }
-            sizeP = new PointF((xMax - xMin), (yMax - yMin));
+            sizeP = new SKPoint((xMax - xMin), (yMax - yMin));
 
-            //MoveToFill = new PointF() { X = xMin, Y = yMin };
+            //MoveToFill = new SKPoint() { X = xMin, Y = yMin };
             MoveToFillXP = xMin;
             MoveToFillYP = yMin;
 
@@ -122,9 +123,23 @@ public class Fragment : GeometryElement
     }
 
 
-    protected override void DrawMainShape(ICanvas canvas, RectF dirtyRect)
+    protected override void DrawMainShape(SKCanvas canvas)
     {
-        //todo draw using path not lines
+        SKPaint paintStroke = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            IsAntialias = true,
+            Color = SKColors.Blue
+        };
+        SKPaint paintFill = new()
+        {
+            Style = SKPaintStyle.Fill,
+            StrokeWidth = 1,
+            IsAntialias = true,
+            Color = SKColors.BlueViolet
+        };
+
         if (!wasTouched)
         {
             {
@@ -138,43 +153,43 @@ public class Fragment : GeometryElement
 
             //float scaleX = (canvasWidth / (defaultCanvasWidth / prop1 * prop2));
             //float Xoffset = (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
-            canvas.StrokeColor = Colors.LightBlue;
-            canvas.FillColor = Colors.Aqua;
-
+           
             //for (int i = 0; i < Points.Length - 1; i++)
             //{
-            //    PointF start = new PointF(Points[i].X * scaleX/8 + position.X, Points[i].Y * scaleY / 8 + position.Y);
-            //    PointF end = new PointF(Points[i + 1].X * scaleX / 8 + position.X, Points[i + 1].Y * scaleY / 8 + position.Y);
+            //    SKPoint start = new SKPoint(Points[i].X * scaleX/8 + position.X, Points[i].Y * scaleY / 8 + position.Y);
+            //    SKPoint end = new SKPoint(Points[i + 1].X * scaleX / 8 + position.X, Points[i + 1].Y * scaleY / 8 + position.Y);
             //    canvas.DrawLine(start, end);
             //}
-            //PointF startOfLastLine = new PointF(Points[Points.Length - 1].X * scaleX / 8 + position.X, Points[Points.Length - 1].Y * scaleY / 8 + position.Y);
-            //PointF endOfLastLine = new PointF(Points[0].X * scaleX / 8 + position.X, Points[0].Y * scaleY / 8 + position.Y);
-            for (int i = 0; i < PointsP.Length - 1; i++)
-            {
-                PointF start = new PointF(UntouchedPointsS[i].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i].Y * scaleY / 8 + PositionS.Y);
-                PointF end = new PointF(UntouchedPointsS[i + 1].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i + 1].Y * scaleY / 8 + PositionS.Y);
-                canvas.DrawLine(start, end);
-            }
-            PointF startOfLastLine = new PointF(UntouchedPointsS[PointsP.Length - 1].X * scaleX / 8 + PositionS.X, UntouchedPointsS[PointsP.Length - 1].Y * scaleY / 8 + PositionS.Y);
-            PointF endOfLastLine = new PointF(UntouchedPointsS[0].X * scaleX / 8 + PositionS.X, UntouchedPointsS[0].Y * scaleY / 8 + PositionS.Y);
-            canvas.DrawLine(startOfLastLine, endOfLastLine);
-
+            //SKPoint startOfLastLine = new SKPoint(Points[Points.Length - 1].X * scaleX / 8 + position.X, Points[Points.Length - 1].Y * scaleY / 8 + position.Y);
+            //SKPoint endOfLastLine = new SKPoint(Points[0].X * scaleX / 8 + position.X, Points[0].Y * scaleY / 8 + position.Y);
+            SKPath path = new();
+            //SKPoint[] skpts = new SKPoint[];
+            //for (int i = 0; i < PointsP.Length; i++)
+            //{
+            //    //skpts[i] = new(UntouchedPointsS[i].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i].Y * scaleY / 8 + PositionS.Y);
+            //    path.MoveTo(UntouchedPointsS[i].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i].Y * scaleY / 8 + PositionS.Y);
+            //}
+            //path.Close();
+            //path.MoveTo(UntouchedPointsS[0].X * scaleX / 8 + PositionS.X, UntouchedPointsS[0].Y * scaleY / 8 + PositionS.Y);
+            //path.AddPoly(skpts);
+            path.AddPoly(UntouchedPointsS);
+            canvas.DrawPath(path, paintFill);
+            canvas.DrawPath(path, paintStroke);
 #if DebugVisuals
             canvas.DrawCircle(MidpointS.X, MidpointS.Y, 0.1f * RadiusP * (scaleX > scaleY ? scaleX : scaleY));//clickbox
 #endif
             return;
         }
         {
-            canvas.StrokeColor = Colors.AliceBlue;
-            canvas.FillColor = Colors.Aqua;
             var VP = VisiblePointsS;
-            PathF path = new();
+            SKPath path = new();
 
             for (int i = 0; i < PointsP.Length; i++)
             {
                 path.LineTo(VP[i]);
             }
-            canvas.FillPath(path);
+            canvas.DrawPath(path, paintStroke);
+            canvas.DrawPath(path, paintFill);
 #if DebugVisuals
             foreach (var pt in VisiblePointsS)
             {
@@ -202,7 +217,7 @@ public class Fragment : GeometryElement
 
     }
 
-    public void SetPositionToPointLocation(PointF VisiblePointToAdjust, int finalIndex) {
+    public void SetPositionToPointLocation(SKPoint VisiblePointToAdjust, int finalIndex) {
         //position = VisiblePoints[finalIndex] - moveto;
         PositionS.X = (VisiblePointToAdjust.X - (PointsP[finalIndex].X * scaleX) + (MoveToFillXP * scaleX)) ;// - (Points[finalIndex].X * scaleX)+ Xoffset;
         PositionS.Y = VisiblePointToAdjust.Y - (PointsP[finalIndex].Y * scaleY) + (MoveToFillYP* scaleY);// - (Points[finalIndex].Y * scaleY)+ Yoffset;
@@ -217,7 +232,7 @@ public class Fragment : GeometryElement
 
     internal float Distance(Point mousePosition)
     {
-        PointF mouse = new Point() {X = mousePosition.X,Y = mousePosition.Y };
+        SKPoint mouse = new SKPoint() {X = (float)mousePosition.X,Y = (float)mousePosition.Y };
         return (float)DrawableStack.CalculateDistance(mouse, MidpointS);
     }
    

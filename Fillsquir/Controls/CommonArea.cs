@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
+using SkiaSharp;
 
 namespace Fillsquir.Controls
 {
@@ -49,20 +50,20 @@ namespace Fillsquir.Controls
                 return area;
             }
         }
-        public List<PointF[]> FiguresP = new();
+        public List<SKPoint[]> FiguresP = new();
         float Xoffset => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
 
-        public List<PointF[]> VisibleFiguresS
+        public List<SKPoint[]> VisibleFiguresS
         {
             get
             {
-                var fgs = new List<PointF[]>();
+                var fgs = new List<SKPoint[]>();
                 foreach (var f in FiguresP)
                 {
-                    var visibleFigure = new PointF[f.Count()];
+                    var visibleFigure = new SKPoint[f.Count()];
                     for (int i = 0; i < f.Length; i++)
                     {
-                        visibleFigure[i] = new PointF((f[i].X * scaleX) + Xoffset, f[i].Y * scaleY);
+                        visibleFigure[i] = new SKPoint((f[i].X * scaleX) + Xoffset, f[i].Y * scaleY);
                     }
                     fgs.Add(visibleFigure);
                 }
@@ -76,15 +77,27 @@ namespace Fillsquir.Controls
         }
 
         //how do i make this work
-        public void AddFigure(PointF[] figure)
+        public void AddFigure(SKPoint[] figure)
         {
             FiguresP.Add(figure);
         }
 
 
-        protected override void DrawMainShape(ICanvas canvas, RectF dirtyRect)
+        protected override void DrawMainShape(SKCanvas canvas)
         {
 
+            SKPaint paintStroke = new()
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                IsAntialias = true
+            };
+            SKPaint paintFill = new()
+            {
+                Style = SKPaintStyle.Fill,
+                StrokeWidth = 1,
+                IsAntialias = true
+            };
             foreach (var shape in VisibleFiguresS)
             {
                 int parents = 0;
@@ -108,25 +121,23 @@ namespace Fillsquir.Controls
 
                 if (parents % 2 == 0)
                 {
-
-                    canvas.StrokeColor = Colors.Yellow;
-                    canvas.FillColor = Colors.Black;
+                    paintFill.Color = SKColors.YellowGreen;
+                    paintStroke.Color = SKColors.Yellow;
                 }
                 else
                 {
-
-                    canvas.StrokeColor = Colors.DarkOrange;
-                    canvas.FillColor = Colors.LightGoldenrodYellow;
+                    paintFill.Color = SKColors.DarkOrange;
+                    paintStroke.Color = SKColors.Orange;
                 }
 
-                PathF path = new();
+                SKPath path = new();
                 foreach (var point in shape)
                 {
                     path.LineTo(point);
                 }path.LineTo(shape[0]);
 
-                canvas.DrawPath(path);
-                canvas.FillPath(path);
+                canvas.DrawPath(path, paintStroke);
+                canvas.DrawPath(path, paintFill);
 
 #if DebugVisualsCommonArea
                 canvas.StrokeColor = Colors.Gray;

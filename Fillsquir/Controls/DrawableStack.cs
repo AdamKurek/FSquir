@@ -3,10 +3,11 @@
 
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
+using SkiaSharp;
 
 namespace Fillsquir.Controls
 {
-    public class DrawableStack : IDrawable
+    public class DrawableStack : SKDrawable
     {
 
         private float screenWidth = 1000;
@@ -14,9 +15,9 @@ namespace Fillsquir.Controls
         public List<GeometryElement> drawables = new();
         public GeometryElement cover;
         public GeometryElement Gui { get; set; }
-        public HashSet<PointF> allActivePoints(int ignoreIndex)//todo make  update on move
+        public HashSet<SKPoint> allActivePoints(int ignoreIndex)//todo make  update on move
         {
-            var set = new HashSet<PointF>();
+            var set = new HashSet<SKPoint>();
             Squir sq = (Squir)drawables[0];
             foreach (var pt in sq.VisiblePoints)
             {
@@ -66,7 +67,7 @@ namespace Fillsquir.Controls
 #if DebugClicking
         public struct Drawpoint
         {
-            public PointF point;
+            public SKPoint point;
             public bool inBounds;
         }
         public List<Drawpoint> clickPoints = new List<Drawpoint> { };
@@ -79,15 +80,16 @@ namespace Fillsquir.Controls
             clickPoints.Add(drawpoint);
         }
 #endif
-        public void Draw(ICanvas canvas, RectF dirtyRect)
+        public SKCanvas Draw(SKCanvas canvas)
         {
             foreach (var drawable in drawables.Skip(1))
             {
-                drawable.Draw(canvas, dirtyRect);
+                drawable.Draw(canvas);
             }
-            this[0].Draw(canvas, dirtyRect);
-            cover?.Draw(canvas, dirtyRect);
-            Gui?.Draw(canvas, dirtyRect);
+            this[0].Draw(canvas);
+
+            cover?.Draw(canvas);
+            Gui?.Draw(canvas);
 #if DebugClicking
             foreach (var circle in clickPoints)
             {
@@ -111,6 +113,7 @@ namespace Fillsquir.Controls
             if(testLine is not null)
             canvas.DrawLine(testLine.q, testLine.p);
 #endif
+            return canvas;
         }
 
         public void Resize(float width, float height)
@@ -140,7 +143,7 @@ namespace Fillsquir.Controls
             return drawables[index] as Fragment;
         }
 
-        public static double CalculateDistance(PointF point1, PointF point2)
+        public static double CalculateDistance(SKPoint point1, SKPoint point2)
         {
             float dx = point2.X - point1.X;
             float dy = point2.Y - point1.Y;

@@ -1,11 +1,12 @@
 ﻿using Clipper2Lib;
+using SkiaSharp;
 
 namespace Fillsquir.Controls
 {
     internal static class FSMath
     {
         
-        public static bool IsPointInShape(Point point, ICollection<PointF> figure)//incluzive
+        public static bool IsPointInShape(SKPoint point, ICollection<SKPoint> figure)//incluzive
         {
             if (figure.Count < 3) 
             {
@@ -18,11 +19,11 @@ namespace Fillsquir.Controls
                     return true;
                 }
             }
-            PointF outsidePoint = new PointF(-9999, -9999); 
+            SKPoint outsidePoint = new SKPoint(-9999, -9999); 
             int intersectCount = 0;
 
-            PointF prevPoint = new PointF(float.NaN, float.NaN);
-            foreach (PointF currentPoint in figure)
+            SKPoint prevPoint = new SKPoint(float.NaN, float.NaN);
+            foreach (SKPoint currentPoint in figure)
             {
                 if (!float.IsNaN(prevPoint.X))
                 {
@@ -47,12 +48,12 @@ namespace Fillsquir.Controls
         }
 
 
-        public static bool OnSegment(PointF p, PointF q, PointF r)
+        public static bool OnSegment(SKPoint p, SKPoint q, SKPoint r)
         {
             return q.X <= Math.Max(p.X, r.X) && q.X >= Math.Min(p.X, r.X) &&
                    q.Y <= Math.Max(p.Y, r.Y) && q.Y >= Math.Min(p.Y, r.Y);
         }
-        public static bool DoSegmentsIntersect(Point p1, PointF q1, PointF p2, PointF q2)
+        public static bool DoSegmentsIntersect(SKPoint p1, SKPoint q1, SKPoint p2, SKPoint q2)
         {
             // Calculate orientation
             float o1 = Orientation(p1, q1, p2);
@@ -81,7 +82,7 @@ namespace Fillsquir.Controls
             return false;
         }
 
-        public static float Orientation(Point a, PointF b, PointF c)
+        public static float Orientation(SKPoint a, SKPoint b, SKPoint c)
         {
             float result = (float)((b.Y - a.Y) * (c.X - b.X) - (b.X - a.X) * (c.Y - b.Y));
             if (result == 0) return 0;  // Collinear
@@ -89,16 +90,16 @@ namespace Fillsquir.Controls
         }
 
         // common area
-        public static PointF[] SutherlandHodgman(PointF[] p1, PointF[] p2)
+        public static SKPoint[] SutherlandHodgman(SKPoint[] p1, SKPoint[] p2)
         {
-            List<PointF> outputList = new List<PointF>(p1);
+            List<SKPoint> outputList = new List<SKPoint>(p1);
 
             for (int i = 0; i < p2.Length; i++)
             {
-                PointF clipEdgeStart = p2[i];
-                PointF clipEdgeEnd = p2[(i + 1) % p2.Length];
+                SKPoint clipEdgeStart = p2[i];
+                SKPoint clipEdgeEnd = p2[(i + 1) % p2.Length];
 
-                List<PointF> inputList = new List<PointF>(outputList);
+                List<SKPoint> inputList = new List<SKPoint>(outputList);
                 outputList.Clear();
 
                 if (inputList.Count == 0)
@@ -106,8 +107,8 @@ namespace Fillsquir.Controls
                     break;
                 }
 
-                PointF prevPoint = inputList[inputList.Count - 1];
-                foreach (PointF currentPoint in inputList)
+                SKPoint prevPoint = inputList[inputList.Count - 1];
+                foreach (SKPoint currentPoint in inputList)
                 {
                     if (IsInside(clipEdgeStart, clipEdgeEnd, currentPoint))
                     {
@@ -128,7 +129,7 @@ namespace Fillsquir.Controls
             return outputList.ToArray();
         }
 
-        public static double CalculateArea(PointF[] figure)
+        public static double CalculateArea(SKPoint[] figure)
         {
 #if DEBUG
             if (figure.Length < 3)
@@ -150,19 +151,19 @@ namespace Fillsquir.Controls
             return area;
         }
 
-        /*public static List<PointF[]> CommonArea(PointF[] p1, PointF[] p2)
+        /*public static List<SKPoint[]> CommonArea(SKPoint[] p1, SKPoint[] p2)
         {
-            List<List<PointF>> subj = new List<List<PointF>>(1), clip = new List<List<PointF>>(1), solution = new List<List<PointF>>();
-            subj.Add(new List<PointF>());
-            clip.Add(new List<PointF>());
+            List<List<SKPoint>> subj = new List<List<SKPoint>>(1), clip = new List<List<SKPoint>>(1), solution = new List<List<SKPoint>>();
+            subj.Add(new List<SKPoint>());
+            clip.Add(new List<SKPoint>());
 
-            // Convert PointF to IntPoint (Clipper's integer point) and populate 'subj' and 'clip'
-            foreach (PointF p in p1)
+            // Convert SKPoint to IntPoint (Clipper's integer point) and populate 'subj' and 'clip'
+            foreach (SKPoint p in p1)
             {
                 subj[0].Add(new IntPoint((long)(p.X * 1e6), (long)(p.Y * 1e6)));
             }
 
-            foreach (PointF p in p2)
+            foreach (SKPoint p in p2)
             {
                 clip[0].Add(new IntPoint((long)(p.X * 1e6), (long)(p.Y * 1e6)));
             }
@@ -172,21 +173,21 @@ namespace Fillsquir.Controls
           //  c.AddPolygon(clip, PolyType.ptClip);
             c.Execute(ClipType.ctIntersection, solution, PolyFillType.pftEvenOdd, PolyFillType.pftEvenOdd);
 
-            // Convert the result back to PointF and return
-            List<PointF[]> result = new List<PointF[]>();
+            // Convert the result back to SKPoint and return
+            List<SKPoint[]> result = new List<SKPoint[]>();
             foreach (List<IntPoint> path in solution)
             {
-                List<PointF> pfList = new List<PointF>();
+                List<SKPoint> pfList = new List<SKPoint>();
                 foreach (IntPoint ip in path)
                 {
-                    pfList.Add(new PointF((float)ip.X / 1e6f, (float)ip.Y / 1e6f));
+                    pfList.Add(new SKPoint((float)ip.X / 1e6f, (float)ip.Y / 1e6f));
                 }
                 result.Add(pfList.ToArray());
             }
 
             return result;
         }*/
-        /*public static List<List<PointF[]>> CommonArea2(PointF[] p1, List<PointF[]> p2)
+        /*public static List<List<SKPoint[]>> CommonArea2(SKPoint[] p1, List<SKPoint[]> p2)
         {
             // Convert p1 to a Path
             Path subj = new Path(p1.Length);
@@ -222,17 +223,17 @@ namespace Fillsquir.Controls
                 c.AddPolygon(subj, PolyType.ptSubject);
             }
 
-            // Convert solutions to a list of lists of PointF arrays
-            List<List<PointF[]>> result = new List<List<PointF[]>>();
+            // Convert solutions to a list of lists of SKPoint arrays
+            List<List<SKPoint[]>> result = new List<List<SKPoint[]>>();
             foreach (var solution in solutions)
             {
-                List<PointF[]> polygons = new List<PointF[]>();
+                List<SKPoint[]> polygons = new List<SKPoint[]>();
                 foreach (var path in solution)
                 {
-                    PointF[] points = new PointF[path.Count];
+                    SKPoint[] points = new SKPoint[path.Count];
                     for (int i = 0; i < path.Count; i++)
                     {
-                        points[i] = new PointF((float)path[i].X / 1000, (float)path[i].Y / 1000);
+                        points[i] = new SKPoint((float)path[i].X / 1000, (float)path[i].Y / 1000);
                     }
                     polygons.Add(points);
                 }
@@ -241,44 +242,44 @@ namespace Fillsquir.Controls
 
             return result;
         }*/
-        private static Path64 PointFArrayToPath64(PointF[] points)
+        private static Path64 SKPointArrayToPath64(SKPoint[] points)
         {
             Path64 path = new Path64();
-            foreach (PointF point in points)
+            foreach (SKPoint point in points)
             {
-                // Clipper's Point64 constructor takes longs, so we need to convert the PointF's floats to longs.
-                // We can do this by rounding the float to the nearest integer, since PointF uses single-precision floating point numbers.
+                // Clipper's Point64 constructor takes longs, so we need to convert the SKPoint's floats to longs.
+                // We can do this by rounding the float to the nearest integer, since SKPoint uses single-precision floating point numbers.
                 long x = (long)Math.Round(point.X * 16384);
                 long y = (long)Math.Round(point.Y * 16384);
                 path.Add(new Point64(x, y));
             }
             return path;
         }
-        private static List<PointF[]> Path64ToPointFArrayList(Path64 path)
+        private static List<SKPoint[]> Path64ToSKPointArrayList(Path64 path)
         {
-            List<PointF[]> list = new List<PointF[]>();
-            PointF[] points = new PointF[path.Count];
+            List<SKPoint[]> list = new List<SKPoint[]>();
+            SKPoint[] points = new SKPoint[path.Count];
             for (int i = 0; i < path.Count; i++)
             {
-                points[i] = new PointF((float)path[i].X / 16384, (float)path[i].Y / 16384);
+                points[i] = new SKPoint((float)path[i].X / 16384, (float)path[i].Y / 16384);
             }
             list.Add(points);
             return list;
         }
-        public static List<PointF[]> CommonArea(PointF[] p1, List<PointF[]> p2)
+        public static List<SKPoint[]> CommonArea(SKPoint[] p1, List<SKPoint[]> p2)
         {
             Paths64 subject = new Paths64();
             Paths64 clip = new Paths64();
-            subject.Add(PointFArrayToPath64(p1));
+            subject.Add(SKPointArrayToPath64(p1));
             foreach (var figure in p2)
             {
-                clip.Add(PointFArrayToPath64(figure));
+                clip.Add(SKPointArrayToPath64(figure));
             }
             Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.NonZero);
-            List<PointF[]> result = new List<PointF[]>();
+            List<SKPoint[]> result = new List<SKPoint[]>();
             foreach (var path in commonArea)
             {
-                result.AddRange(Path64ToPointFArrayList(path));
+                result.AddRange(Path64ToSKPointArrayList(path));
             }
             return result;
         }
@@ -292,40 +293,40 @@ namespace Fillsquir.Controls
 
 
 
-        public static (List<PointF[]>, double) CommonArea2(PointF[] p1, List<PointF[]> p2)
+        public static (List<SKPoint[]>, double) CommonArea2(SKPoint[] p1, List<SKPoint[]> p2)
         {
             Paths64 subject = new Paths64();
             Paths64 clip = new Paths64();
 
-            // Convert PointF[] to Path64 and add to subject
-            subject.Add(PointFArrayToPath64(p1));
+            // Convert SKPoint[] to Path64 and add to subject
+            subject.Add(SKPointArrayToPath64(p1));
 
-            // Convert each PointF[] in the list to Path64 and add to clip
+            // Convert each SKPoint[] in the list to Path64 and add to clip
             foreach (var figure in p2)
             {
-                clip.Add(PointFArrayToPath64(figure));
+                clip.Add(SKPointArrayToPath64(figure));
             }
 
             // Find the common area
             Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.Positive);//cosider EvenOdd rule
 
             double area = 0;
-            // Convert the common area from Paths64 to List<List<PointF[]>> for the return value
-            List<PointF[]> result = new List<PointF[]>();
+            // Convert the common area from Paths64 to List<List<SKPoint[]>> for the return value
+            List<SKPoint[]> result = new List<SKPoint[]>();
             foreach (var path in commonArea)
             {
-                result.AddRange(Path64ToPointFArrayList(path));
+                result.AddRange(Path64ToSKPointArrayList(path));
                 area += Math.Abs(Clipper.Area(path));
             }
             return (result, area);
         }
-        public static bool IsInside(PointF clipEdgeStart, PointF clipEdgeEnd, PointF point)
+        public static bool IsInside(SKPoint clipEdgeStart, SKPoint clipEdgeEnd, SKPoint point)
         {
             return (clipEdgeEnd.Y - clipEdgeStart.Y) * (point.X - clipEdgeStart.X) -
                    (clipEdgeEnd.X - clipEdgeStart.X) * (point.Y - clipEdgeStart.Y) >= 0;
         }
 
-        public static PointF Intersection(PointF clipEdgeStart, PointF clipEdgeEnd, PointF lineStart, PointF lineEnd)
+        public static SKPoint Intersection(SKPoint clipEdgeStart, SKPoint clipEdgeEnd, SKPoint lineStart, SKPoint lineEnd)
         {
             float A1 = lineEnd.Y - lineStart.Y;
             float B1 = lineStart.X - lineEnd.X;
@@ -339,11 +340,11 @@ namespace Fillsquir.Controls
             float x = (B2 * C1 - B1 * C2) / det;
             float y = (A1 * C2 - A2 * C1) / det;
 
-            return new PointF(x, y);
+            return new SKPoint(x, y);
         }
 
 #if YourDumb
-        internal static void EnsureTriangleIsWrongDirection(ref PointF[] triangle)
+        internal static void EnsureTriangleIsWrongDirection(ref SKPoint[] triangle)
         {
 #if DEBUG
             if (triangle.Length != 3)
@@ -370,7 +371,7 @@ namespace Fillsquir.Controls
         }
 #endif
 
-        internal static void EnsureTriangleDirection(ref PointF[] triangle)
+        internal static void EnsureTriangleDirection(ref SKPoint[] triangle)
         {
 #if DEBUG
             if (triangle.Length != 3)

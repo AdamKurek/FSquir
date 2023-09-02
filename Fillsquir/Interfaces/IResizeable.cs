@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SkiaSharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Fillsquir.Interfaces
 {
-    public abstract class GeometryElement: IDrawable
+    public abstract class GeometryElement: SKDrawable
     {
 
         static public float defaultCanvasWidth = 1000;
@@ -28,12 +29,12 @@ namespace Fillsquir.Interfaces
         }
         protected virtual void ResizePrecize(float Width, float Height) { } 
 
-        public void Draw(ICanvas canvas, RectF dirtyRect)
+        public void Draw(SKCanvas canvas)
         {
-            DrawMainShape(canvas, dirtyRect);
+            DrawMainShape(canvas);
 
         }
 
-        protected abstract void DrawMainShape(ICanvas canvas, RectF dirtyRect);
+        protected abstract void DrawMainShape(SKCanvas canvas);
     }
 }

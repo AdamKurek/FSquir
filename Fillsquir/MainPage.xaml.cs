@@ -1,5 +1,7 @@
-#define nDebugClickingLines
-using Fillsquir.Controls;
+﻿using Fillsquir.Controls;
+using SkiaScene.TouchManipulation;
+using SkiaSharp;
+using System.Drawing;
 
 namespace Fillsquir;
 
@@ -17,8 +19,8 @@ public partial class MainPage : ContentPage
     Squir drawa;
     DrawableStack drawables;
     double SquirArea; 
-    PointF startingPoint = new();
-    Point mousePosition = new();
+    SKPoint startingPoint = new();
+    Microsoft.Maui.Graphics.Point mousePosition = new();
     Fragment moved;
     CommonArea commonArea = new();
     GameSettings gameSettings = new();
@@ -42,34 +44,60 @@ public partial class MainPage : ContentPage
             }
             drawables.AddCover(commonArea); // keep it on top somehow
             drawables.Gui = new PercentageDisplay();
-            DropGestureRecognizer dropGestureRecognizer = new DropGestureRecognizer();
-            squir.GestureRecognizers.Add(dropGestureRecognizer);
-            squir.Drawable = drawables;
+
+            //so now it's not graphicView and it's canvasView so how do i set canvas to it?
+            //you don't, you set canvas to picture
+
+
+            squir.PaintSurface += (s, e) =>
+            {
+                e.Surface.Canvas.Clear();
+
+                drawables.Draw(e.Surface.Canvas);
+            };
 
             var panGesture = new PanGestureRecognizer();
             var pointGesture = new PointerGestureRecognizer();
-            //i need recognizer that will give me position from where user taps on phone
-            var recoginizer = new TapGestureRecognizer();
+           
+            var theHero = new TouchGestureRecognizer();
+            theHero.OnSingleTap += (s, e) =>
+            {
+                //why is it never called when i tap on screen?
+                //because you need to set it to some view
+
+                var point = e.ViewPoint;
+                mousePosition.X = point.X;
+                mousePosition.Y = point.Y;
+
+                (drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
+                
+                Invalidate();
+            };
+            
+           //is it how i add it to view?
+           // squir.GestureRecognizers.Add(theHero);
+           //no, you can't do it cause theHero doesn't implement IGestureRecognizer interface  
+           //so how do i add it to view?
+           //you don't, you add it to canvas like this:
+
+           //squir.CanvasView.GestureRecognizers.Add(theHero);
+           squir.EnableTouchEvents = true;
+            squir.Touch+= (s, e) =>
+            {
+                //why is it never called when i tap on screen?
+                //because you need to set it to some view
+                var point = e.Location;
+                mousePosition.X = point.X;
+                mousePosition.Y = point.Y;
+
+                ((PercentageDisplay)drawables.Gui).debugString = e.MouseButton.ToString();
+                
+                Invalidate();
+            };
             //how do i trigger tapped event?
             //recoginizer.Tapped +=
             //no, i want to trigger event of this recognizer from other function, can i do it?
             //yes, i can, i just need to call recoginizer.SendTapped
-
-            recoginizer.Tapped += (s, e) =>
-            {
-                //can i somehow make it so i get coordinates even if i hold finger on screen?
-                //yes , i can, but i need to use pan gesture recognizer
-                //but then i need to get coordinates using pan gesture recognizer
-                //but pan gesture recognizer gives me movement of the finger, not coordinates of the finger
-                //so use some library like xamarin.forms that is called 
-
-                var point = e.GetPosition(((View)s));
-
-                //fix syntaxof 2 lines below
-                mousePosition.X = point.Value.X;
-                mousePosition.Y = point.Value.Y;
-                Invalidate();
-            };  
 
             //recoginizer.NumberOfTapsRequired = 1;
             //recoginizer.Tapped += (s, e) =>
@@ -103,11 +131,12 @@ public partial class MainPage : ContentPage
 
                 //i want it to work only on windows what directive do i use 
                 //use 
+
 #if windows
                 mousePosition = (Point)e.GetPosition(this);
 #endif
 #if DebugString
-                (drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
+                //(drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
 #endif
 
 
@@ -120,13 +149,12 @@ public partial class MainPage : ContentPage
             
             panGesture.PanUpdated += (s, e) =>
             {
-                
-                //how do i get position where user taps on phone
+
 
 #if DebugString
                 //(drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
 #endif
-                
+
 
 #if DebugClickingLines
                 switch (e.StatusType)
@@ -180,7 +208,10 @@ public partial class MainPage : ContentPage
                         moved.PositionS.Y = startingPoint.Y + (float)e.TotalY;
                         UpdateCover();
                         //UpdateGui(50.0f);
+#if Debil
+
                         squir.Invalidate();
+#endif
                         break;
 
                     case GestureStatus.Completed:
@@ -188,7 +219,7 @@ public partial class MainPage : ContentPage
                         if (!moved.wasTouched) { return; }
                         float min = float.MaxValue;
                         int i = 0, finalIndex = 0;
-                        PointF assignedPoint = new();
+                        SKPoint assignedPoint = new();
                         int drawableindex = 0;
                         for (;drawableindex<drawables.drawables.Count;drawableindex++)
                         {
@@ -222,12 +253,9 @@ public partial class MainPage : ContentPage
                         break;
                 }
             };
-            squir.GestureRecognizers.Add(pointGesture);
-            squir.GestureRecognizers.Add(panGesture);
-            squir.GestureRecognizers.Add(recoginizer);
-            //squir.Drawable = new drawab
-            //Microsoft.Maui.Graphics
-            //squir.Drawable.Draw(picture, RectF.Zero);
+            //squir.GestureRecognizers.Add(pointGesture);
+            //squir.GestureRecognizers.Add(panGesture);
+            //squir.GestureRecognizers.Add(recoginizer);
 
         }
         //using(ScalingCanvas canvas =
@@ -238,7 +266,7 @@ public partial class MainPage : ContentPage
     }
     void UpdateCover()                  
     {
-        var FiguresAsPointlists = new List<PointF[]>();
+        var FiguresAsPointlists = new List<SKPoint[]>();
         foreach (var a in drawables.drawables.Skip(1))
         {
             FiguresAsPointlists.Add(((Fragment)a).VisiblePointsP);
@@ -289,11 +317,11 @@ public partial class MainPage : ContentPage
         //dragged.Frame.Inflate(1000, 1000);
         //dragged.ScaleY = 3;
         ////wtr.Resize(squir.Width, squir.Height);
-        //PointF[] ps= new PointF[4] {
-        //new PointF(1000,10),
-        //new PointF(100,100),
-        //new PointF(30,40),
-        //new PointF(30,10),
+        //SKPoint[] ps= new SKPoint[4] {
+        //new SKPoint(1000,10),
+        //new SKPoint(100,100),
+        //new SKPoint(30,40),
+        //new SKPoint(30,10),
 
         //};
         //var largerDrawable = new Fragment(ps); // This method should return a new larger Drawable
@@ -317,8 +345,25 @@ public partial class MainPage : ContentPage
 
     void Invalidate()
     {
+
+        squir.InvalidateSurface();
+#if Debil
+
         squir.Invalidate();
+#endif
     }
+
+    private void squir_Touch(object sender, SkiaSharp.Views.Maui.SKTouchEventArgs e)
+    {
+      var d =  drawables.Gui as PercentageDisplay;
+        d.debugString = e.Location.ToString();
+        //why is it never called?
+        //i autogenerated this event handler, on touch and it never gets called
+        //it's because i have to set the touch handler in the xaml file
+        //witch i did now
+        //but it still doesn't work
+    }
+
     void DropGestureRecognizer_Drop(object sender, DropEventArgs e)
     {
         var points = e.Data.Properties["val"] as GraphicsView;
