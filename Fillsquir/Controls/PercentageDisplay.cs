@@ -22,7 +22,7 @@ public string debugString = "pusty text";
             SKPaint paint = new SKPaint() { 
                 Color = SKColors.Red,
                 TextAlign = SKTextAlign.Right,
-                TextSize = 18
+                TextSize = 80
                 
             };
 
@@ -42,8 +42,10 @@ public string debugString = "pusty text";
             text = debugString;
 
 #endif
-            canvas.DrawText(text, canvasWidth - 20, 15, paint);
-         //   canvas.DrawString(text, canvasWidth-20, 15, HorizontalAlignment.Right);
+            canvas.DrawText(text, canvasWidth - 20, 150, paint);
+
+            //canvas.DrawText(text, canvasWidth - 20, 15, paint);
+            //   canvas.DrawString(text, canvasWidth-20, 15, HorizontalAlignment.Right);
         }
     }
 }

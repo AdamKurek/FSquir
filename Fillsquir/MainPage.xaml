@@ -7,8 +7,15 @@
     
     <Grid
         BackgroundColor="Black"
+        
         >
-
+        <Grid.GestureRecognizers>
+            <PanGestureRecognizer
+                PanUpdated="PanGesture_PanUpdated"
+                >
+            </PanGestureRecognizer>
+        </Grid.GestureRecognizers>
+        
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
 
@@ -22,11 +29,11 @@
                     
             
             x:Name="squir"
- 
-            BackgroundColor="Black"
-            Grid.Row="0"
+            Touch="squir_Touch"
+            EnableTouchEvents="True"
             
-            Grid.ColumnSpan="4"
+            BackgroundColor="Black"
+            IgnorePixelScaling="True"
             SizeChanged="squir_SizeChanged">
                         
         </skiae:SKCanvasView>

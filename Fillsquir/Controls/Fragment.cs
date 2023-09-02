@@ -181,13 +181,8 @@ public class Fragment : GeometryElement
             return;
         }
         {
-            var VP = VisiblePointsS;
             SKPath path = new();
-
-            for (int i = 0; i < PointsP.Length; i++)
-            {
-                path.LineTo(VP[i]);
-            }
+            path.AddPoly(VisiblePointsS);
             canvas.DrawPath(path, paintStroke);
             canvas.DrawPath(path, paintFill);
 #if DebugVisuals
@@ -230,10 +225,9 @@ public class Fragment : GeometryElement
     }
 
 
-    internal float Distance(Point mousePosition)
+    internal float Distance(SKPoint mousePosition)
     {
-        SKPoint mouse = new SKPoint() {X = (float)mousePosition.X,Y = (float)mousePosition.Y };
-        return (float)DrawableStack.CalculateDistance(mouse, MidpointS);
+        return (float)DrawableStack.CalculateDistance(mousePosition, MidpointS);
     }
    
     public float scaleToMiddleX(float from)

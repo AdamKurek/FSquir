@@ -127,7 +127,7 @@ namespace Fillsquir.Controls
             cover?.Resize(width, height);
         }
 
-        internal Fragment getNearestFragment(Point mousePosition)
+        internal Fragment getNearestFragment(SKPoint mousePosition)
         {
             float nearest = float.MaxValue;
             int index = 0;

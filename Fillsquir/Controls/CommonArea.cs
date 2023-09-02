@@ -131,11 +131,7 @@ namespace Fillsquir.Controls
                 }
 
                 SKPath path = new();
-                foreach (var point in shape)
-                {
-                    path.LineTo(point);
-                }path.LineTo(shape[0]);
-
+                path.AddPoly(shape);
                 canvas.DrawPath(path, paintStroke);
                 canvas.DrawPath(path, paintFill);
 
