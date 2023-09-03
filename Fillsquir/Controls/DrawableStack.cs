@@ -143,13 +143,7 @@ namespace Fillsquir.Controls
             return drawables[index] as Fragment;
         }
 
-        public static double CalculateDistance(SKPoint point1, SKPoint point2)
-        {
-            float dx = point2.X - point1.X;
-            float dy = point2.Y - point1.Y;
-
-            return Math.Sqrt(dx * dx + dy * dy);
-        }
+        
 
 
     }

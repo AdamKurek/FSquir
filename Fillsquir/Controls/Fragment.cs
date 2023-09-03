@@ -243,7 +243,7 @@ public class Fragment : GeometryElement
 
     internal float Distance(SKPoint mousePosition)
     {
-        return (float)DrawableStack.CalculateDistance(mousePosition, MidpointS);
+        return FSMath.CalculateDistance(mousePosition, MidpointS);
     }
    
     public float scaleToMiddleX(float from)

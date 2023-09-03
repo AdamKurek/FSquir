@@ -48,6 +48,14 @@ namespace Fillsquir.Controls
         }
 
 
+        public static float CalculateDistance(SKPoint point1, SKPoint point2)
+        {
+            float dx = point2.X - point1.X;
+            float dy = point2.Y - point1.Y;
+            //can i return float?
+            return MathF.Sqrt(dx * dx + dy * dy);
+        }
+
         public static bool OnSegment(SKPoint p, SKPoint q, SKPoint r)
         {
             return q.X <= Math.Max(p.X, r.X) && q.X >= Math.Min(p.X, r.X) &&
@@ -421,6 +429,8 @@ namespace Fillsquir.Controls
                 return Math.Atan2(dy, dx);
             }).ToArray();
         }
+
+      
 
     }
 }

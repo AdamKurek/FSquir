@@ -38,10 +38,10 @@ public class Squir : GeometryElement
 
         var centre = new SKPoint(500, 500);
 
-        PointsP = SquirGenerator.GenerateOrderedMainShapeOnCircle(centre, 100, 500, 8);
+        PointsP = SquirGenerator.GenerateCompletelyRandomShape(8,1000,1000);
         shapes = new();
         { 
-            foreach (var shape in SquirGenerator.GenerateShapes(8, PointsP))
+            foreach (var shape in SquirGenerator.GenerateCompletelyRandomShapes(8, PointsP))
             {
                 shapes.Add(shape);
             }

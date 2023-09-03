@@ -278,7 +278,7 @@ public partial class MainPage : ContentPage
                         {
                             foreach (var oneOfMilion in drawables.allActivePoints(drawableindex))
                             {
-                                float cur = (float)DrawableStack.CalculateDistance(pt, oneOfMilion);
+                                float cur = FSMath.CalculateDistance(pt, oneOfMilion);
                                 if (cur < min)
                                 {
                                     min = cur;

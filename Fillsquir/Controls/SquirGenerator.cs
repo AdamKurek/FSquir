@@ -1,9 +1,4 @@
 ﻿using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Fillsquir.Controls
 {
@@ -63,6 +58,54 @@ namespace Fillsquir.Controls
             return points;
         }
 
+        public static SKPoint[] GenerateCompletelyRandomShape(int numberOfPoints, float maxX, float maxY)
+        {
+            SKPoint[] points = new SKPoint[numberOfPoints];
+            for (int i = 0; i < numberOfPoints; i++)
+            {
+                points[i] = RandomPoint(maxX, maxY);
+
+            }
+            //get max x and y from points
+            float maxx = 0, maxy = 0,
+            minx = float.MaxValue, miny = float.MaxValue;
+            foreach (var point in points)
+            {
+                if (point.X > maxx)
+                {
+                    maxx = point.X;
+                }
+                else if (point.X < minx)
+                {
+                    minx = point.X;
+                }
+                if (point.Y > maxy)
+                {
+                    maxy = point.Y;
+                }
+                else if (point.Y < miny)
+                {
+                    miny = point.Y;
+                }
+            }
+            //now i want to scale all these points to fit in the 1000 Y and X
+            float scalex = 1000 / (maxx - minx);
+            float scaley = 1000 / (maxy - miny);
+            for (int i = 0; i < numberOfPoints; i++)
+            {
+                points[i] = new SKPoint((points[i].X - minx) * scalex, (points[i].Y - miny) * scaley);
+            }
+
+            FSMath.EnsureFigureDirection(ref points);
+
+
+            //while ((points[i].X < 30.0f && points[i].Y < 30.0f) || points[i])
+            {
+                //   points[i] = RandomPoint(maxX, maxY);
+            }
+
+            return points;
+        }
 
         public static List<SKPoint[]> GenerateShapes(int numShapes, SKPoint[] mainShape)
         {
@@ -76,9 +119,9 @@ namespace Fillsquir.Controls
                 SKPoint midpointStart = new SKPoint((pointStart.X + center.X) / 2, (pointStart.Y + center.Y) / 2);
                 SKPoint midpointEnd = new SKPoint((pointEnd.X + center.X) / 2, (pointEnd.Y + center.Y) / 2);
 
-              //  if (numShapes == mainShape.Length) // same number of shapes as original points, generate quads
+                //  if (numShapes == mainShape.Length) // same number of shapes as original points, generate quads
                 {
-                  //  shapes.Add(new SKPoint[] { center, midpointStart, pointEnd,  });
+                    //  shapes.Add(new SKPoint[] { center, midpointStart, pointEnd,  });
                 }
                 //else
                 {
@@ -90,20 +133,110 @@ namespace Fillsquir.Controls
                     shapes.Add(triangle);
                 }
             }
-
-            //    shapes = new List<SKPoint[]>();
-            //shapes.Add(new SKPoint[] {  new SKPoint((float)519.32, (float)730.7), new SKPoint((float)419.2, (float)501.60), new SKPoint((float)463.8, (float)546.3) });
-            //shapes.Add(new SKPoint[] { new SKPoint((float)800.2, (float)501.60), new SKPoint((float)519.32, (float)730.7), new SKPoint((float)463.8, (float)546.3) });
-            //shapes.Add(new SKPoint[] { new SKPoint((float)0.0, (float)0), new SKPoint((float)150, (float)0), new SKPoint((float)100, (float)-10) });
-
-            // why all the shapes in a loop don't count as shapes and only the last one is counted?
-            // can you run trough entire code and see if you can find the problem?
-
-
-
-            //shapes[0] = new SKPoint[]{ new SKPoint { X =0,Y = 0 }, new SKPoint { X = 1000, Y = 0 }, new SKPoint { X = 1000, Y = 10000 } };
             return shapes;
         }
+
+        public static List<SKPoint[]> GenerateCompletelyRandomShapes(int numShapes, SKPoint[] mainShape)
+        {
+            SKPoint center = Centroid(mainShape);
+            List<SKPoint[]> shapes = new List<SKPoint[]>();
+
+            for (int i = 0; i < numShapes; i++)
+            {
+                SKPoint[] figure;
+
+                var rng = rand.NextDouble();
+                if (rng > 0.6)
+                {
+
+                    SKPoint pointStart = mainShape[i];
+                    SKPoint pointEnd = mainShape[(i + 1) % mainShape.Length];
+                    SKPoint midpointStart = new SKPoint((pointStart.X + center.X) / 2, (pointStart.Y + center.Y) / 2);
+                    SKPoint midpointEnd = new SKPoint((pointEnd.X + center.X) / 2, (pointEnd.Y + center.Y) / 2);
+                    if (rng > 0.6)
+                    {
+                        figure = new SKPoint[] { center, pointStart, midpointEnd };
+                    }
+                    else
+                    {
+                        figure = new SKPoint[] { center, midpointStart, pointEnd, midpointEnd };
+                    }
+                }
+                else if (rng > 0.9)
+                {
+                    //take random point from random figure in shapes
+                    if (shapes.Count == 0)
+                    {
+                        if (rand.NextDouble() > 0.5)
+                        {
+                            figure = GenerateCompletelyRandomShape(rand.Next(3, 4), rand.Next(700, 1000), rand.Next(30, 100));
+                        }
+                        else
+                        {
+                            figure = GenerateCompletelyRandomShape(rand.Next(3, 4), rand.Next(30, 100), rand.Next(700, 1000));
+                        }
+                    }
+                    else
+                    {
+                        var randomFigure = shapes[rand.Next(0, shapes.Count)];
+                        var randomPointIndex = rand.Next(0, randomFigure.Length-1);
+
+                        //what should i put in this point?
+                        if (center == randomFigure[randomPointIndex] || center == randomFigure[randomPointIndex + 1])
+                        {
+                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex], center };
+                        }
+                        else
+                        {
+                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex], RandomPoint(1000,1000) };
+                        }
+                    }
+                }
+                else
+                {
+                    figure = GenerateCompletelyRandomShape(rand.Next(3, 7), rand.Next(30, 500), rand.Next(30, 500));
+                }
+                FSMath.EnsureFigureDirection(ref figure);
+                while (FSMath.CalculateArea(figure) > 50000)
+                {
+                    int randomPointIndex = rand.Next(0,figure.Length);
+                    var difference = new SKPoint(center.X - figure[randomPointIndex].X, center.Y - figure[randomPointIndex].Y);
+                    figure[randomPointIndex].X += difference.X;
+                    figure[randomPointIndex].Y += difference.Y;
+                    FSMath.EnsureFigureDirection(ref figure);
+                }
+                while (FSMath.CalculateArea(figure) < 2000)
+                {
+                    //take point that is the closest to the center and move it away from the center
+                    float mindist = float.MaxValue;
+                    int closestPointIndex = new();
+                    //use for loop instead 
+                    for(int j = 0; j < figure.Length; j++)
+                    {
+                        var dist = FSMath.CalculateDistance(figure[j], center);
+                        if(dist < mindist)
+                        {
+                            mindist = dist;
+                            closestPointIndex = j;
+                        }
+                    }
+                    var difference = new SKPoint(center.X - figure[closestPointIndex].X, center.Y - figure[closestPointIndex].Y);
+                    figure[closestPointIndex].X += difference.X;
+                    figure[closestPointIndex].Y += difference.Y;
+                    FSMath.EnsureFigureDirection(ref figure);
+                }
+                    
+                shapes.Add(figure);
+            }
+
+            
+            var temp = shapes[0];
+            shapes[0] = shapes[rand.Next(1, shapes.Count)];
+            shapes[rand.Next(1, shapes.Count)] = temp;
+
+            return shapes;
+        }
+
 
         /*
         public static void ExtendToParallel(SKPoint[] trianglePoints, SKPoint[] parallelPoints)

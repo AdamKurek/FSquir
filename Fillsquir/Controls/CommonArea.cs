@@ -12,9 +12,6 @@ namespace Fillsquir.Controls
 {
     public class CommonArea : GeometryElement
     {
-        private float big = 1000;
-        private float small = 0;
-
         public double Area
         {
             get{
