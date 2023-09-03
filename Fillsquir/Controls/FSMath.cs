@@ -397,6 +397,31 @@ namespace Fillsquir.Controls
             triangle[2] = temp;
         }
 
+
+        internal static void EnsureFigureDirection(ref SKPoint[] figure)
+        {
+            if (figure == null || figure.Length < 3)
+            {
+                throw new ArgumentException("Figure must have at least 3 points", "figure");
+            }
+
+            float centroidX = 0, centroidY = 0;
+            foreach (var point in figure)
+            {
+                centroidX += point.X;
+                centroidY += point.Y;
+            }
+            centroidX /= figure.Length;
+            centroidY /= figure.Length;
+
+            figure = figure.OrderBy(point =>
+            {
+                float dx = point.X - centroidX;
+                float dy = point.Y - centroidY;
+                return Math.Atan2(dy, dx);
+            }).ToArray();
+        }
+
     }
 }
 

@@ -60,21 +60,6 @@ public partial class MainPage : ContentPage
 
         panGesture.PanUpdated += PanGesture_PanUpdated; 
 
-        var theHero = new TouchGestureRecognizer();
-        theHero.OnSingleTap += (s, e) =>
-        {
-            //why is it never called when i tap on screen?
-            //because you need to set it to some view
-
-            var point = e.ViewPoint;
-            mousePosition.X = point.X;
-            mousePosition.Y = point.Y;
-
-            (drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
-
-            Invalidate();
-        };
-
         //is it how i add it to view?
         // squir.GestureRecognizers.Add(theHero);
         //no, you can't do it cause theHero doesn't implement IGestureRecognizer interface  
@@ -171,16 +156,7 @@ public partial class MainPage : ContentPage
                 return;
 #endif
 
-#if DebugClicking
-                bool inisde = false;
-                if (FSMath.IsPointInShape(mousePosition, ((Squir)drawables[0]).VisiblePoints))
-                {
-                    inisde = true;
-                }
-                drawables.AddDot(mousePosition, inisde);
-                squir.Invalidate();
-                return;
-#endif
+
 
             //using(ScalingCanvas canvas =
             //new ScalingCanvas())
@@ -232,7 +208,9 @@ public partial class MainPage : ContentPage
     private void PanGesture_PanUpdated(object sender, PanUpdatedEventArgs e)
     {
         var d = drawables.Gui as PercentageDisplay;
+#if DebugString
         d.debugString = wtfff++.ToString();
+#endif
 
         if (moved == null) { return; }
         if(e.StatusType != GestureStatus.Running) { return; }
@@ -254,6 +232,22 @@ public partial class MainPage : ContentPage
         var diff = e.Location;
         //but i feel like this method is called only on touch and then it's done
         //
+
+
+#if DebugClicking
+        bool inisde = false;
+        SKPoint mp = new SKPoint() { X = (float)e.Location.X, Y = (float)e.Location.Y };
+        if (FSMath.IsPointInShape(mp, ((Squir)drawables[0]).VisiblePoints))
+        {
+            inisde = true;
+        }
+        drawables.AddDot(mp, inisde);
+        Invalidate();
+        return;
+#endif
+
+
+
 
 
         switch (e.ActionType)

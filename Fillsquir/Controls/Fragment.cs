@@ -41,8 +41,13 @@ public class Fragment : GeometryElement
             SKPoint midpoint = new SKPoint();
             if (wasTouched) 
             {
-                midpoint.X = PositionS.X + (sizeP.X / 2);
-                midpoint.Y = PositionS.Y + (sizeP.Y / 4);
+                midpoint.X = PositionS.X + (sizeP.X / 2 * scaleX);
+                midpoint.Y = PositionS.Y + (sizeP.Y / 2 * scaleY);
+                //it's in wrong place if screen is vertical 
+                //so try this instead:
+
+
+
                 return midpoint;
             }
             midpoint.X = PositionS.X;
@@ -51,10 +56,12 @@ public class Fragment : GeometryElement
             return midpoint;
 
         } }
-    public float RadiusP { get {
-            return Math.Max(sizeP.X, sizeP.Y) / 2;
-        } }
 
+#if DebugVisuals
+    public float RadiusS { get {
+            return Math.Max(sizeP.X * scaleX, sizeP.Y*scaleY) / 2;
+        } }
+#endif
     public bool wasTouched = false;
     int index;
     int rows = 4;
@@ -176,7 +183,14 @@ public class Fragment : GeometryElement
             canvas.DrawPath(path, paintFill);
             canvas.DrawPath(path, paintStroke);
 #if DebugVisuals
-            canvas.DrawCircle(MidpointS.X, MidpointS.Y, 0.1f * RadiusP * (scaleX > scaleY ? scaleX : scaleY));//clickbox
+            SKPaint sKPaint = new()
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                IsAntialias = true,
+                Color = SKColors.BlueViolet
+            };
+            canvas.DrawCircle(PositionS.X, PositionS.Y, 3, sKPaint);
 #endif
             return;
         }
@@ -186,21 +200,23 @@ public class Fragment : GeometryElement
             canvas.DrawPath(path, paintStroke);
             canvas.DrawPath(path, paintFill);
 #if DebugVisuals
+            SKPaint sKPaint = new()
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                IsAntialias = true,
+                Color = SKColors.BlueViolet
+            };
             foreach (var pt in VisiblePointsS)
             {
-                canvas.FillColor = Colors.Azure;
-
-                canvas.FillCircle(pt.X, pt.Y, 3);
+                canvas.DrawCircle(pt.X, pt.Y, 5, sKPaint);
             }
-            canvas.StrokeColor = Colors.BurlyWood;
-
-            canvas.DrawCircle(MidpointS.X, MidpointS.Y, RadiusP* (scaleX>scaleY? scaleX:scaleY));//clickbox
-            canvas.StrokeColor = Colors.DarkViolet;
-
-            canvas.DrawRectangle(new RectF() { Height = sizeP.Y*scaleY, Width = sizeP.X* scaleX, X =PositionS.X ,Y= PositionS.Y});
-            canvas.StrokeColor = Colors.Red;
-            canvas.FillColor = Colors.Red;
-            canvas.DrawRectangle(new RectF() { Height = 1000 * scaleY, Width = 1000 * scaleX, X = PositionS.X, Y = PositionS.Y });
+            sKPaint.Color = SKColors.BurlyWood;
+            canvas.DrawCircle(MidpointS.X, MidpointS.Y, RadiusS, sKPaint);
+            sKPaint.Color = SKColors.DarkViolet;
+            canvas.DrawRect(PositionS.X, PositionS.Y, sizeP.X * scaleX, sizeP.Y * scaleY, sKPaint);
+            //sKPaint.Color = SKColors.DarkOrange;
+            //canvas.DrawRectangle(new RectF() { Height = 1000 * scaleY, Width = 1000 * scaleX, X = PositionS.X, Y = PositionS.Y });
 #endif
         }
         //PathF path = new PathF(Points[0]);

@@ -71,7 +71,7 @@ namespace Fillsquir.Controls
             public bool inBounds;
         }
         public List<Drawpoint> clickPoints = new List<Drawpoint> { };
-        public void AddDot(Point point, bool inBounds = false)
+        public void AddDot(SKPoint point, bool inBounds = false)
         {
             Drawpoint drawpoint = new Drawpoint();
             drawpoint.point.X = (float)point.X;
@@ -93,11 +93,11 @@ namespace Fillsquir.Controls
 #if DebugClicking
             foreach (var circle in clickPoints)
             {
-                if(!circle.inBounds)
-                    canvas.StrokeColor = Colors.IndianRed;
-
-                canvas.DrawCircle(circle.point.X, circle.point.Y, 1);
-                canvas.StrokeColor = Colors.AliceBlue;
+                var pt = new SKPaint();
+                pt.Color = SKColors.Green;
+                if (!circle.inBounds)
+                    pt.Color = SKColors.Red;
+                canvas.DrawCircle(circle.point.X, circle.point.Y, 1,pt);
 
             }
 #endif
