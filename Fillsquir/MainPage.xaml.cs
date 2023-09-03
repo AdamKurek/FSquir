@@ -233,6 +233,12 @@ public partial class MainPage : ContentPage
     {
         var d = drawables.Gui as PercentageDisplay;
         d.debugString = wtfff++.ToString();
+
+        if (moved == null) { return; }
+        if(e.StatusType != GestureStatus.Running) { return; }
+        moved.PositionS.X = startingPoint.X + (float)e.TotalX;
+        moved.PositionS.Y = startingPoint.Y + (float)e.TotalY;
+        UpdateCover();
         Invalidate();
 
     }
@@ -257,14 +263,6 @@ public partial class MainPage : ContentPage
                         moved = drawables.getNearestFragment(e.Location);
                         startingPoint = moved.PositionS;
                         moved.wasTouched = true;
-                        break;
-                    }
-                case SkiaSharp.Views.Maui.SKTouchAction.Moved:
-                    {
-                        if (moved == null) { return; }
-                        moved.PositionS.X = e.Location.X;
-                        moved.PositionS.Y = e.Location.Y;
-                        UpdateCover();
                         break;
                     }
                 case SkiaSharp.Views.Maui.SKTouchAction.Released:
@@ -302,12 +300,11 @@ public partial class MainPage : ContentPage
                         }
                         moved = null;
                         UpdateCover();
-                        //UpdateGui();
+                    //UpdateGui();
+                        Invalidate();
                         break;
                     }
             }
-       // d.debugString = (diff - e.Location).ToString();
 
-        Invalidate();
     }
 }
