@@ -4,24 +4,16 @@ namespace Fillsquir.Controls
 {
     internal static class SquirGenerator
     {
-        static Random rand = new Random();
+        static Random rand = new Random(70);
+
+        static SKPoint RandomPoint(float minX, float minY, float maxX, float maxY)
+        {
+            return new SKPoint(rand.NextFloat(minX, maxX), rand.NextFloat(minY, maxY));
+        }
 
         static SKPoint RandomPoint(float maxX, float maxY)
         {
             return new SKPoint(rand.NextFloat(0, maxX), rand.NextFloat(0, maxY));
-        }
-
-        static SKPoint Centroid(SKPoint[] points)
-        {
-            float centroidX = 0, centroidY = 0;
-
-            foreach (var point in points)
-            {
-                centroidX += point.X;
-                centroidY += point.Y;
-            }
-
-            return new SKPoint(centroidX / points.Length, centroidY / points.Length);
         }
 
         public static float NextFloat(this Random rand, float min, float max)
@@ -66,50 +58,15 @@ namespace Fillsquir.Controls
                 points[i] = RandomPoint(maxX, maxY);
 
             }
-            //get max x and y from points
-            float maxx = 0, maxy = 0,
-            minx = float.MaxValue, miny = float.MaxValue;
-            foreach (var point in points)
-            {
-                if (point.X > maxx)
-                {
-                    maxx = point.X;
-                }
-                else if (point.X < minx)
-                {
-                    minx = point.X;
-                }
-                if (point.Y > maxy)
-                {
-                    maxy = point.Y;
-                }
-                else if (point.Y < miny)
-                {
-                    miny = point.Y;
-                }
-            }
-            //now i want to scale all these points to fit in the 1000 Y and X
-            float scalex = 1000 / (maxx - minx);
-            float scaley = 1000 / (maxy - miny);
-            for (int i = 0; i < numberOfPoints; i++)
-            {
-                points[i] = new SKPoint((points[i].X - minx) * scalex, (points[i].Y - miny) * scaley);
-            }
-
+            
             FSMath.EnsureFigureDirection(ref points);
-
-
-            //while ((points[i].X < 30.0f && points[i].Y < 30.0f) || points[i])
-            {
-                //   points[i] = RandomPoint(maxX, maxY);
-            }
-
             return points;
         }
 
+   
         public static List<SKPoint[]> GenerateShapes(int numShapes, SKPoint[] mainShape)
         {
-            SKPoint center = Centroid(mainShape);
+            SKPoint center = FSMath.Centroid(mainShape);
             List<SKPoint[]> shapes = new List<SKPoint[]>();
 
             for (int i = 0; i < numShapes; i++)
@@ -138,102 +95,120 @@ namespace Fillsquir.Controls
 
         public static List<SKPoint[]> GenerateCompletelyRandomShapes(int numShapes, SKPoint[] mainShape)
         {
-            SKPoint center = Centroid(mainShape);
+            SKPoint center = FSMath.Centroid(mainShape);
             List<SKPoint[]> shapes = new List<SKPoint[]>();
-
+            var squirArea = FSMath.CalculateArea(mainShape);
+            var minArea = squirArea / 42;
+            var maxArea = squirArea / 7;
+            HashSet<SKPoint> DirectionVectors = FSMath.GetDirectionVectors(mainShape);
             for (int i = 0; i < numShapes; i++)
             {
+                #region generate random figure
                 SKPoint[] figure;
 
-                var rng = rand.NextDouble();
-                if (rng > 0.6)
+                var rng = 0.9; ;
+                if (rng < 0.95)
                 {
+                    int points = rand.Next(3, 5);
+                    figure = FSMath.GenerateFigureUsingDirectionVectors(DirectionVectors, rand, points);
+                    FSMath.MovePointTowardsDirectionVectorToMatchBothDirectionVectors(ref figure[figure.Length-1], FSMath.DirectionVector(figure[figure.Length-2], figure[figure.Length-1]), figure[0],DirectionVectors);
 
-                    SKPoint pointStart = mainShape[i];
-                    SKPoint pointEnd = mainShape[(i + 1) % mainShape.Length];
-                    SKPoint midpointStart = new SKPoint((pointStart.X + center.X) / 2, (pointStart.Y + center.Y) / 2);
-                    SKPoint midpointEnd = new SKPoint((pointEnd.X + center.X) / 2, (pointEnd.Y + center.Y) / 2);
-                    if (rng > 0.6)
+                    //foreach (var dv in FSMath.GetDirectionVectors(figure))
                     {
-                        figure = new SKPoint[] { center, pointStart, midpointEnd };
+                        //DirectionVectors.Add(dv);
                     }
-                    else
-                    {
-                        figure = new SKPoint[] { center, midpointStart, pointEnd, midpointEnd };
-                    }
+                    FSMath.EnsureFigureDirection(ref figure);
+                    // if (FSMath.minBounds(figure).X < 0 || FSMath.minBounds(figure).Y < 0)
+                    FSMath.AdjustFigureToRequiredArea(ref figure,minArea, maxArea,rand);  
+                    
+                      
+
+                    FSMath.EnsureFigureDirection(ref figure);
+
+
                 }
-                else if (rng > 0.9)
+                else 
                 {
                     //take random point from random figure in shapes
-                    if (shapes.Count == 0)
+                    if (shapes.Count >= 0)//==!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     {
-                        if (rand.NextDouble() > 0.5)
+                        //generate random shape that will be very long and thin by creating random point and moving him away from center in 2 sides, then make 2 shapes around these points and combine them into 1 shape
+                        var randomPoint = RandomPoint(451, 549);
+                        //copy this point and move it away from center
+                        var distance = rand.NextFloat(200, 450);
+                        var randomPoint1 = FSMath.MovePointAwayFrom(randomPoint, center, distance);
+                        var randomPoint2 = FSMath.MovePointAwayFrom(randomPoint, center, -distance);
+                        //make SKPoint arrays with 1-3 points and combine them into 1 shape
+                        var newDirection = FSMath.GetFurtherstDirectionVector(mainShape, FSMath.DirectionVector(randomPoint1, randomPoint2));
+                        //do bitwise operation so i randomize form 1 to 4 and if it's 1 i do stuff if it's 2 i go elsewhere and if it's 4 i go both ways
+                        var randomizer = rand.Next(0, 3);
+                        List<SKPoint> figureList = new List<SKPoint>
                         {
-                            figure = GenerateCompletelyRandomShape(rand.Next(3, 4), rand.Next(700, 1000), rand.Next(30, 100));
-                        }
-                        else
+                            randomPoint1,
+                            randomPoint2
+                        };
+                        if(randomizer<= 1)
                         {
-                            figure = GenerateCompletelyRandomShape(rand.Next(3, 4), rand.Next(30, 100), rand.Next(700, 1000));
+                            figureList.Add(FSMath.MoveTowardsDirectionVector(randomPoint1, newDirection, 250f - (distance/2f)));
                         }
+                        if(randomizer>= 1)
+                        {
+                            figureList.Add(FSMath.MoveTowardsDirectionVector(randomPoint2, newDirection, 250f - (distance/2f)));
+                        }
+                        figure = figureList.ToArray();
+                        FSMath.EnsureFigureDirection(ref figure);
                     }
                     else
                     {
-                        var randomFigure = shapes[rand.Next(0, shapes.Count)];
-                        var randomPointIndex = rand.Next(0, randomFigure.Length-1);
-
-                        //what should i put in this point?
-                        if (center == randomFigure[randomPointIndex] || center == randomFigure[randomPointIndex + 1])
+                        var randomizer = rand.Next(0, shapes.Count);
+                        SKPoint[] randomFigure;
+                        if (randomizer == shapes.Count)
                         {
-                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex], center };
+                              randomFigure = mainShape;
                         }
                         else
                         {
-                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex], RandomPoint(1000,1000) };
+                            randomFigure = shapes[randomizer];
                         }
-                    }
-                }
-                else
-                {
-                    figure = GenerateCompletelyRandomShape(rand.Next(3, 7), rand.Next(30, 500), rand.Next(30, 500));
-                }
-                FSMath.EnsureFigureDirection(ref figure);
-                while (FSMath.CalculateArea(figure) > 50000)
-                {
-                    int randomPointIndex = rand.Next(0,figure.Length);
-                    var difference = new SKPoint(center.X - figure[randomPointIndex].X, center.Y - figure[randomPointIndex].Y);
-                    figure[randomPointIndex].X += difference.X;
-                    figure[randomPointIndex].Y += difference.Y;
-                    FSMath.EnsureFigureDirection(ref figure);
-                }
-                while (FSMath.CalculateArea(figure) < 2000)
-                {
-                    //take point that is the closest to the center and move it away from the center
-                    float mindist = float.MaxValue;
-                    int closestPointIndex = new();
-                    //use for loop instead 
-                    for(int j = 0; j < figure.Length; j++)
-                    {
-                        var dist = FSMath.CalculateDistance(figure[j], center);
-                        if(dist < mindist)
+                        var randomPointIndex = rand.Next(0, randomFigure.Length);
+
+
+                        if (center == randomFigure[randomPointIndex] || center == randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1])
                         {
-                            mindist = dist;
-                            closestPointIndex = j;
+                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1], RandomPoint(1000, 1000) };
+                        }
+                        else
+                        {
+                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1], center };
+
+                        }
+                        var figureArea = FSMath.CalculateArea(figure);
+                        
+                        if (figureArea < minArea)
+                        {
+                            FSMath.MovePointAwayFromPoints(ref figure[2], figure[0], figure[1], MathF.Sqrt(minArea - figureArea));
+                        }
+                        else if (figureArea > maxArea)
+                        {
+                            var wat = figureArea - maxArea;
+                            var non = MathF.Sqrt(wat);
+                            FSMath.MovePointTowardsPoints(ref figure[2], figure[0], figure[1],non);
+                        }
+                        FSMath.EnsureFigureDirection(ref figure);
+                      //  while (FSMath.CheckAngle(figure, 3f))
+                        {
+                           // FSMath.LonliestPoint
                         }
                     }
-                    var difference = new SKPoint(center.X - figure[closestPointIndex].X, center.Y - figure[closestPointIndex].Y);
-                    figure[closestPointIndex].X += difference.X;
-                    figure[closestPointIndex].Y += difference.Y;
-                    FSMath.EnsureFigureDirection(ref figure);
                 }
-                    
+
+                #endregion
                 shapes.Add(figure);
+
+               
+
+                
             }
-
-            
-            var temp = shapes[0];
-            shapes[0] = shapes[rand.Next(1, shapes.Count)];
-            shapes[rand.Next(1, shapes.Count)] = temp;
-
             return shapes;
         }
 

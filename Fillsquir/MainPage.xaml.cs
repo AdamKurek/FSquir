@@ -22,7 +22,7 @@ public partial class MainPage : ContentPage
     Microsoft.Maui.Graphics.Point mousePosition = new();
     Fragment moved;
     CommonArea commonArea = new();
-    GameSettings gameSettings = new();
+    GameSettings gameSettings = new(4,4);
 #if DebugClickingLines
 #endif
     private void InitializeSquir(int dots)
@@ -155,13 +155,6 @@ public partial class MainPage : ContentPage
 
                 return;
 #endif
-
-
-
-            //using(ScalingCanvas canvas =
-            //new ScalingCanvas())
-
-
             //squir.Invalidate();resize
         }
 

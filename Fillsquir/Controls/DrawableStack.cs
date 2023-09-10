@@ -90,6 +90,10 @@ namespace Fillsquir.Controls
 
             cover?.Draw(canvas);
             Gui?.Draw(canvas);
+            foreach (Fragment drawable in drawables.Skip(1))
+            {
+                drawable.DrawVertices(canvas);
+            }
 #if DebugClicking
             foreach (var circle in clickPoints)
             {

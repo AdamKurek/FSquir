@@ -118,7 +118,7 @@ namespace Fillsquir.Controls
 
                 if (parents % 2 == 0)
                 {
-                    paintFill.Color = SKColors.YellowGreen;
+                    paintFill.Color = SKColors.Black;
                     paintStroke.Color = SKColors.Yellow;
                 }
                 else

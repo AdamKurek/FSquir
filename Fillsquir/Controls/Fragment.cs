@@ -43,11 +43,6 @@ public class Fragment : GeometryElement
             {
                 midpoint.X = PositionS.X + (sizeP.X / 2 * scaleX);
                 midpoint.Y = PositionS.Y + (sizeP.Y / 2 * scaleY);
-                //it's in wrong place if screen is vertical 
-                //so try this instead:
-
-
-
                 return midpoint;
             }
             midpoint.X = PositionS.X;
@@ -56,6 +51,17 @@ public class Fragment : GeometryElement
             return midpoint;
 
         } }
+
+    public SKPoint Centroid { get
+        {
+            if(wasTouched)
+            {
+                return FSMath.Centroid(VisiblePointsS);
+            }
+            return MidpointS;//noone cares it's a bug
+
+        } 
+    }
 
 #if DebugVisuals
     public float RadiusS { get {
@@ -158,27 +164,7 @@ public class Fragment : GeometryElement
                 PositionS.Y = SQHeight + ((index/rows)*MovePerColl) + afterMove;
             }
 
-            //float scaleX = (canvasWidth / (defaultCanvasWidth / prop1 * prop2));
-            //float Xoffset = (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
-           
-            //for (int i = 0; i < Points.Length - 1; i++)
-            //{
-            //    SKPoint start = new SKPoint(Points[i].X * scaleX/8 + position.X, Points[i].Y * scaleY / 8 + position.Y);
-            //    SKPoint end = new SKPoint(Points[i + 1].X * scaleX / 8 + position.X, Points[i + 1].Y * scaleY / 8 + position.Y);
-            //    canvas.DrawLine(start, end);
-            //}
-            //SKPoint startOfLastLine = new SKPoint(Points[Points.Length - 1].X * scaleX / 8 + position.X, Points[Points.Length - 1].Y * scaleY / 8 + position.Y);
-            //SKPoint endOfLastLine = new SKPoint(Points[0].X * scaleX / 8 + position.X, Points[0].Y * scaleY / 8 + position.Y);
             SKPath path = new();
-            //SKPoint[] skpts = new SKPoint[];
-            //for (int i = 0; i < PointsP.Length; i++)
-            //{
-            //    //skpts[i] = new(UntouchedPointsS[i].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i].Y * scaleY / 8 + PositionS.Y);
-            //    path.MoveTo(UntouchedPointsS[i].X * scaleX / 8 + PositionS.X, UntouchedPointsS[i].Y * scaleY / 8 + PositionS.Y);
-            //}
-            //path.Close();
-            //path.MoveTo(UntouchedPointsS[0].X * scaleX / 8 + PositionS.X, UntouchedPointsS[0].Y * scaleY / 8 + PositionS.Y);
-            //path.AddPoly(skpts);
             path.AddPoly(UntouchedPointsS);
             canvas.DrawPath(path, paintFill);
             canvas.DrawPath(path, paintStroke);
@@ -213,37 +199,45 @@ public class Fragment : GeometryElement
             }
             sKPaint.Color = SKColors.BurlyWood;
             canvas.DrawCircle(MidpointS.X, MidpointS.Y, RadiusS, sKPaint);
+            sKPaint.Color = SKColors.IndianRed;
+            canvas.DrawCircle(Centroid.X, Centroid.Y, RadiusS, sKPaint);
             sKPaint.Color = SKColors.DarkViolet;
             canvas.DrawRect(PositionS.X, PositionS.Y, sizeP.X * scaleX, sizeP.Y * scaleY, sKPaint);
             //sKPaint.Color = SKColors.DarkOrange;
             //canvas.DrawRectangle(new RectF() { Height = 1000 * scaleY, Width = 1000 * scaleX, X = PositionS.X, Y = PositionS.Y });
 #endif
         }
-        //PathF path = new PathF(Points[0]);
-        //for (int i = 1; i < Points.Length; i++)
-        //{
-        //    path.MoveTo(Points[i]);
-        //}
-        // canvas.DrawPath(path);
 
     }
 
+    public void DrawVertices(SKCanvas canvas)
+    {
+        if (!wasTouched)
+        {
+            return;
+        }
+        SKPaint paintStroke = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            IsAntialias = true,
+            Color = SKColors.Blue
+        };
+        
+        SKPath path = new();
+        path.AddPoly(VisiblePointsS);
+        canvas.DrawPath(path, paintStroke);
+    }
+
     public void SetPositionToPointLocation(SKPoint VisiblePointToAdjust, int finalIndex) {
-        //position = VisiblePoints[finalIndex] - moveto;
         PositionS.X = (VisiblePointToAdjust.X - (PointsP[finalIndex].X * scaleX) + (MoveToFillXP * scaleX)) ;// - (Points[finalIndex].X * scaleX)+ Xoffset;
         PositionS.Y = VisiblePointToAdjust.Y - (PointsP[finalIndex].Y * scaleY) + (MoveToFillYP* scaleY);// - (Points[finalIndex].Y * scaleY)+ Yoffset;
-            /*
-            movetofillx
-            position
-            pt
-
-             */
     }
 
 
     internal float Distance(SKPoint mousePosition)
     {
-        return FSMath.CalculateDistance(mousePosition, MidpointS);
+        return FSMath.CalculateDistance(mousePosition, Centroid);//use to use midpoint but centroid is better?
     }
    
     public float scaleToMiddleX(float from)

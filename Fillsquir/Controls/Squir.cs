@@ -38,7 +38,9 @@ public class Squir : GeometryElement
 
         var centre = new SKPoint(500, 500);
 
-        PointsP = SquirGenerator.GenerateCompletelyRandomShape(8,1000,1000);
+        PointsP = SquirGenerator.GenerateCompletelyRandomShape(8,10000,10000);
+        FSMath.ScaleShape(ref PointsP, canvasHeight, canvasWidth);
+        
         shapes = new();
         { 
             foreach (var shape in SquirGenerator.GenerateCompletelyRandomShapes(8, PointsP))
