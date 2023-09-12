@@ -4,6 +4,7 @@
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
 using SkiaSharp;
+using System;
 
 namespace Fillsquir.Controls
 {
@@ -14,7 +15,16 @@ namespace Fillsquir.Controls
         private float screenHeight = 1000;
         public List<GeometryElement> drawables = new();
         public GeometryElement cover;
+        GameSettings gameSettings;
+        internal DrawableStack(GameSettings settings)
+        {
+            gameSettings = settings;
+        }
+
         public GeometryElement Gui { get; set; }
+
+
+
         public HashSet<SKPoint> allActivePoints(int ignoreIndex)//todo make  update on move
         {
             var set = new HashSet<SKPoint>();
@@ -47,7 +57,7 @@ namespace Fillsquir.Controls
             drawable.Resize(screenWidth, screenHeight);
             //(drawable as GeometryElement).Resize()
         }
-        public void AddCover(GeometryElement drawable)
+        internal void AddCover(GeometryElement drawable)
         {
             cover = drawable;
         }
@@ -147,7 +157,30 @@ namespace Fillsquir.Controls
             return drawables[index] as Fragment;
         }
 
-        
+        internal Fragment SelectFragmentOnClick(SKPoint mousePosition)
+        {
+            List<Fragment> fragments = new();
+            foreach(Fragment drawable in drawables.Skip(1)) {
+                if (FSMath.IsPointInShape(mousePosition, drawable.VisiblePointsS))
+                    fragments.Add(drawable);
+            }
+            float nearest = float.MaxValue;
+            Fragment ret = null;
+            foreach (var clickedFr in fragments)
+            {
+                if (clickedFr.Distance(mousePosition) < nearest)
+                {
+                    ret = clickedFr;
+                }
+            }
+            if(ret is not null)
+            {
+                return ret;
+            }
+            return getNearestFragment(mousePosition);
+        }
+
+
 
 
     }

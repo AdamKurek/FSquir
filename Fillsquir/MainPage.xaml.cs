@@ -21,29 +21,28 @@ public partial class MainPage : ContentPage
     SKPoint startingPoint = new();
     Microsoft.Maui.Graphics.Point mousePosition = new();
     Fragment moved;
-    CommonArea commonArea = new();
-    GameSettings gameSettings = new(4,4);
+    GameSettings gameSettings;
+    CommonArea commonArea;
 #if DebugClickingLines
 #endif
     private void InitializeSquir(int dots)
     {
-        drawa = new Squir(1000, 1000);
+        gameSettings = new(0,16);
+        commonArea = new(gameSettings);
+
+        drawa = new Squir(1000, 1000, gameSettings);
         SquirArea = FSMath.CalculateArea(drawa.PointsP);
-        drawables = new DrawableStack();
-        drawables.AddDrawable(drawa);
-        // drawa.Resize(squir.Width, squir.Height);
         var fragmentpoints = drawa.SplitSquir();
+        drawables = new DrawableStack(gameSettings);
+        drawables.AddDrawable(drawa);
         for (int i = 0; i < fragmentpoints.Count; i++)
         {
-            var fragment = new Fragment(fragmentpoints[i], i);
+            var fragment = new Fragment(fragmentpoints[i], i, gameSettings);
             drawables.AddDrawable(fragment);
-
         }
-        drawables.AddCover(commonArea); // keep it on top somehow
+        drawables.AddCover(commonArea); 
         drawables.Gui = new PercentageDisplay();
 
-        //so now it's not graphicView and it's canvasView so how do i set canvas to it?
-        //you don't, you set canvas to picture
 
         squir.PaintSurface += (s, e) =>
         {
@@ -247,7 +246,7 @@ public partial class MainPage : ContentPage
             {
                 case SkiaSharp.Views.Maui.SKTouchAction.Pressed:
                     {
-                        moved = drawables.getNearestFragment(e.Location);
+                        moved = drawables.SelectFragmentOnClick(e.Location);
                         startingPoint = moved.PositionS;
                         moved.wasTouched = true;
                         break;

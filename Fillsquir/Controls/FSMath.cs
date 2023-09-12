@@ -1,12 +1,15 @@
 ﻿using Clipper2Lib;
 using SkiaSharp;
+using System.Numerics;
 using FillRule = Clipper2Lib.FillRule;
 
 namespace Fillsquir.Controls
 {
     internal static class FSMath
     {
-        
+#if DEBUG
+        static internal int randit;
+#endif
         public static bool IsPointInShape(SKPoint point, ICollection<SKPoint> figure)//incluzive
         {
             if (figure.Count < 3) 
@@ -597,7 +600,7 @@ namespace Fillsquir.Controls
         }
 
 
-        internal static void EnsureFigureDirection(ref SKPoint[] figure)
+        internal static bool EnsureFigureDirection(ref SKPoint[] figure)
         {
             if (figure == null || figure.Length < 3)
             {
@@ -606,6 +609,10 @@ namespace Fillsquir.Controls
 
             // Find convex hull using Gift Wrapping algorithm
             List<SKPoint> convexHull = GetConvexHull(figure.ToList());
+            if(convexHull == null)
+            {
+                return false;
+            }              
             List<SKPoint> remainingPoints = figure.Except(convexHull).ToList();
 
             foreach (var point in remainingPoints)
@@ -635,8 +642,9 @@ namespace Fillsquir.Controls
                 }
             }
             //set figure to convex hull without last point
-            convexHull.RemoveAt(convexHull.Count - 1);
+            //convexHull.RemoveAt(convexHull.Count - 1);
             figure = convexHull.ToArray();
+            return true;
         }
 
         private static double GetDistance(SKPoint a, SKPoint b)
@@ -646,6 +654,9 @@ namespace Fillsquir.Controls
 
         private static List<SKPoint> GetConvexHull(List<SKPoint> points)
         {
+            if (points == null || points.Count < 3)
+                throw new ArgumentException("At least 3 distinct points are required to compute a convex hull.");
+
             List<SKPoint> convexHull = new List<SKPoint>();
 
             // Step 1: Find the leftmost point (If there are multiple, take the bottom one).
@@ -660,42 +671,52 @@ namespace Fillsquir.Controls
 
             convexHull.Add(startPoint);
             SKPoint currentPoint = startPoint;
+            SKPoint nextPoint;
 
             // Infinite loop protection for malformed datasets
             int infiniteLoopProtection = 0;
+            const double epsilon = 1e-10; // For floating point precision checks
 
             // Step 2: Keep wrapping
             do
             {
-                SKPoint nextPoint = points[0];
-                for (int i = 1; i < points.Count; i++)
+                nextPoint = points[0] == currentPoint ? points[1] : points[0];
+
+                for (int i = 0; i < points.Count; i++)
                 {
                     if (points[i] == currentPoint)
                     {
                         continue;
                     }
 
-                    float value = (points[i].X - currentPoint.X) * (nextPoint.Y - currentPoint.Y) -
-                                  (points[i].Y - currentPoint.Y) * (nextPoint.X - currentPoint.X);
+                    double value = (points[i].X - currentPoint.X) * (nextPoint.Y - currentPoint.Y) -
+                                   (points[i].Y - currentPoint.Y) * (nextPoint.X - currentPoint.X);
 
-                    if (nextPoint == currentPoint || value < 0 || (value == 0 && GetDistance(currentPoint, points[i]) > GetDistance(currentPoint, nextPoint)))
+                    if (value > epsilon ||
+                        (Math.Abs(value) < epsilon && GetDistance(currentPoint, points[i]) > GetDistance(currentPoint, nextPoint)))
                     {
                         nextPoint = points[i];
                     }
                 }
 
+                // Avoid adding the same point again, which would cause an infinite loop.
+                if (convexHull.Contains(nextPoint))
+                {
+                    break;
+                }
+
+                convexHull.Add(nextPoint);
                 currentPoint = nextPoint;
-                convexHull.Add(currentPoint);
 
                 infiniteLoopProtection++;
-                if (infiniteLoopProtection > points.Count) // Safeguard to prevent infinite loops for malformed datasets.
+                if (infiniteLoopProtection > points.Count)
                 {
-                    throw new InvalidOperationException("Unable to generate convex hull. Possible malformed dataset. pewnie używasz non jak dałn");
+                    return null;
                 }
             } while (currentPoint != startPoint);
-
             return convexHull;
         }
+
 
 
 
@@ -796,6 +817,14 @@ namespace Fillsquir.Controls
             rotate = false;
             return false;
         }
+        const double epsilon = 1e-6;
+
+        public static bool AreVectorsSimilar(SKPoint a, SKPoint b)
+        {
+            double dot = DotProduct(a, b);
+            return Math.Abs(dot - 1) < epsilon;
+        }
+
         internal static void AdjustPointToMatchDirectionVector(SKPoint p1, ref SKPoint AdjustPoint, SKPoint DirectionVector)
         {
             var dx = AdjustPoint.X - p1.X;
@@ -1052,8 +1081,15 @@ namespace Fillsquir.Controls
         internal static void AdjustFigureToRequiredArea(ref SKPoint[] figure, float minArea, float maxArea, Random rand)
         {
             float area = FSMath.CalculateArea(figure);
+            
             if (area < minArea || area > maxArea)
             {
+                while (area == 0)//once in 40 000 
+                {
+                    figure = SquirGenerator.GenerateCompletelyRandomShape(9, 100, 100, rand);
+                    area = FSMath.CalculateArea(figure);
+                    
+                }
 
                 var size = FSMath.ShapeSize(figure);
 
@@ -1064,12 +1100,6 @@ namespace Fillsquir.Controls
                 var newWidth = (float)Math.Sqrt(newarea * xtoy);
                 var newHeight = (float)Math.Sqrt(newarea / xtoy);
                 FSMath.ScaleShape(ref figure, newWidth, newHeight);
-
-
-
-
-
-
             }
         }
     }

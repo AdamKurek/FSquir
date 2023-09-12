@@ -1,17 +1,16 @@
 ﻿using SkiaSharp;
+using System.Linq.Expressions;
 
 namespace Fillsquir.Controls
 {
     internal static class SquirGenerator
     {
-        static Random rand = new Random(70);
-
-        static SKPoint RandomPoint(float minX, float minY, float maxX, float maxY)
+        static SKPoint RandomPoint(float minX, float minY, float maxX, float maxY, Random rand)
         {
             return new SKPoint(rand.NextFloat(minX, maxX), rand.NextFloat(minY, maxY));
         }
 
-        static SKPoint RandomPoint(float maxX, float maxY)
+        static SKPoint RandomPoint(float maxX, float maxY, Random rand)
         {
             return new SKPoint(rand.NextFloat(0, maxX), rand.NextFloat(0, maxY));
         }
@@ -29,7 +28,7 @@ namespace Fillsquir.Controls
             return new SKPoint(x, y);
         }
 
-        public static SKPoint[] GenerateOrderedMainShapeOnCircle(SKPoint center, float minRadius, float maxRadius, int numberOfPoints)
+        public static SKPoint[] GenerateOrderedMainShapeOnCircle(SKPoint center, float minRadius, float maxRadius, int numberOfPoints, Random rand)
         {
             List<double> angles = new List<double>();
             for (int i = 0; i < numberOfPoints; i++)
@@ -50,19 +49,23 @@ namespace Fillsquir.Controls
             return points;
         }
 
-        public static SKPoint[] GenerateCompletelyRandomShape(int numberOfPoints, float maxX, float maxY)
+        public static SKPoint[] GenerateCompletelyRandomShape(int numberOfPoints, float maxX, float maxY, Random rand)
         {
-            SKPoint[] points = new SKPoint[numberOfPoints];
-            for (int i = 0; i < numberOfPoints; i++)
+            while (true)
             {
-                points[i] = RandomPoint(maxX, maxY);
+                SKPoint[] points = new SKPoint[numberOfPoints];
+                for (int i = 0; i < numberOfPoints; i++)
+                {
+                    points[i] = RandomPoint(maxX, maxY, rand);
 
+                }
+                if (FSMath.EnsureFigureDirection(ref points))
+                {
+                    return points;
+                }
             }
-            
-            FSMath.EnsureFigureDirection(ref points);
-            return points;
         }
-
+        
    
         public static List<SKPoint[]> GenerateShapes(int numShapes, SKPoint[] mainShape)
         {
@@ -93,7 +96,7 @@ namespace Fillsquir.Controls
             return shapes;
         }
 
-        public static List<SKPoint[]> GenerateCompletelyRandomShapes(int numShapes, SKPoint[] mainShape)
+        public static List<SKPoint[]> GenerateCompletelyRandomShapes(int numShapes, SKPoint[] mainShape, Random rand)
         {
             SKPoint center = FSMath.Centroid(mainShape);
             List<SKPoint[]> shapes = new List<SKPoint[]>();
@@ -103,111 +106,143 @@ namespace Fillsquir.Controls
             HashSet<SKPoint> DirectionVectors = FSMath.GetDirectionVectors(mainShape);
             for (int i = 0; i < numShapes; i++)
             {
-                #region generate random figure
-                SKPoint[] figure;
-
-                var rng = 0.9; ;
-                if (rng < 0.95)
+                try
                 {
-                    int points = rand.Next(3, 5);
-                    figure = FSMath.GenerateFigureUsingDirectionVectors(DirectionVectors, rand, points);
-                    FSMath.MovePointTowardsDirectionVectorToMatchBothDirectionVectors(ref figure[figure.Length-1], FSMath.DirectionVector(figure[figure.Length-2], figure[figure.Length-1]), figure[0],DirectionVectors);
-
-                    //foreach (var dv in FSMath.GetDirectionVectors(figure))
+                    #region generate random figure
+                    SKPoint[] figure;
+                    var rng = 0.99; ;
+                    if (rng < 0.95)
                     {
-                        //DirectionVectors.Add(dv);
+                        int points = rand.Next(3, 5);
+                        figure = FSMath.GenerateFigureUsingDirectionVectors(DirectionVectors, rand, points);
+                        FSMath.MovePointTowardsDirectionVectorToMatchBothDirectionVectors(ref figure[figure.Length - 1], FSMath.DirectionVector(figure[figure.Length - 2], figure[figure.Length - 1]), figure[0], DirectionVectors);
+
+                        //foreach (var dv in FSMath.GetDirectionVectors(figure))
+                        {
+                            //DirectionVectors.Add(dv);
+                        }
+                        if (!FSMath.EnsureFigureDirection(ref figure))
+                        {
+#if DEBUG
+                            FSMath.randit++;
+#endif
+                            i--;
+                            continue;
+                        }
+                        // if (FSMath.minBounds(figure).X < 0 || FSMath.minBounds(figure).Y < 0)
+                        FSMath.AdjustFigureToRequiredArea(ref figure, minArea, maxArea, rand);
+
+
+
+                        if (!FSMath.EnsureFigureDirection(ref figure))
+                        {
+#if DEBUG
+                            FSMath.randit++;
+#endif
+                            i--;
+                            continue;
+                        }
+
                     }
-                    FSMath.EnsureFigureDirection(ref figure);
-                    // if (FSMath.minBounds(figure).X < 0 || FSMath.minBounds(figure).Y < 0)
-                    FSMath.AdjustFigureToRequiredArea(ref figure,minArea, maxArea,rand);  
-                    
-                      
-
-                    FSMath.EnsureFigureDirection(ref figure);
-
-
-                }
-                else 
-                {
-                    //take random point from random figure in shapes
-                    if (shapes.Count >= 0)//==!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    else
                     {
-                        //generate random shape that will be very long and thin by creating random point and moving him away from center in 2 sides, then make 2 shapes around these points and combine them into 1 shape
-                        var randomPoint = RandomPoint(451, 549);
-                        //copy this point and move it away from center
-                        var distance = rand.NextFloat(200, 450);
-                        var randomPoint1 = FSMath.MovePointAwayFrom(randomPoint, center, distance);
-                        var randomPoint2 = FSMath.MovePointAwayFrom(randomPoint, center, -distance);
-                        //make SKPoint arrays with 1-3 points and combine them into 1 shape
-                        var newDirection = FSMath.GetFurtherstDirectionVector(mainShape, FSMath.DirectionVector(randomPoint1, randomPoint2));
-                        //do bitwise operation so i randomize form 1 to 4 and if it's 1 i do stuff if it's 2 i go elsewhere and if it's 4 i go both ways
-                        var randomizer = rand.Next(0, 3);
-                        List<SKPoint> figureList = new List<SKPoint>
+                        //take random point from random figure in shapes
+                        if (shapes.Count == 0)//==!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        {
+                            //generate random shape that will be very long and thin by creating random point and moving him away from center in 2 sides, then make 2 shapes around these points and combine them into 1 shape
+                            var randomPoint = RandomPoint(451, 549, rand);
+                            //copy this point and move it away from center
+                            var distance = rand.NextFloat(200, 450);
+                            var randomPoint1 = FSMath.MovePointAwayFrom(randomPoint, center, distance);
+                            var randomPoint2 = FSMath.MovePointAwayFrom(randomPoint, center, -distance);
+                            //make SKPoint arrays with 1-3 points and combine them into 1 shape
+                            var newDirection = FSMath.GetFurtherstDirectionVector(mainShape, FSMath.DirectionVector(randomPoint1, randomPoint2));
+                            //do bitwise operation so i randomize form 1 to 4 and if it's 1 i do stuff if it's 2 i go elsewhere and if it's 4 i go both ways
+                            var randomizer = rand.Next(0, 3);
+                            List<SKPoint> figureList = new List<SKPoint>
                         {
                             randomPoint1,
                             randomPoint2
                         };
-                        if(randomizer<= 1)
-                        {
-                            figureList.Add(FSMath.MoveTowardsDirectionVector(randomPoint1, newDirection, 250f - (distance/2f)));
-                        }
-                        if(randomizer>= 1)
-                        {
-                            figureList.Add(FSMath.MoveTowardsDirectionVector(randomPoint2, newDirection, 250f - (distance/2f)));
-                        }
-                        figure = figureList.ToArray();
-                        FSMath.EnsureFigureDirection(ref figure);
-                    }
-                    else
-                    {
-                        var randomizer = rand.Next(0, shapes.Count);
-                        SKPoint[] randomFigure;
-                        if (randomizer == shapes.Count)
-                        {
-                              randomFigure = mainShape;
+                            if (randomizer <= 1)
+                            {
+                                figureList.Add(FSMath.MoveTowardsDirectionVector(randomPoint1, newDirection, 250f - (distance / 2f)));
+                            }
+                            if (randomizer >= 1)
+                            {
+                                figureList.Add(FSMath.MoveTowardsDirectionVector(randomPoint2, newDirection, 250f - (distance / 2f)));
+                            }
+                            figure = figureList.ToArray();
+                            FSMath.EnsureFigureDirection(ref figure);
                         }
                         else
                         {
-                            randomFigure = shapes[randomizer];
-                        }
-                        var randomPointIndex = rand.Next(0, randomFigure.Length);
+                            var randomizer = rand.Next(0, shapes.Count);
+                            SKPoint[] randomFigure;
+                            if (randomizer == shapes.Count)
+                            {
+                                randomFigure = mainShape;
+                            }
+                            else
+                            {
+                                randomFigure = shapes[randomizer];
+                            }
+                            var randomPointIndex = rand.Next(0, randomFigure.Length);
 
 
-                        if (center == randomFigure[randomPointIndex] || center == randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1])
-                        {
-                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1], RandomPoint(1000, 1000) };
-                        }
-                        else
-                        {
-                            figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1], center };
+                            if (center == randomFigure[randomPointIndex] || center == randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1])
+                            {
+                                figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1], RandomPoint(1000, 1000, rand) };
+                            }
+                            else
+                            {
+                                figure = new SKPoint[] { randomFigure[randomPointIndex], randomFigure[randomPointIndex + 1 >= randomFigure.Length ? 0 : randomPointIndex + 1], center };
 
-                        }
-                        var figureArea = FSMath.CalculateArea(figure);
-                        
-                        if (figureArea < minArea)
-                        {
-                            FSMath.MovePointAwayFromPoints(ref figure[2], figure[0], figure[1], MathF.Sqrt(minArea - figureArea));
-                        }
-                        else if (figureArea > maxArea)
-                        {
-                            var wat = figureArea - maxArea;
-                            var non = MathF.Sqrt(wat);
-                            FSMath.MovePointTowardsPoints(ref figure[2], figure[0], figure[1],non);
-                        }
-                        FSMath.EnsureFigureDirection(ref figure);
-                      //  while (FSMath.CheckAngle(figure, 3f))
-                        {
-                           // FSMath.LonliestPoint
+                            }
+                            var figureArea = FSMath.CalculateArea(figure);
+
+
+
+                            if (figureArea < minArea)
+                            {
+                                FSMath.MovePointAwayFromPoints(ref figure[2], figure[0], figure[1], MathF.Sqrt(minArea - figureArea));
+                            }
+                            else if (figureArea > maxArea)
+                            {
+                                var wat = figureArea - maxArea;
+                                var non = MathF.Sqrt(wat);
+                                FSMath.MovePointTowardsPoints(ref figure[2], figure[0], figure[1], non);
+                            }
+                            if (!FSMath.EnsureFigureDirection(ref figure))
+                            {
+#if DEBUG
+                                FSMath.randit++;
+#endif
+                                i--;
+                                continue;
+                            }
+                            FSMath.AdjustFigureToRequiredArea(ref figure, minArea, maxArea, rand);
+                            if (!FSMath.EnsureFigureDirection(ref figure))
+                            {
+#if DEBUG
+                                FSMath.randit++;
+#endif
+                                i--;
+                                continue;
+                            }
                         }
                     }
+
+                    #endregion
+                    shapes.Add(figure);
+                }catch(Exception)
+                {
+#if DEBUG
+                    FSMath.randit++;
+#endif
+                    i--;
+                    continue;
                 }
-
-                #endregion
-                shapes.Add(figure);
-
-               
-
-                
             }
             return shapes;
         }

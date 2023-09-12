@@ -4,12 +4,12 @@ using SkiaSharp;
 
 public class Squir : GeometryElement 
 {
-
+    GameSettings gameSettings;
     public SKPoint[] PointsP;
     public List<SKPoint[]> shapes;
     float Xoffset => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
 
-    private SKPoint[] visiblePoints;
+    //private SKPoint[] visiblePoints;
     public SKPoint[] VisiblePoints
     {
         get
@@ -23,8 +23,9 @@ public class Squir : GeometryElement
         }
     }
   
-    public Squir(float Width, float Height)
+    internal Squir(float Width, float Height, GameSettings settings)
 	{
+        gameSettings = settings;
         //Points = new SKPoint[]{
         //    new SKPoint(10, 100),
         //    new SKPoint(800, 100),
@@ -37,13 +38,14 @@ public class Squir : GeometryElement
         //};
 
         var centre = new SKPoint(500, 500);
-
-        PointsP = SquirGenerator.GenerateCompletelyRandomShape(8,10000,10000);
-        FSMath.ScaleShape(ref PointsP, canvasHeight, canvasWidth);
+        
         
         shapes = new();
-        { 
-            foreach (var shape in SquirGenerator.GenerateCompletelyRandomShapes(8, PointsP))
+        {
+            PointsP = SquirGenerator.GenerateCompletelyRandomShape(80, 10000, 10000, gameSettings.rand);
+            FSMath.ScaleShape(ref PointsP, canvasHeight, canvasWidth);
+
+            foreach (var shape in SquirGenerator.GenerateCompletelyRandomShapes(16, PointsP, gameSettings.rand))
             {
                 shapes.Add(shape);
             }

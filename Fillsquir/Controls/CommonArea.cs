@@ -12,6 +12,8 @@ namespace Fillsquir.Controls
 {
     public class CommonArea : GeometryElement
     {
+        GameSettings gameSettings;
+
         public double Area
         {
             get{
@@ -69,8 +71,9 @@ namespace Fillsquir.Controls
             }
         }
 
-        public CommonArea()
+        internal CommonArea(GameSettings settings)
         {
+            gameSettings = settings;
         }
 
         //how do i make this work

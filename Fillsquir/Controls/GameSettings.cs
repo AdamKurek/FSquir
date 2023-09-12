@@ -8,46 +8,38 @@ namespace Fillsquir.Controls
 {
     internal class GameSettings
     {
-        public GameSettings(int Fragments, int seed)
+        public GameSettings(int seed ,int fragments)
         {
-            Rows = Fragments;
-            Cols = Fragments;
-            Random random = new Random(seed);
+            DetermineDimensions(fragments);
+            rand = new Random(seed);
         }
         internal int Rows;
         internal int Cols;
         internal double percentageRequired;
-        internal Random random;
+        internal Random rand;
         private void DetermineDimensions(int n)
         {
-            // Start at the square root and find closest factors
             int start = (int)Math.Sqrt(n);
-
-            for (int r = start; r > 0; r--)
+            while (true) 
             {
-                int c = n / r;
-
-                // Check if it's roughly 3:1 proportion
-                if (r / (double)c >= 2.5 && r / (double)c <= 3.5)
+                for (int r = start; r > 0; r--)
                 {
-                    Rows = r;
-                    Cols = c;
-                    return;
+                    int c = n / r;
+                    if (r / (float)c >= 2.5f && r / (float)c <= 3.5f)
+                    {
+                        Rows = r;
+                        Cols = c;
+                        return;
+                    }
+                    if (c / (float)r >= 2.5f && c / (float)r <= 3.5f)
+                    {
+                        Rows = c;
+                        Cols = r;
+                        return;
+                    }
                 }
-
-                // You can also check for the inverse proportion, c to r.
-                if (c / (double)r >= 2.5 && c / (double)r <= 3.5)
-                {
-                    Rows = c;
-                    Cols = r;
-                    return;
-                }
+                start++;
             }
-
-            // Default if no suitable factors found
-            Rows = n;
-            Cols = 1;
         }
     }
-
 }
