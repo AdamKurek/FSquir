@@ -17,6 +17,9 @@ namespace Fillsquir.Controls
         internal int Cols;
         internal double percentageRequired;
         internal Random rand;
+        internal float zoomFactor = 1.0f;
+        internal float xoffset = 0.5f;
+        internal float yoffset = 0;
         private void DetermineDimensions(int n)
         {
             int start = (int)Math.Sqrt(n);

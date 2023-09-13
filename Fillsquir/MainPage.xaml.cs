@@ -1,6 +1,7 @@
 ﻿using Fillsquir.Controls;
-using SkiaScene.TouchManipulation;
 using SkiaSharp;
+using SkiaSharp.Views.Maui.Controls;
+using System.Text.RegularExpressions;
 
 namespace Fillsquir;
 
@@ -9,6 +10,11 @@ public partial class MainPage : ContentPage
 
     public MainPage()
     {
+
+        //NavigationPage.SetHasNavigationBar(this, false);
+        Shell.SetNavBarIsVisible(this, false);
+        
+        
         InitializeComponent();
         InitializeSquir(1);
         
@@ -46,18 +52,53 @@ public partial class MainPage : ContentPage
 
         squir.PaintSurface += (s, e) =>
         {
-            e.Surface.Canvas.Clear();
+            var canvas = e.Surface.Canvas;
 
-            drawables.Draw(e.Surface.Canvas);
+            // Clear the canvas
+            canvas.Clear();
+
+            // Apply transformations for zoom
+             // Change this to the desired zoom level
+            canvas.Scale(gameSettings.zoomFactor);
+            canvas.Translate(gameSettings.xoffset, gameSettings.yoffset);
+            // Draw zoomed contents
+            // Assuming drawables.Draw() draws the contents that you want zoomed
+            drawables.Draw(canvas);
+            canvas.ResetMatrix();
+
+            // Draw remaining contents
+            // Assuming drawables.DrawNonZoomed() draws the remaining contents
+           // drawables.DrawNonZoomed(canvas);
 
         };
 
         var panGesture = new PanGestureRecognizer();
         var pointGesture = new PointerGestureRecognizer();
-
+        var zoom = new PinchGestureRecognizer();
+        zoom.PinchUpdated += (s, e) =>
+        { 
+        var d = e.ScaleOrigin;
+            
+            switch (e.Status)
+            {
+                case GestureStatus.Started:
+                    break;
+                case GestureStatus.Running:
+                    gameSettings.zoomFactor *= (float)e.Scale;
+                    break;
+                case GestureStatus.Completed:
+                    break;
+            }
+            squir.InvalidateSurface();
+        };
         squir.GestureRecognizers.Add(panGesture);
+        squir.GestureRecognizers.Add(zoom);
+        //why it never triggers zoom.PinchUpdated
+        //because you need to add it to view
 
-        panGesture.PanUpdated += PanGesture_PanUpdated; 
+
+  
+    panGesture.PanUpdated += PanGesture_PanUpdated; 
 
         //is it how i add it to view?
         // squir.GestureRecognizers.Add(theHero);
@@ -114,10 +155,6 @@ public partial class MainPage : ContentPage
 
 
             return;
-            // nie działa
-            // moved.position.X = startingPoint.X + (float)st.Value.X;
-            // moved.position.Y = startingPoint.Y + (float)st.Value.Y;
-            // squir.Invalidate();
         };
 
 
@@ -154,7 +191,6 @@ public partial class MainPage : ContentPage
 
                 return;
 #endif
-            //squir.Invalidate();resize
         }
 
 
@@ -198,44 +234,53 @@ public partial class MainPage : ContentPage
     int wtfff = 0;
 
     private void PanGesture_PanUpdated(object sender, PanUpdatedEventArgs e)
-    {
+    { 
+        //location.Offset(+gameSettings.xoffset);
+
+        SKPoint location =new((float)e.TotalX, (float)e.TotalY);
+
+        location.X /= gameSettings.zoomFactor;
+        location.Y /= gameSettings.zoomFactor;
+
+
         var d = drawables.Gui as PercentageDisplay;
 #if DebugString
-        d.debugString = wtfff++.ToString();
+        //d.debugString = wtfff++.ToString();
 #endif
 
         if (moved == null) { return; }
         if(e.StatusType != GestureStatus.Running) { return; }
-        moved.PositionS.X = startingPoint.X + (float)e.TotalX;
-        moved.PositionS.Y = startingPoint.Y + (float)e.TotalY;
+        moved.PositionS.X = startingPoint.X + location.X;
+        moved.PositionS.Y = startingPoint.Y + location.Y;
         UpdateCover();
         Invalidate();
 
     }
+
+    SKPoint offsetMoveLocation;
     private void squir_Touch(object sender, SkiaSharp.Views.Maui.SKTouchEventArgs e)
         {
-
         var d = drawables.Gui as PercentageDisplay;
         //d.debugString = wtfff++.ToString();
-        //how do i get movement of the touch
-        //you need to store the starting point and then calculate the difference
-        //how do i get the difference
-        //like this:
+        var location = e.Location;
+        location.X /= gameSettings.zoomFactor;
+        location.Y /= gameSettings.zoomFactor;
+        //location.Offset(+gameSettings.xoffset);
+        location.X -= gameSettings.xoffset;
+        location.Y -= gameSettings.yoffset;
         var diff = e.Location;
         //but i feel like this method is called only on touch and then it's done
         //
 
-
 #if DebugClicking
         bool inisde = false;
-        SKPoint mp = new SKPoint() { X = (float)e.Location.X, Y = (float)e.Location.Y };
+        SKPoint mp = new SKPoint() { X = location.X, Y = location.Y };
         if (FSMath.IsPointInShape(mp, ((Squir)drawables[0]).VisiblePoints))
         {
             inisde = true;
         }
         drawables.AddDot(mp, inisde);
         Invalidate();
-        return;
 #endif
 
 
@@ -243,54 +288,122 @@ public partial class MainPage : ContentPage
 
 
         switch (e.ActionType)
-            {
-                case SkiaSharp.Views.Maui.SKTouchAction.Pressed:
+        {
+            case SkiaSharp.Views.Maui.SKTouchAction.Pressed:
+                {
+                    if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
-                        moved = drawables.SelectFragmentOnClick(e.Location);
-                        startingPoint = moved.PositionS;
-                        moved.wasTouched = true;
+                        offsetMoveLocation = location;
                         break;
                     }
-                case SkiaSharp.Views.Maui.SKTouchAction.Released:
+
+                    moved = drawables.SelectFragmentOnClick(location);
+                    startingPoint = moved.PositionS;
+                    moved.wasTouched = true;
+                    break;
+                }
+            case SkiaSharp.Views.Maui.SKTouchAction.Released:
+                {
+                    if (moved == null) { return; }
+                    if (!moved.wasTouched) { return; }
+                    float min = float.MaxValue;
+                    int i = 0, finalIndex = 0;
+                    SKPoint assignedPoint = new();
+                    int drawableindex = 0;
+                    for (; drawableindex < drawables.drawables.Count; drawableindex++)
                     {
-                        if (moved == null) { return; }
-                        if (!moved.wasTouched) { return; }
-                        float min = float.MaxValue;
-                        int i = 0, finalIndex = 0;
-                        SKPoint assignedPoint = new();
-                        int drawableindex = 0;
-                        for (; drawableindex < drawables.drawables.Count; drawableindex++)
+                        if (Object.ReferenceEquals(drawables[drawableindex], moved))
                         {
-                            if (Object.ReferenceEquals(drawables[drawableindex], moved))
+                            break;
+                        }
+                    }
+                    foreach (var pt in moved.VisiblePointsS)
+                    {
+                        foreach (var oneOfMilion in drawables.allActivePoints(drawableindex))
+                        {
+                            float cur = FSMath.CalculateDistance(pt, oneOfMilion);
+                            if (cur < min)
                             {
-                                break;
+                                min = cur;
+                                finalIndex = i;
+                                assignedPoint = oneOfMilion;
                             }
                         }
-                        foreach (var pt in moved.VisiblePointsS)
-                        {
-                            foreach (var oneOfMilion in drawables.allActivePoints(drawableindex))
-                            {
-                                float cur = FSMath.CalculateDistance(pt, oneOfMilion);
-                                if (cur < min)
-                                {
-                                    min = cur;
-                                    finalIndex = i;
-                                    assignedPoint = oneOfMilion;
-                                }
-                            }
-                            i++;
-                        }
-                        if (min < 10)
-                        {
-                            moved.SetPositionToPointLocation(assignedPoint, finalIndex);
-                        }
-                        moved = null;
-                        UpdateCover();
+                        i++;
+                    }
+                    if (min < 10)
+                    {
+                        moved.SetPositionToPointLocation(assignedPoint, finalIndex);
+                    }
+                    moved = null;
+                    UpdateCover();
                     //UpdateGui();
+                    Invalidate();
+                    break;
+                }
+            case SkiaSharp.Views.Maui.SKTouchAction.WheelChanged:
+                {
+
+                    var zoomPrev = gameSettings.zoomFactor;
+                    squir.AnchorX = location.X;
+                    if (e.WheelDelta > 0)
+                    {
+                        gameSettings.zoomFactor += 0.25f;
+                    }
+                    else 
+                    {
+                        if (gameSettings.zoomFactor <= 0.5f)
+                        {
+                            return;
+                        }
+                        gameSettings.zoomFactor -= 0.25f;
+                    }
+                    var zoomprop = gameSettings.zoomFactor / zoomPrev;
+                    var xfromhere = -gameSettings.xoffset + (e.Location.X / zoomPrev);
+                    var yfromhere = -gameSettings.yoffset + (e.Location.Y / zoomPrev);
+                    gameSettings.xoffset = -location.X + (e.Location.X / gameSettings.zoomFactor);
+                    gameSettings.yoffset = -location.Y + (e.Location.Y / gameSettings.zoomFactor);
+
+
+                    
+
+
+                    //var xd = location.X;
+                    //var difference = xd - xfromhere;
+
+                    Invalidate();
+
+                    //var 
+
+
+                    //but it can't be constant 1 pixel it has to be something else, maybe librarys have different approach to this
+
+
+
+                    //but notice that by default it zooms to the left top corner
+                    //so to adjust xoffset you need to add difference that was made by that
+
+
+
+
+                    break;
+                }
+            case SkiaSharp.Views.Maui.SKTouchAction.Moved:
+                {
+                
+                    if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
+                    {
+                        gameSettings.xoffset += location.X - offsetMoveLocation.X;
+                        gameSettings.yoffset += location.Y - offsetMoveLocation.Y;
                         Invalidate();
                         break;
                     }
+                    break;
+                }
             }
+        
 
     }
+    bool wtf = true;
+    int wtfint = 0;
 }

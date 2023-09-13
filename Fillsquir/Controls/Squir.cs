@@ -73,7 +73,7 @@ public class Squir : GeometryElement
         {
             Style = SKPaintStyle.Stroke,
             Color = SKColors.Aqua,
-            StrokeWidth = 3,
+            StrokeWidth = 3f,
             StrokeCap = SKStrokeCap.Round,
             StrokeJoin = SKStrokeJoin.Round
         };

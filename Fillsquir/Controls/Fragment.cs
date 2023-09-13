@@ -87,6 +87,10 @@ public class Fragment : GeometryElement
     {
         get
         {
+            if (!wasTouched)
+            {
+                return UntouchedPointsS;
+            }
             var pts = new SKPoint[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
             {
@@ -208,10 +212,6 @@ public class Fragment : GeometryElement
 
     public void DrawVertices(SKCanvas canvas)
     {
-        if (!wasTouched)
-        {
-            return;
-        }
         SKPaint paintStroke = new()
         {
             Style = SKPaintStyle.Stroke,
@@ -219,17 +219,24 @@ public class Fragment : GeometryElement
             IsAntialias = true,
             Color = SKColors.Blue
         };
-        
         SKPath path = new();
-        path.AddPoly(VisiblePointsS);
+
+        if (!wasTouched)
+        {
+            path.AddPoly(UntouchedPointsS);
+        }
+        else
+        {
+            path.AddPoly(VisiblePointsS);
+        }
         canvas.DrawPath(path, paintStroke);
+
     }
 
     public void SetPositionToPointLocation(SKPoint VisiblePointToAdjust, int finalIndex) {
         PositionS.X = (VisiblePointToAdjust.X - (PointsP[finalIndex].X * scaleX) + (MoveToFillXP * scaleX)) ;// - (Points[finalIndex].X * scaleX)+ Xoffset;
         PositionS.Y = VisiblePointToAdjust.Y - (PointsP[finalIndex].Y * scaleY) + (MoveToFillYP* scaleY);// - (Points[finalIndex].Y * scaleY)+ Yoffset;
     }
-
 
     internal float Distance(SKPoint mousePosition)
     {
