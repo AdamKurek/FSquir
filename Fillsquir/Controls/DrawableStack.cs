@@ -20,11 +20,7 @@ namespace Fillsquir.Controls
         {
             gameSettings = settings;
         }
-
         public GeometryElement Gui { get; set; }
-
-
-
         public HashSet<SKPoint> allActivePoints(int ignoreIndex)//todo make  update on move
         {
             var set = new HashSet<SKPoint>();
@@ -45,7 +41,6 @@ namespace Fillsquir.Controls
             }
             return set;
         }
-
         public GeometryElement this[int i]
         {
             get { return drawables[i]; }
@@ -90,7 +85,7 @@ namespace Fillsquir.Controls
             clickPoints.Add(drawpoint);
         }
 #endif
-        public SKCanvas Draw(SKCanvas canvas)
+        public SKCanvas DrawPreZoom(SKCanvas canvas)
         {
             foreach (var drawable in drawables.Skip(1))
             {
@@ -99,7 +94,7 @@ namespace Fillsquir.Controls
             this[0].Draw(canvas);
 
             cover?.Draw(canvas);
-            Gui?.Draw(canvas);
+            
             foreach (Fragment drawable in drawables.Skip(1))
             {
                 drawable.DrawVertices(canvas);
@@ -130,7 +125,16 @@ namespace Fillsquir.Controls
             return canvas;
         }
 
-        public void Resize(float width, float height)
+
+        public SKCanvas DrawPastZoom(SKCanvas canvas)
+        {
+
+
+            Gui?.Draw(canvas);
+            return canvas;
+        }
+
+            public void Resize(float width, float height)
         {
             screenWidth = width;
             screenHeight = height;

@@ -6,8 +6,4 @@ public partial class AppShell : Shell
 	{
 		InitializeComponent();
 	}
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-    }
 }

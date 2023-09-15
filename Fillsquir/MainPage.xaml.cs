@@ -16,7 +16,9 @@ public partial class MainPage : ContentPage
         
         
         InitializeComponent();
-        InitializeSquir(1);
+
+        GameSettings settings = new(0, 10, 10);
+        InitializeSquir(settings);
         
     }
 
@@ -31,13 +33,13 @@ public partial class MainPage : ContentPage
     CommonArea commonArea;
 #if DebugClickingLines
 #endif
-    private void InitializeSquir(int dots)
+    private void InitializeSquir(GameSettings settings)
     {
-        gameSettings = new(0,16);
+        gameSettings = settings;
         commonArea = new(gameSettings);
-
         drawa = new Squir(1000, 1000, gameSettings);
-        SquirArea = FSMath.CalculateArea(drawa.PointsP);
+        gameSettings.MaxArea = FSMath.CalculateArea(drawa.PointsP);
+
         var fragmentpoints = drawa.SplitSquir();
         drawables = new DrawableStack(gameSettings);
         drawables.AddDrawable(drawa);
@@ -47,7 +49,7 @@ public partial class MainPage : ContentPage
             drawables.AddDrawable(fragment);
         }
         drawables.AddCover(commonArea); 
-        drawables.Gui = new PercentageDisplay();
+        drawables.Gui = new PercentageDisplay(gameSettings);
 
 
         squir.PaintSurface += (s, e) =>
@@ -63,8 +65,10 @@ public partial class MainPage : ContentPage
             canvas.Translate(gameSettings.xoffset, gameSettings.yoffset);
             // Draw zoomed contents
             // Assuming drawables.Draw() draws the contents that you want zoomed
-            drawables.Draw(canvas);
+            drawables.DrawPreZoom(canvas);
             canvas.ResetMatrix();
+
+            drawables.DrawPastZoom(canvas);
 
             // Draw remaining contents
             // Assuming drawables.DrawNonZoomed() draws the remaining contents
@@ -205,12 +209,12 @@ public partial class MainPage : ContentPage
             //var u1 = ((Fragment)drawables.drawables[1]).VisiblePointsP;
             //var u2 = ((Squir)drawables[0]).PointsP;
             commonArea.FiguresP = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
-            UpdateGui(((CommonArea)drawables.cover).Area * 100);
+            UpdateGui(((CommonArea)drawables.cover).Area);
         }
 
-        void UpdateGui(double percentage)
+        void UpdateGui(double area)
         {
-            (drawables.Gui as PercentageDisplay).Percentage = percentage / SquirArea;
+            gameSettings.AreaFilled = area;
         }
 
 

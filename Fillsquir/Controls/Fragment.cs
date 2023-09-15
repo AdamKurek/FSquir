@@ -82,7 +82,6 @@ public class Fragment : GeometryElement
     float dravingMoveX => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
     private float Xoffset => PositionS.X - (MoveToFillXP * scaleX);
     private float Yoffset => PositionS.Y - (MoveToFillYP *scaleY);
-    private SKPoint[] visiblePointsS;
     public SKPoint[] VisiblePointsS
     {
         get

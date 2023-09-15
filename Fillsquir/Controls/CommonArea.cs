@@ -146,18 +146,5 @@ namespace Fillsquir.Controls
 #endif
             }
         }
-
-        private bool BaseColour = true;
-        private bool reverseColours(bool baseColour)
-        {
-            if(baseColour)
-            {
-                BaseColour = false;
-                return false;
-            }
-            BaseColour = true;
-            return true;
-        }
-
     }
 }

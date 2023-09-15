@@ -12,7 +12,18 @@ namespace Fillsquir.Controls
 {
     internal class PercentageDisplay : GeometryElement
     {
-        public double Percentage { get; set; } = 0;
+        GameSettings gameSettings;
+        public PercentageDisplay(GameSettings settings)
+        {
+            gameSettings = settings;
+        }
+
+        public double Percentage { get 
+            {
+                return gameSettings.percentageFilled / gameSettings.percentageRequired *10000;
+
+            } 
+        }
 
 #if DebugString
 public string debugString = "pusty text";
@@ -22,13 +33,15 @@ public string debugString = "pusty text";
             SKPaint paint = new SKPaint() { 
                 Color = SKColors.Red,
                 TextAlign = SKTextAlign.Right,
-                TextSize = 80
-                
+                TextSize = 20,
+            };
+            SKPaint stripPaint = new SKPaint()
+            {
+                Color = SKColors.WhiteSmoke,
+                Style = SKPaintStyle.StrokeAndFill,
             };
 
-            //canvas.DrawRectangle(0,0, (float)Percentage * scaleX, 30);
-            //canvas.FillRectangle(0, 0, (float)Percentage * scaleX, 30);
-
+            canvas.DrawRect(0, 0, (float)Percentage*scaleX, 30, stripPaint);
 
 
 
