@@ -8,9 +8,8 @@ using System;
 
 namespace Fillsquir.Controls
 {
-    public class DrawableStack : SKDrawable
+    public class DrawableStack : GeometryElement
     {
-
         private float screenWidth = 1000;
         private float screenHeight = 1000;
         public List<GeometryElement> drawables = new();
@@ -87,18 +86,18 @@ namespace Fillsquir.Controls
 #endif
         public SKCanvas DrawPreZoom(SKCanvas canvas)
         {
-            foreach (var drawable in drawables.Skip(1))
+            foreach (Fragment drawable in drawables.Skip(1))
             {
-                drawable.Draw(canvas);
+                if (drawable.wasTouched)
+                {
+                    drawable.Draw(canvas);
+                }
             }
             this[0].Draw(canvas);
 
             cover?.Draw(canvas);
             
-            foreach (Fragment drawable in drawables.Skip(1))
-            {
-                drawable.DrawVertices(canvas);
-            }
+            
 #if DebugClicking
             foreach (var circle in clickPoints)
             {
@@ -128,13 +127,34 @@ namespace Fillsquir.Controls
 
         public SKCanvas DrawPastZoom(SKCanvas canvas)
         {
+            //how do i cover 33% of the bottom screen in black colour
+            //var wtf = new SKRectl(0f, screenHeight /, screenWidth, screenHeight);
+            var rectl = new SKRectI(0, (int)(screenHeight * prop1/prop2) , (int)screenWidth, (int)screenHeight);
+            canvas.DrawRegion(new SKRegion(rectl), new SKPaint() { Color = SKColors.Black });
 
-
+            foreach (Fragment drawable in drawables.Skip(1))
+            {
+                if (!drawable.wasTouched)
+                {
+                    drawable.Draw(canvas);
+                }
+            }
             Gui?.Draw(canvas);
             return canvas;
         }
 
-            public void Resize(float width, float height)
+        internal void DrawFragmentsoutlines(SKCanvas canvas)
+        {
+            foreach (Fragment drawable in drawables.Skip(1))
+            {
+                if (drawable.wasTouched)
+                {
+                    drawable.DrawVertices(canvas);
+                }
+            }
+        }
+
+        public void Resize(float width, float height)
         {
             screenWidth = width;
             screenHeight = height;
@@ -184,8 +204,9 @@ namespace Fillsquir.Controls
             return getNearestFragment(mousePosition);
         }
 
-
-
-
+        protected override void DrawMainShape(SKCanvas canvas)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

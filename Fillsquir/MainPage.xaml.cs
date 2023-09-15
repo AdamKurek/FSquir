@@ -55,24 +55,18 @@ public partial class MainPage : ContentPage
         squir.PaintSurface += (s, e) =>
         {
             var canvas = e.Surface.Canvas;
-
-            // Clear the canvas
             canvas.Clear();
-
-            // Apply transformations for zoom
-             // Change this to the desired zoom level
             canvas.Scale(gameSettings.zoomFactor);
             canvas.Translate(gameSettings.xoffset, gameSettings.yoffset);
-            // Draw zoomed contents
-            // Assuming drawables.Draw() draws the contents that you want zoomed
             drawables.DrawPreZoom(canvas);
             canvas.ResetMatrix();
-
             drawables.DrawPastZoom(canvas);
-
+            canvas.Scale(gameSettings.zoomFactor);
+            canvas.Translate(gameSettings.xoffset, gameSettings.yoffset);
+            drawables.DrawFragmentsoutlines(canvas);
             // Draw remaining contents
             // Assuming drawables.DrawNonZoomed() draws the remaining contents
-           // drawables.DrawNonZoomed(canvas);
+            // drawables.DrawNonZoomed(canvas);
 
         };
 
@@ -99,11 +93,7 @@ public partial class MainPage : ContentPage
         squir.GestureRecognizers.Add(zoom);
         //why it never triggers zoom.PinchUpdated
         //because you need to add it to view
-
-
-  
-    panGesture.PanUpdated += PanGesture_PanUpdated; 
-
+        panGesture.PanUpdated += PanGesture_PanUpdated; 
         //is it how i add it to view?
         // squir.GestureRecognizers.Add(theHero);
         //no, you can't do it cause theHero doesn't implement IGestureRecognizer interface  
@@ -302,7 +292,14 @@ public partial class MainPage : ContentPage
                     }
 
                     moved = drawables.SelectFragmentOnClick(location);
-                    startingPoint = moved.PositionS;
+                    if(moved == null) { return; }//probably will be needed one day
+                    if(moved.wasTouched) {
+                        startingPoint = moved.PositionS;
+                    }
+                    else
+                    {
+                        startingPoint = location;
+                    }
                     moved.wasTouched = true;
                     break;
                 }
