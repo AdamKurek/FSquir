@@ -12,8 +12,6 @@ namespace Fillsquir.Controls
 {
     public class CommonArea : GeometryElement
     {
-        GameSettings gameSettings;
-
         public double Area
         {
             get{
@@ -50,7 +48,7 @@ namespace Fillsquir.Controls
             }
         }
         public List<SKPoint[]> FiguresP = new();
-        float Xoffset => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
+        float Xoffset => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
 
         public List<SKPoint[]> VisibleFiguresS
         {
@@ -71,13 +69,11 @@ namespace Fillsquir.Controls
             }
         }
 
-        internal CommonArea(GameSettings settings)
+        internal CommonArea(GameSettings settings):base(settings)
         {
-            gameSettings = settings;
         }
 
-        //how do i make this work
-        public void AddFigure(SKPoint[] figure)
+        internal void AddFigure(SKPoint[] figure)
         {
             FiguresP.Add(figure);
         }

@@ -12,10 +12,8 @@ namespace Fillsquir.Controls
 {
     internal class PercentageDisplay : GeometryElement
     {
-        GameSettings gameSettings;
-        public PercentageDisplay(GameSettings settings)
+        public PercentageDisplay(GameSettings settings) : base(settings)
         {
-            gameSettings = settings;
         }
 
         public double Percentage { get 

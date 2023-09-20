@@ -1,7 +1,5 @@
 ﻿using Fillsquir.Controls;
 using SkiaSharp;
-using SkiaSharp.Views.Maui.Controls;
-using System.Text.RegularExpressions;
 
 namespace Fillsquir;
 
@@ -225,24 +223,40 @@ public partial class MainPage : ContentPage
         //(sender as SKCanvasView).ScaleX.ToString();
     }
 
-    int wtfff = 0;
-
+    float wtfstrip;
+    private float bottomStripMovePre
+    {
+        get
+        {
+            return wtfstrip;
+        }
+        set
+        {
+            wtfstrip = value;
+        }
+    }
     private void PanGesture_PanUpdated(object sender, PanUpdatedEventArgs e)
     { 
         //location.Offset(+gameSettings.xoffset);
 
         SKPoint location =new((float)e.TotalX, (float)e.TotalY);
 
+        
+
         location.X /= gameSettings.zoomFactor;
         location.Y /= gameSettings.zoomFactor;
 
 
-        var d = drawables.Gui as PercentageDisplay;
 #if DebugString
+        var d = drawables.Gui as PercentageDisplay;
         //d.debugString = wtfff++.ToString();
 #endif
 
-        if (moved == null) { return; }
+        if (moved == null) {
+            if (e.TotalX == 0) { return; }
+            gameSettings.bottomStripMove = bottomStripMovePre + (float)e.TotalX;
+            return; 
+        }
         if(e.StatusType != GestureStatus.Running) { return; }
         moved.PositionS.X = startingPoint.X + location.X;
         moved.PositionS.Y = startingPoint.Y + location.Y;
@@ -288,11 +302,15 @@ public partial class MainPage : ContentPage
                     if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
                         offsetMoveLocation = location;
+                        bottomStripMovePre = gameSettings.bottomStripMove;
                         break;
                     }
 
                     moved = drawables.SelectFragmentOnClick(location);
-                    if(moved == null) { return; }//probably will be needed one day
+                    if(moved == null) {
+                        bottomStripMovePre = gameSettings.bottomStripMove;
+                        return;
+                    }//probably will be needed one day
                     if(moved.wasTouched) {
                         startingPoint = moved.PositionS;
                     }

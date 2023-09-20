@@ -4,10 +4,9 @@ using SkiaSharp;
 
 public class Squir : GeometryElement 
 {
-    GameSettings gameSettings;
     public SKPoint[] PointsP;
     public List<SKPoint[]> shapes;
-    float Xoffset => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
+    float Xoffset => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
     public SKPoint[] VisiblePoints
     {
         get
@@ -21,9 +20,8 @@ public class Squir : GeometryElement
         }
     }
   
-    internal Squir(float Width, float Height, GameSettings settings)
-	{
-        gameSettings = settings;
+    internal Squir(float Width, float Height, GameSettings settings) : base(settings)
+    {
         shapes = new();
         {
             PointsP = SquirGenerator.GenerateCompletelyRandomShape(gameSettings.vertices, 10000, 10000, gameSettings.rand);

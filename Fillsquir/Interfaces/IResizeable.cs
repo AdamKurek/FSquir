@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using Fillsquir.Controls;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +15,17 @@ namespace Fillsquir.Interfaces
         static public float defaultCanvasHeight = 1000;
         public float canvasWidth = 1000;
         public float canvasHeight = 1000;
-        public static float prop1 = 3;
-        public static float prop2 = 4;
-        protected float scaleX => (canvasWidth / (defaultCanvasWidth / prop1 * prop2));
+        internal GameSettings gameSettings;
+        private GeometryElement() { }
+        internal GeometryElement(GameSettings gameSettings)
+        {
+            this.gameSettings = gameSettings;
+        } 
 
-        protected float scaleY => (canvasHeight / (defaultCanvasHeight / prop1 * prop2));
+
+        protected float scaleX => (canvasWidth / (defaultCanvasWidth / gameSettings.prop1 * gameSettings.prop2));
+
+        protected float scaleY => (canvasHeight / (defaultCanvasHeight / gameSettings.prop1 * gameSettings.prop2));
         public void Resize(float Width, float Height)
         {
             if (Width <= 0 || Height <= 0)

@@ -79,7 +79,7 @@ public class Fragment : GeometryElement
 
     public int IndexX { get { return index % gameSettings.Rows; } }
     public int IndexY { get { return index - (IndexX * gameSettings.Rows) ; } }
-    float dravingMoveX => (canvasWidth - ((prop1 / prop2) * canvasWidth)) / 2;
+    float dravingMoveX => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
     private float Xoffset => PositionS.X - (MoveToFillXP * scaleX);
     private float Yoffset => PositionS.Y - (MoveToFillYP *scaleY);
     public SKPoint[] VisiblePointsS
@@ -109,8 +109,7 @@ public class Fragment : GeometryElement
                 return pts;
             }
         }
-    GameSettings gameSettings;
-    internal Fragment(SKPoint[] Points, int index, GameSettings settings)
+    internal Fragment(SKPoint[] Points, int index, GameSettings settings) : base(settings)
     {
         {
             float xMin = float.MaxValue, yMin = float.MaxValue, xMax = 0, yMax = 0;
@@ -131,7 +130,6 @@ public class Fragment : GeometryElement
 
             this.index = index;
         }
-        gameSettings = settings;
     }
 
 
@@ -156,8 +154,8 @@ public class Fragment : GeometryElement
         {
             {
                 var cellWidth = canvasWidth / gameSettings.Rows;
-                PositionS.X = (cellWidth * IndexX) + (cellWidth /2) ;
-                var SQHeight = canvasHeight * (prop1 / prop2);
+                PositionS.X = (cellWidth * IndexX) + (cellWidth /2) + gameSettings.bottomStripMove;
+                var SQHeight = canvasHeight * (gameSettings.prop1 / gameSettings.prop2);
                 var MovePerColl = (canvasHeight - SQHeight) / gameSettings.Cols;
                 var afterMove = 1/2f * MovePerColl;
                 PositionS.Y = SQHeight + ((index/ gameSettings.Rows)*MovePerColl) + afterMove;

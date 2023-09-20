@@ -9,7 +9,7 @@ namespace Fillsquir.Controls
 {
     internal class GameSettings
     {
-        public GameSettings(int seed ,int fragments, int vertices)
+        internal GameSettings(int seed ,int fragments, int vertices)
         {
             DetermineDimensions(fragments);
             rand = new Random(seed);
@@ -29,8 +29,20 @@ namespace Fillsquir.Controls
         internal float yoffset = 0;
         internal int fragments;
         internal int vertices;
+        internal float bottomStripMove = 0;
+        public float prop1 = 3;
+        public float prop2 = 4;
         private void DetermineDimensions(int n)
         {
+            if (n < 4)
+            {
+                Cols = 1;
+                Rows = n;
+            }
+            Cols = 2;
+            Rows = n/2;
+        return;
+
             int start = (int)Math.Sqrt(n);
             while (true) 
             {

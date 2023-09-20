@@ -8,19 +8,17 @@ using System;
 
 namespace Fillsquir.Controls
 {
-    public class DrawableStack : GeometryElement
+    internal class DrawableStack : GeometryElement
     {
         private float screenWidth = 1000;
         private float screenHeight = 1000;
         public List<GeometryElement> drawables = new();
         public GeometryElement cover;
-        GameSettings gameSettings;
-        internal DrawableStack(GameSettings settings)
+        internal DrawableStack(GameSettings settings) : base(settings)
         {
-            gameSettings = settings;
         }
-        public GeometryElement Gui { get; set; }
-        public HashSet<SKPoint> allActivePoints(int ignoreIndex)//todo make  update on move
+        internal GeometryElement Gui { get; set; }
+        internal HashSet<SKPoint> allActivePoints(int ignoreIndex)//todo make  update on move
         {
             var set = new HashSet<SKPoint>();
             Squir sq = (Squir)drawables[0];
@@ -40,12 +38,12 @@ namespace Fillsquir.Controls
             }
             return set;
         }
-        public GeometryElement this[int i]
+        internal GeometryElement this[int i]
         {
             get { return drawables[i]; }
             set { drawables[i] = value; }
         }
-        public void AddDrawable(GeometryElement drawable)
+        internal void AddDrawable(GeometryElement drawable)
         {
             drawables.Add(drawable);
             drawable.Resize(screenWidth, screenHeight);
@@ -84,7 +82,7 @@ namespace Fillsquir.Controls
             clickPoints.Add(drawpoint);
         }
 #endif
-        public SKCanvas DrawPreZoom(SKCanvas canvas)
+        internal SKCanvas DrawPreZoom(SKCanvas canvas)
         {
             foreach (Fragment drawable in drawables.Skip(1))
             {
@@ -125,11 +123,11 @@ namespace Fillsquir.Controls
         }
 
 
-        public SKCanvas DrawPastZoom(SKCanvas canvas)
+        internal SKCanvas DrawPastZoom(SKCanvas canvas)
         {
             //how do i cover 33% of the bottom screen in black colour
             //var wtf = new SKRectl(0f, screenHeight /, screenWidth, screenHeight);
-            var rectl = new SKRectI(0, (int)(screenHeight * prop1/prop2) , (int)screenWidth, (int)screenHeight);
+            var rectl = new SKRectI(0, (int)(screenHeight * gameSettings.prop1 / gameSettings.prop2) , (int)screenWidth, (int)screenHeight);
             canvas.DrawRegion(new SKRegion(rectl), new SKPaint() { Color = SKColors.Black });
 
             foreach (Fragment drawable in drawables.Skip(1))
@@ -154,7 +152,7 @@ namespace Fillsquir.Controls
             }
         }
 
-        public void Resize(float width, float height)
+        protected override void ResizePrecize(float width, float height)
         {
             screenWidth = width;
             screenHeight = height;
