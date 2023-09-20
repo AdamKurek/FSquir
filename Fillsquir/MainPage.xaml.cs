@@ -15,7 +15,7 @@ public partial class MainPage : ContentPage
         
         InitializeComponent();
 
-        GameSettings settings = new(0, 10, 10);
+        GameSettings settings = new(0, 20, 10);
         InitializeSquir(settings);
         
     }

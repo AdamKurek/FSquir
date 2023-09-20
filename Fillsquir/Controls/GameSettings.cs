@@ -9,7 +9,7 @@ namespace Fillsquir.Controls
 {
     internal class GameSettings
     {
-        internal GameSettings(int seed ,int fragments, int vertices)
+        internal GameSettings(int seed, int fragments, int vertices)
         {
             DetermineDimensions(fragments);
             rand = new Random(seed);
@@ -18,6 +18,7 @@ namespace Fillsquir.Controls
         }
         internal int Rows;
         internal int Cols;
+        internal int VisibleRows {get{ return Rows < 5? Rows:5;} }
         internal double AreaFilled;
         internal double percentageRequired = 100;
         internal double percentageFilled

@@ -153,7 +153,7 @@ public class Fragment : GeometryElement
         if (!wasTouched)
         {
             {
-                var cellWidth = canvasWidth / gameSettings.Rows;
+                var cellWidth = canvasWidth / gameSettings.VisibleRows;
                 PositionS.X = (cellWidth * IndexX) + (cellWidth /2) + gameSettings.bottomStripMove;
                 var SQHeight = canvasHeight * (gameSettings.prop1 / gameSettings.prop2);
                 var MovePerColl = (canvasHeight - SQHeight) / gameSettings.Cols;
