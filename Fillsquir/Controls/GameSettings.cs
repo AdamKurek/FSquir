@@ -31,6 +31,7 @@ namespace Fillsquir.Controls
         internal int fragments;
         internal int vertices;
         internal float bottomStripMove = 0;
+        
         public float prop1 = 3;
         public float prop2 = 4;
         private void DetermineDimensions(int n)

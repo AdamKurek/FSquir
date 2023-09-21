@@ -141,21 +141,10 @@ public partial class MainPage : ContentPage
 #if windows
             mousePosition = (Point)e.GetPosition(this);
 #endif
-#if DebugString
-            //(drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
-#endif
 
 
             return;
         };
-
-
-
-
-#if DebugString
-            //(drawables.Gui as PercentageDisplay).debugString = mousePosition.ToString();
-#endif
-
 
 #if DebugClickingLines
                 switch (e.StatusType)
@@ -220,6 +209,7 @@ public partial class MainPage : ContentPage
             }
             drawables.cover.Resize((float)squir.Width, (float)squir.Height);
             drawables.Gui.Resize((float)squir.Width, (float)squir.Height);
+
         //(sender as SKCanvasView).ScaleX.ToString();
     }
 
@@ -246,16 +236,33 @@ public partial class MainPage : ContentPage
         location.X /= gameSettings.zoomFactor;
         location.Y /= gameSettings.zoomFactor;
 
-
-#if DebugString
-        var d = drawables.Gui as PercentageDisplay;
-        //d.debugString = wtfff++.ToString();
-#endif
-
         if (moved == null) {
-            if (e.TotalX == 0) { return; }
-            gameSettings.bottomStripMove = bottomStripMovePre + (float)e.TotalX;
-            return; 
+            if (movingBottomStrip)
+            {
+                if (e.TotalX == 0) { return; }
+                var pos = bottomStripMovePre - (float)e.TotalX;
+                if (pos <= 0)
+                {
+                    pos = 0;
+                }
+                else
+                {
+                    var TotalStripLenth = ((float)gameSettings.Rows/(float)gameSettings.VisibleRows) * (float)squir.Width - (float)squir.Width;
+                    if (TotalStripLenth <= pos)
+                    {
+                        pos = TotalStripLenth;
+                    }
+                }
+                gameSettings.bottomStripMove = pos;
+                Invalidate();
+                return;
+            }
+            if (movingMap)
+            {
+
+                return;
+            }
+            return;
         }
         if(e.StatusType != GestureStatus.Running) { return; }
         moved.PositionS.X = startingPoint.X + location.X;
@@ -266,11 +273,39 @@ public partial class MainPage : ContentPage
     }
 
     SKPoint offsetMoveLocation;
+    bool movingBottomStrip = false;
+    bool movingMap = false;
     private void squir_Touch(object sender, SkiaSharp.Views.Maui.SKTouchEventArgs e)
         {
         var d = drawables.Gui as PercentageDisplay;
         //d.debugString = wtfff++.ToString();
+
         var location = e.Location;
+
+        if (location.Y > squir.Height * gameSettings.prop1 / gameSettings.prop2&& e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed)
+        {
+            if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
+            {
+                var bottomStripHeight = squir.Height - ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
+                location.Y = -(float)squir.Height - ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
+                (int, int) selectedCell;
+                selectedCell.Item2 = (int)location.Y % gameSettings.Cols;
+                selectedCell.Item1 = (int)((location.X + gameSettings.bottomStripMove) / ((float)squir.Width/gameSettings.VisibleRows));
+                (drawables.Gui as PercentageDisplay).debugString = selectedCell.ToString();
+                movingBottomStrip = true; movingMap = false;
+                bottomStripMovePre = gameSettings.bottomStripMove;
+                Invalidate();
+                return;
+            }
+            //if(e.ActionType == SkiaSharp.Views.Maui.SKTouchAction)
+            {
+
+                return;
+            }
+            if(e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed) {; }
+
+        }
+
         location.X /= gameSettings.zoomFactor;
         location.Y /= gameSettings.zoomFactor;
         //location.Offset(+gameSettings.xoffset);
@@ -291,10 +326,6 @@ public partial class MainPage : ContentPage
         Invalidate();
 #endif
 
-
-
-
-
         switch (e.ActionType)
         {
             case SkiaSharp.Views.Maui.SKTouchAction.Pressed:
@@ -302,7 +333,8 @@ public partial class MainPage : ContentPage
                     if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
                         offsetMoveLocation = location;
-                        bottomStripMovePre = gameSettings.bottomStripMove;
+                        movingBottomStrip = false;
+                        movingMap = true;
                         break;
                     }
 
@@ -409,18 +441,25 @@ public partial class MainPage : ContentPage
                 }
             case SkiaSharp.Views.Maui.SKTouchAction.Moved:
                 {
-                
                     if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
-                        gameSettings.xoffset += location.X - offsetMoveLocation.X;
-                        gameSettings.yoffset += location.Y - offsetMoveLocation.Y;
-                        Invalidate();
-                        break;
+                        if (movingMap) { 
+                            gameSettings.xoffset += location.X - offsetMoveLocation.X;
+                            gameSettings.yoffset += location.Y - offsetMoveLocation.Y;
+                            Invalidate();
+                            break;
+                        }
+
+                    }
+                    if (movingBottomStrip)
+                    {
+                        ;
                     }
                     break;
                 }
             }
-        
+
+        Invalidate();
 
     }
     bool wtf = true;
