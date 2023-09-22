@@ -281,34 +281,44 @@ public partial class MainPage : ContentPage
         //d.debugString = wtfff++.ToString();
 
         var location = e.Location;
-
+        bool locationUpdated = false;
         if (location.Y > squir.Height * gameSettings.prop1 / gameSettings.prop2&& e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed)
         {
-            if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
+            if(e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Left)
             {
                 var bottomStripHeight = squir.Height - ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
-                location.Y = -(float)squir.Height - ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
+                var onStripLocation = e.Location;
+                onStripLocation.Y -= ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
                 (int, int) selectedCell;
-                selectedCell.Item2 = (int)location.Y % gameSettings.Cols;
-                selectedCell.Item1 = (int)((location.X + gameSettings.bottomStripMove) / ((float)squir.Width/gameSettings.VisibleRows));
-                (drawables.Gui as PercentageDisplay).debugString = selectedCell.ToString();
+                selectedCell.Item2 = (int)(onStripLocation.Y / bottomStripHeight * gameSettings.Cols);
+                selectedCell.Item1 = (int)((onStripLocation.X + gameSettings.bottomStripMove) / ((float)squir.Width / gameSettings.VisibleRows));
+                moved = drawables[1+ selectedCell.Item1+(selectedCell.Item2* gameSettings.Rows)] as Fragment;
+                moved.wasTouched = true;
+                ((PercentageDisplay)(drawables.Gui)).debugString = selectedCell.ToString();
+                if (moved != null)
+                {
+                    location.X /= gameSettings.zoomFactor;
+                    location.Y /= gameSettings.zoomFactor;
+                    location.X -= gameSettings.xoffset;
+                    location.Y -= gameSettings.yoffset;
+                    startingPoint = location;
+                    return;
+                }
+            }
+            else if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
+            {
+              
                 movingBottomStrip = true; movingMap = false;
                 bottomStripMovePre = gameSettings.bottomStripMove;
                 Invalidate();
                 return;
             }
-            //if(e.ActionType == SkiaSharp.Views.Maui.SKTouchAction)
-            {
-
-                return;
-            }
-            if(e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed) {; }
+            else if(e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed) {; }
 
         }
 
         location.X /= gameSettings.zoomFactor;
         location.Y /= gameSettings.zoomFactor;
-        //location.Offset(+gameSettings.xoffset);
         location.X -= gameSettings.xoffset;
         location.Y -= gameSettings.yoffset;
         var diff = e.Location;
