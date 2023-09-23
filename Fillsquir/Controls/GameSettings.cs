@@ -11,10 +11,11 @@ namespace Fillsquir.Controls
     {
         internal GameSettings(int seed, int fragments, int vertices)
         {
-            DetermineDimensions(fragments);
-            rand = new Random(seed);
             this.fragments = fragments;
             this.vertices = vertices;
+            DetermineDimensions(fragments);
+            untouchedFragments = new Fragment[Rows,Cols];
+            rand = new Random(seed);
         }
         internal int Rows;
         internal int Cols;
@@ -31,6 +32,7 @@ namespace Fillsquir.Controls
         internal int fragments;
         internal int vertices;
         internal float bottomStripMove = 0;
+        internal Fragment[,] untouchedFragments;
         
         public float prop1 = 3;
         public float prop2 = 4;

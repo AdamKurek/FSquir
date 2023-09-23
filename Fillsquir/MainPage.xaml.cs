@@ -41,10 +41,20 @@ public partial class MainPage : ContentPage
         var fragmentpoints = drawa.SplitSquir();
         drawables = new DrawableStack(gameSettings);
         drawables.AddDrawable(drawa);
-        for (int i = 0; i < fragmentpoints.Count; i++)
+
+        for (int r = 0, i = 0; i < gameSettings.fragments; r++) 
         {
-            var fragment = new Fragment(fragmentpoints[i], i, gameSettings);
-            drawables.AddDrawable(fragment);
+            for(int c = 0; c < gameSettings.Rows; c++)
+            {
+                var fragment = new Fragment(fragmentpoints[i++], c,r, gameSettings);
+                gameSettings.untouchedFragments[c,r] = fragment;
+                drawables.AddDrawable(fragment);
+            }
+        }
+        //for (int i = 0; i < fragmentpoints.Count; i++)
+        {
+         //   var fragment = new Fragment(fragmentpoints[i], i, gameSettings);
+        //    drawables.AddDrawable(fragment);
         }
         drawables.AddCover(commonArea); 
         drawables.Gui = new PercentageDisplay(gameSettings);
@@ -292,17 +302,26 @@ public partial class MainPage : ContentPage
                 (int, int) selectedCell;
                 selectedCell.Item2 = (int)(onStripLocation.Y / bottomStripHeight * gameSettings.Cols);
                 selectedCell.Item1 = (int)((onStripLocation.X + gameSettings.bottomStripMove) / ((float)squir.Width / gameSettings.VisibleRows));
-                moved = drawables[1+ selectedCell.Item1+(selectedCell.Item2* gameSettings.Rows)] as Fragment;
-                moved.wasTouched = true;
-                ((PercentageDisplay)(drawables.Gui)).debugString = selectedCell.ToString();
+                moved = gameSettings.untouchedFragments[selectedCell.Item1,selectedCell.Item2];
+                gameSettings.untouchedFragments[selectedCell.Item1, selectedCell.Item2] = null;
+
+#if nDebugString
+                //((PercentageDisplay)(drawables.Gui)).debugString = selectedCell.ToString();
+#endif
+
                 if (moved != null)
                 {
+                    moved.wasTouched = true;
                     location.X /= gameSettings.zoomFactor;
                     location.Y /= gameSettings.zoomFactor;
                     location.X -= gameSettings.xoffset;
                     location.Y -= gameSettings.yoffset;
                     startingPoint = location;
                     return;
+                }
+                else
+                {
+                    ;
                 }
             }
             else if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)

@@ -69,7 +69,6 @@ public class Fragment : GeometryElement
         } }
 #endif
     public bool wasTouched = false;
-    int index;
     protected override void ResizePrecize(float Width, float Height)
     {
         PositionS.X = PositionS.X * (Width / canvasWidth);
@@ -77,8 +76,8 @@ public class Fragment : GeometryElement
 
     }
 
-    public int IndexX { get { return index % gameSettings.Rows; } }
-    public int IndexY { get { return index - (IndexX * gameSettings.Rows) ; } }
+    public int IndexX;
+    public int IndexY;
     float dravingMoveX => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
     private float Xoffset => PositionS.X - (MoveToFillXP * scaleX);
     private float Yoffset => PositionS.Y - (MoveToFillYP *scaleY);
@@ -109,7 +108,7 @@ public class Fragment : GeometryElement
                 return pts;
             }
         }
-    internal Fragment(SKPoint[] Points, int index, GameSettings settings) : base(settings)
+    internal Fragment(SKPoint[] Points, int indexX, int indexY, GameSettings settings) : base(settings)
     {
         {
             float xMin = float.MaxValue, yMin = float.MaxValue, xMax = 0, yMax = 0;
@@ -127,8 +126,8 @@ public class Fragment : GeometryElement
             //MoveToFill = new SKPoint() { X = xMin, Y = yMin };
             MoveToFillXP = xMin;
             MoveToFillYP = yMin;
-
-            this.index = index;
+            IndexX = indexX;
+            IndexY = indexY;
         }
     }
 
@@ -158,7 +157,7 @@ public class Fragment : GeometryElement
                 var SQHeight = canvasHeight * (gameSettings.prop1 / gameSettings.prop2);
                 var MovePerColl = (canvasHeight - SQHeight) / gameSettings.Cols;
                 var afterMove = 1/2f * MovePerColl;
-                PositionS.Y = SQHeight + ((index/ gameSettings.Rows)*MovePerColl) + afterMove;
+                PositionS.Y = SQHeight + (IndexY*MovePerColl) + afterMove;
             }
 
             SKPath path = new();

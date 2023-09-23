@@ -18,10 +18,10 @@ namespace Fillsquir.Controls
             }
             foreach(var f in figure)
             {
-                  if (f.X == point.X && f.Y == point.Y)
-                {
-                    return true;
-                }
+                 if (f.X == point.X && f.Y == point.Y)
+                 {
+                     return true;
+                 }
             }
             SKPoint outsidePoint = new SKPoint(-9999, -9999); 
             int intersectCount = 0;

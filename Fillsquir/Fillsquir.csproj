@@ -22,7 +22,7 @@
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</TargetPlatformMinVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
   
-	<DefineConstants>DebugString;nDebugClickingLines;nDebugClicking;DebugVisuals</DefineConstants>
+	<DefineConstants>nDebugString;nDebugClickingLines;nDebugClicking;nDebugVisuals</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <!-- App Icon -->
