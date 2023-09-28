@@ -1,7 +1,4 @@
-﻿#define nDebugClicking
-#define nDebugClickingLines
-
-using Fillsquir.Interfaces;
+﻿using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
 using SkiaSharp;
 using System;
@@ -92,16 +89,13 @@ namespace Fillsquir.Controls
                 }
             }
             this[0].Draw(canvas);
-
             cover?.Draw(canvas);
-            
-            
 #if DebugClicking
             foreach (var circle in clickPoints)
             {
                 var pt = new SKPaint();
                 pt.Color = SKColors.Green;
-                if (!circle.inBounds)
+                if(!circle.inBounds)
                     pt.Color = SKColors.Red;
                 canvas.DrawCircle(circle.point.X, circle.point.Y, 1,pt);
 
@@ -145,6 +139,9 @@ namespace Fillsquir.Controls
         {
             foreach (Fragment drawable in drawables.Skip(1))
             {
+#if DebugVisuals
+    drawable.DrawVertices(canvas);
+#endif
                 if (drawable.wasTouched)
                 {
                     drawable.DrawVertices(canvas);
@@ -167,13 +164,17 @@ namespace Fillsquir.Controls
         {
             float nearest = float.MaxValue;
             int index = 0;
-            for(int i = 1; i < drawables.Count; i++)
+            for (int i = 1; i < drawables.Count; i++)
             {
-                float a = (drawables[i] as Fragment).Distance(mousePosition);
-                if ( a < nearest)
+                var f = (drawables[i] as Fragment);
+                if (f.wasTouched)
                 {
-                    nearest = a;
-                    index = i;
+                    float a = f.Distance(mousePosition);
+                    if (a < nearest)
+                    {
+                        nearest = a;
+                        index = i;
+                    }
                 }
             }
             return drawables[index] as Fragment;
@@ -190,9 +191,11 @@ namespace Fillsquir.Controls
             Fragment ret = null;
             foreach (var clickedFr in fragments)
             {
-                if (clickedFr.Distance(mousePosition) < nearest)
-                {
-                    ret = clickedFr;
+                if(clickedFr.wasTouched) {
+                    if (clickedFr.Distance(mousePosition) < nearest)
+                    {
+                        ret = clickedFr;
+                    }
                 }
             }
             if(ret is not null)

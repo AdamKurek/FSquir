@@ -1,6 +1,4 @@
-﻿#define nDebugVisuals
-
-using Fillsquir.Controls;
+﻿using Fillsquir.Controls;
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
 using SkiaSharp;
@@ -15,7 +13,7 @@ public class Fragment : GeometryElement
             var Up = new SKPoint[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
             {
-                Up[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X)) * scaleX / 8 + PositionS.X;// + (0.5f * canvasWidth);// ;
+                Up[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X)) * scaleX / 8 + PositionS.X - gameSettings.bottomStripMove;// + (0.5f * canvasWidth);// ;
                 Up[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y)) * scaleY / 8 + PositionS.Y;// +(0.5f * canvasHeight);// ;
             }
             return Up;
@@ -41,8 +39,8 @@ public class Fragment : GeometryElement
             SKPoint midpoint = new SKPoint();
             if (wasTouched) 
             {
-                midpoint.X = PositionS.X + (sizeP.X / 2 * scaleX);
-                midpoint.Y = PositionS.Y + (sizeP.Y / 2 * scaleY);
+                midpoint.X = PositionS.X + (sizeP.X / 2 * scaleX) + gameSettings.xoffset;
+                midpoint.Y = PositionS.Y + (sizeP.Y / 2 * scaleY) + gameSettings.yoffset;
                 return midpoint;
             }
             midpoint.X = PositionS.X;
@@ -54,13 +52,8 @@ public class Fragment : GeometryElement
 
     public SKPoint Centroid { get
         {
-            if(wasTouched)
-            {
-                return FSMath.Centroid(VisiblePointsS);
-            }
-            return MidpointS;//noone cares it's a bug
-
-        } 
+            return FSMath.Centroid(VisiblePointsS);
+        }
     }
 
 #if DebugVisuals
@@ -92,7 +85,7 @@ public class Fragment : GeometryElement
             var pts = new SKPoint[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
             {
-                pts[i] = new SKPoint((PointsP[i].X * scaleX) + Xoffset, (PointsP[i].Y * scaleY) + Yoffset);
+                pts[i] = new SKPoint((PointsP[i].X * scaleX) + Xoffset + gameSettings.xoffset, (PointsP[i].Y * scaleY) + Yoffset + gameSettings.yoffset);
             }
             return pts;
         }
@@ -103,7 +96,7 @@ public class Fragment : GeometryElement
                 var pts = new SKPoint[PointsP.Length];
                 for (int i = 0; i < PointsP.Length; i++)
                 {
-                    pts[i] = new SKPoint(PointsP[i].X + PositionP.X - MoveToFillXP, PointsP[i].Y + PositionP.Y - MoveToFillYP);
+                    pts[i] = new SKPoint(PointsP[i].X + PositionP.X - MoveToFillXP, PointsP[i].Y + PositionP.Y - MoveToFillYP);//no gameSettings.offset
                 }
                 return pts;
             }
@@ -153,7 +146,7 @@ public class Fragment : GeometryElement
         {
             {
                 var cellWidth = canvasWidth / gameSettings.VisibleRows;
-                PositionS.X = (cellWidth * IndexX) + (cellWidth /2) - gameSettings.bottomStripMove;
+                PositionS.X = (cellWidth * IndexX) + (cellWidth /2);
                 var SQHeight = canvasHeight * (gameSettings.prop1 / gameSettings.prop2);
                 var MovePerColl = (canvasHeight - SQHeight) / gameSettings.Cols;
                 var afterMove = 1/2f * MovePerColl;
@@ -164,16 +157,7 @@ public class Fragment : GeometryElement
             path.AddPoly(UntouchedPointsS);
             canvas.DrawPath(path, paintFill);
             canvas.DrawPath(path, paintStroke);
-#if DebugVisuals
-            SKPaint sKPaint = new()
-            {
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 1,
-                IsAntialias = true,
-                Color = SKColors.BlueViolet
-            };
-            canvas.DrawCircle(PositionS.X, PositionS.Y, 3, sKPaint);
-#endif
+
             return;
         }
         {
@@ -181,27 +165,6 @@ public class Fragment : GeometryElement
             path.AddPoly(VisiblePointsS);
             canvas.DrawPath(path, paintStroke);
             canvas.DrawPath(path, paintFill);
-#if DebugVisuals
-            SKPaint sKPaint = new()
-            {
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 1,
-                IsAntialias = true,
-                Color = SKColors.BlueViolet
-            };
-            foreach (var pt in VisiblePointsS)
-            {
-                canvas.DrawCircle(pt.X, pt.Y, 5, sKPaint);
-            }
-            sKPaint.Color = SKColors.BurlyWood;
-            canvas.DrawCircle(MidpointS.X, MidpointS.Y, RadiusS, sKPaint);
-            sKPaint.Color = SKColors.IndianRed;
-            canvas.DrawCircle(Centroid.X, Centroid.Y, RadiusS, sKPaint);
-            sKPaint.Color = SKColors.DarkViolet;
-            canvas.DrawRect(PositionS.X, PositionS.Y, sizeP.X * scaleX, sizeP.Y * scaleY, sKPaint);
-            //sKPaint.Color = SKColors.DarkOrange;
-            //canvas.DrawRectangle(new RectF() { Height = 1000 * scaleY, Width = 1000 * scaleX, X = PositionS.X, Y = PositionS.Y });
-#endif
         }
 
     }
@@ -226,12 +189,41 @@ public class Fragment : GeometryElement
             path.AddPoly(VisiblePointsS);
         }
         canvas.DrawPath(path, paintStroke);
+#if DebugVisuals
+        SKPaint sKPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            IsAntialias = true,
+            Color = SKColors.BlueViolet
+        };
+        canvas.DrawCircle(Centroid.X, Centroid.Y, 3, sKPaint);
+        sKPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            IsAntialias = true,
+            Color = SKColors.BlueViolet
+        };
+        foreach (var pt in VisiblePointsS)
+        {
+            canvas.DrawCircle(pt.X, pt.Y, 5, sKPaint);
+        }
+        sKPaint.Color = SKColors.BurlyWood;
+        canvas.DrawCircle(MidpointS.X, MidpointS.Y, RadiusS, sKPaint);
+        sKPaint.Color = SKColors.IndianRed;
+        canvas.DrawCircle(Centroid.X, Centroid.Y, RadiusS, sKPaint);
+        sKPaint.Color = SKColors.DarkViolet;
+        canvas.DrawRect(PositionS.X + gameSettings.xoffset, PositionS.Y + gameSettings.yoffset, sizeP.X * scaleX, sizeP.Y * scaleY, sKPaint);
+        //sKPaint.Color = SKColors.DarkOrange;
+        //canvas.DrawRectangle(new RectF() { Height = 1000 * scaleY, Width = 1000 * scaleX, X = PositionS.X, Y = PositionS.Y });
+#endif
 
     }
 
     public void SetPositionToPointLocation(SKPoint VisiblePointToAdjust, int finalIndex) {
-        PositionS.X = (VisiblePointToAdjust.X - (PointsP[finalIndex].X * scaleX) + (MoveToFillXP * scaleX)) ;// - (Points[finalIndex].X * scaleX)+ Xoffset;
-        PositionS.Y = VisiblePointToAdjust.Y - (PointsP[finalIndex].Y * scaleY) + (MoveToFillYP* scaleY);// - (Points[finalIndex].Y * scaleY)+ Yoffset;
+        PositionS.X = VisiblePointToAdjust.X - (PointsP[finalIndex].X * scaleX) + (MoveToFillXP * scaleX) - gameSettings.xoffset;// - (Points[finalIndex].X * scaleX)+ Xoffset;
+        PositionS.Y = VisiblePointToAdjust.Y - (PointsP[finalIndex].Y * scaleY) + (MoveToFillYP* scaleY) -gameSettings.yoffset;// - (Points[finalIndex].Y * scaleY)+ Yoffset;
     }
 
     internal float Distance(SKPoint mousePosition)

@@ -60,7 +60,7 @@ namespace Fillsquir.Controls
                     var visibleFigure = new SKPoint[f.Count()];
                     for (int i = 0; i < f.Length; i++)
                     {
-                        visibleFigure[i] = new SKPoint((f[i].X * scaleX) + Xoffset, f[i].Y * scaleY);
+                        visibleFigure[i] = new SKPoint((f[i].X * scaleX) + Xoffset + gameSettings.xoffset, f[i].Y * scaleY + gameSettings.yoffset);
                     }
                     fgs.Add(visibleFigure);
                 }

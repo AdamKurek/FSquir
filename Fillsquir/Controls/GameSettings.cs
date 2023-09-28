@@ -26,7 +26,7 @@ namespace Fillsquir.Controls
         { get { return AreaFilled / MaxArea; } }
         internal double MaxArea;
         internal Random rand;
-        internal float zoomFactor = 1.0f;
+        internal float zoomFactor = 1.5f;
         internal float xoffset = 0.5f;
         internal float yoffset = 0;
         internal int fragments;

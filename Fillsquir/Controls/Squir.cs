@@ -14,7 +14,7 @@ public class Squir : GeometryElement
             var pts = new SKPoint[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
             {
-                pts[i] = new((PointsP[i].X * scaleX) + Xoffset, PointsP[i].Y * scaleY);
+                pts[i] = new((PointsP[i].X * scaleX) + Xoffset + gameSettings.xoffset, PointsP[i].Y * scaleY + gameSettings.yoffset);
             }
             return pts;
         }
@@ -50,7 +50,7 @@ public class Squir : GeometryElement
         canvas.DrawPath(path, paint);
     }
 
-    public List<SKPoint[]> SplitSquir()//TODO MAKE IT RANDOM
+    public List<SKPoint[]> SplitSquir()
     {
         //return new List<SKPoint[]> { new SKPoint[] { new SKPoint(0f, 0f), new SKPoint(1000f, 0f), new SKPoint(1000f, 1000f), new SKPoint(0f, 1000f) }, };
         return shapes;

@@ -1,7 +1,13 @@
-﻿using Fillsquir.Controls;
+﻿#if DebugString
+// #define dbgs ((PercentageDisplay)(drawables.Gui)).debugString   
+#endif
+using Fillsquir.Controls;
+using Microsoft.Maui.Devices.Sensors;
 using SkiaSharp;
 
 namespace Fillsquir;
+
+
 
 public partial class MainPage : ContentPage
 {
@@ -25,10 +31,20 @@ public partial class MainPage : ContentPage
     DrawableStack drawables;
     double SquirArea; 
     SKPoint startingPoint = new();
+    SKPoint TapPosition = new();
     Microsoft.Maui.Graphics.Point mousePosition = new();
     Fragment moved;
     GameSettings gameSettings;
     CommonArea commonArea;
+
+    SKPoint dlocation;
+    SKPoint d;
+
+    bool isZooming = false;
+    float zoomSum = 0f;
+
+    static List<(float, float, float, float)> floats = new();
+
 #if DebugClickingLines
 #endif
     private void InitializeSquir(GameSettings settings)
@@ -65,88 +81,99 @@ public partial class MainPage : ContentPage
             var canvas = e.Surface.Canvas;
             canvas.Clear();
             canvas.Scale(gameSettings.zoomFactor);
-            canvas.Translate(gameSettings.xoffset, gameSettings.yoffset);
             drawables.DrawPreZoom(canvas);
-            canvas.ResetMatrix();
+            canvas.Scale(1/gameSettings.zoomFactor);
             drawables.DrawPastZoom(canvas);
             canvas.Scale(gameSettings.zoomFactor);
-            canvas.Translate(gameSettings.xoffset, gameSettings.yoffset);
             drawables.DrawFragmentsoutlines(canvas);
-            // Draw remaining contents
-            // Assuming drawables.DrawNonZoomed() draws the remaining contents
-            // drawables.DrawNonZoomed(canvas);
-
         };
 
         var panGesture = new PanGestureRecognizer();
         var pointGesture = new PointerGestureRecognizer();
         var zoom = new PinchGestureRecognizer();
+        var slide2FingersGesture = new PanGestureRecognizer();
+        slide2FingersGesture.TouchPoints = 2;
+        slide2FingersGesture.PanUpdated += (s, e) =>
+        {
+            //gameSettings.xoffset = (float)e.TotalX;
+            //gameSettings.yoffset = (float)e.TotalY;
+            switch (e.StatusType)
+            {
+                case GestureStatus.Started:
+                    {
+                        
+                        break;
+                    }
+                case GestureStatus.Running: { break; }
+                case GestureStatus.Completed: { break; }
+            }
+
+            Invalidate();
+        };
         zoom.PinchUpdated += (s, e) =>
         { 
-        var d = e.ScaleOrigin;
-            
+            var xd = drawables.Gui as PercentageDisplay;
+
             switch (e.Status)
             {
                 case GestureStatus.Started:
+                    isZooming = true;
+
+
+                    //dlocation.X -= gameSettings.xoffset;
+                    //dlocation.Y -= gameSettings.yoffset;
+
+                    prevXOffset = gameSettings.xoffset;
+                    prevYOffset = gameSettings.yoffset;
+                    dlocation = new SKPoint((float)(e.ScaleOrigin.X * squir.Width), (float)(e.ScaleOrigin.Y * squir.Height));
+                    dlocation.X /= gameSettings.zoomFactor;
+                    dlocation.Y /= gameSettings.zoomFactor;
+                    d = new SKPoint((float)(e.ScaleOrigin.X * squir.Width), (float)(e.ScaleOrigin.Y * squir.Height));
                     break;
+
                 case GestureStatus.Running:
+
+                    zoomSum += 1f - (float)e.Scale;
+                    zoomPrev = gameSettings.zoomFactor;
                     gameSettings.zoomFactor *= (float)e.Scale;
+                    gameSettings.xoffset = -dlocation.X + prevXOffset + (d.X / gameSettings.zoomFactor);
+                    gameSettings.yoffset = -dlocation.Y + prevYOffset + (d.Y / gameSettings.zoomFactor);
+
+                    //gameSettings.xoffset = -location.X + gameSettings.xoffset + (e.Location.X / gameSettings.zoomFactor);
+
+                    // floats.Add((-d.X , gameSettings.xoffset , dlocation.X , gameSettings.zoomFactor));
+                    //gameSettings.yoffset = -d.Y + gameSettings.yoffset + (dlocation.Y / gameSettings.zoomFactor);
+
+                    ((PercentageDisplay)(drawables.Gui)).debugString = e.Scale.ToString();
+
+                    drawables.AddDot(dlocation);
+                    drawables.AddDot(d,true);
                     break;
+
                 case GestureStatus.Completed:
+                    isZooming = false;
+                    zoomSum = 0f;
                     break;
+
             }
-            squir.InvalidateSurface();
+            Invalidate();
         };
         squir.GestureRecognizers.Add(panGesture);
-        squir.GestureRecognizers.Add(zoom);
-        //why it never triggers zoom.PinchUpdated
-        //because you need to add it to view
-        panGesture.PanUpdated += PanGesture_PanUpdated; 
-        //is it how i add it to view?
-        // squir.GestureRecognizers.Add(theHero);
-        //no, you can't do it cause theHero doesn't implement IGestureRecognizer interface  
-        //so how do i add it to view?
-        //you don't, you add it to canvas like this:
-
-        //squir.CanvasView.GestureRecognizers.Add(theHero);
+        grid.GestureRecognizers.Add(zoom);
+        grid.GestureRecognizers.Add(slide2FingersGesture);
+        grid.GestureRecognizers.Add(pointGesture);
+        panGesture.PanUpdated += PanGesture_PanUpdated;
         squir.EnableTouchEvents = true;
-        //how do i trigger tapped event?
-        //recoginizer.Tapped +=
-        //no, i want to trigger event of this recognizer from other function, can i do it?
-        //yes, i can, i just need to call recoginizer.SendTapped
-
-        //recoginizer.NumberOfTapsRequired = 1;
-        //recoginizer.Tapped += (s, e) =>
-        //{
-        //    var point = e.GetPosition(((View)s));
-        //    (drawables[0] as Squir).PointsP[0].X = (float)point.Value.X;
-        //    (drawables[0] as Squir).PointsP[0].Y = (float)point.Value.Y;
-
-        //    //fix syntaxof 2 lines below
-        //    mousePosition.X = point.Value.X;
-        //    mousePosition.Y = point.Value.Y;
-        //};
-        // var rr= new Gesturerecognizer();
-        //how do i get position where user taps on phone
 
         pointGesture.PointerEntered += (s, e) =>
         {
+            var wtwd =  e.GetPosition(grid);
+            
+            drawables.AddDot(new SKPoint((float)wtwd.Value.X, (float)wtwd.Value.Y));
 
-            //fix syntaxof 2 lines below
-            // mousePosition.X = point.Value
-
-            // mousePosition.X = point.X;
-            // mousePosition.Y = point.Y;
-            //    var st = e.GetPosition(this);
-            //    startingPoint.X = (float)st.Value.X;
-            //    startingPoint.Y = (float)st.Value.Y;
-            //    moved = (Fragment)drawables[1];
         };
 
         pointGesture.PointerMoved += (s, e) => {
-
-            //i want it to work only on windows what directive do i use 
-            //use 
 
 #if windows
             mousePosition = (Point)e.GetPosition(this);
@@ -192,7 +219,6 @@ public partial class MainPage : ContentPage
             {
                 FiguresAsPointlists.Add(((Fragment)a).VisiblePointsP);
             }
-
             //var u1 = ((Fragment)drawables.drawables[1]).VisiblePointsP;
             //var u2 = ((Squir)drawables[0]).PointsP;
             commonArea.FiguresP = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
@@ -219,7 +245,6 @@ public partial class MainPage : ContentPage
             }
             drawables.cover.Resize((float)squir.Width, (float)squir.Height);
             drawables.Gui.Resize((float)squir.Width, (float)squir.Height);
-
         //(sender as SKCanvasView).ScaleX.ToString();
     }
 
@@ -241,10 +266,12 @@ public partial class MainPage : ContentPage
 
         SKPoint location =new((float)e.TotalX, (float)e.TotalY);
 
-        
 
+      
         location.X /= gameSettings.zoomFactor;
         location.Y /= gameSettings.zoomFactor;
+       // location.X += gameSettings.xoffset;
+       // location.Y += gameSettings.yoffset;
 
         if (moved == null) {
             if (movingBottomStrip)
@@ -285,30 +312,26 @@ public partial class MainPage : ContentPage
     SKPoint offsetMoveLocation;
     bool movingBottomStrip = false;
     bool movingMap = false;
+
+    float zoomPrev = 1;
+    SKPoint zoomPos;
+    float prevXOffset;
+    float prevYOffset;
     private void squir_Touch(object sender, SkiaSharp.Views.Maui.SKTouchEventArgs e)
         {
-        var d = drawables.Gui as PercentageDisplay;
-        //d.debugString = wtfff++.ToString();
-
+        TapPosition = e.Location;
         var location = e.Location;
-        bool locationUpdated = false;
         if (location.Y > squir.Height * gameSettings.prop1 / gameSettings.prop2&& e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed)
         {
             if(e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Left)
             {
-                var bottomStripHeight = squir.Height - ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
-                var onStripLocation = e.Location;
-                onStripLocation.Y -= ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
-                (int, int) selectedCell;
-                selectedCell.Item2 = (int)(onStripLocation.Y / bottomStripHeight * gameSettings.Cols);
-                selectedCell.Item1 = (int)((onStripLocation.X + gameSettings.bottomStripMove) / ((float)squir.Width / gameSettings.VisibleRows));
+                (int,int) selectedCell = FindSlotOnBottomStrip(e.Location);
+
                 moved = gameSettings.untouchedFragments[selectedCell.Item1,selectedCell.Item2];
                 gameSettings.untouchedFragments[selectedCell.Item1, selectedCell.Item2] = null;
-
-#if nDebugString
+#if DebugString
                 //((PercentageDisplay)(drawables.Gui)).debugString = selectedCell.ToString();
 #endif
-
                 if (moved != null)
                 {
                     moved.wasTouched = true;
@@ -333,16 +356,12 @@ public partial class MainPage : ContentPage
                 return;
             }
             else if(e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed) {; }
-
         }
-
+       // location.X -= gameSettings.xoffset;
+       // location.Y -= gameSettings.yoffset;
         location.X /= gameSettings.zoomFactor;
         location.Y /= gameSettings.zoomFactor;
-        location.X -= gameSettings.xoffset;
-        location.Y -= gameSettings.yoffset;
         var diff = e.Location;
-        //but i feel like this method is called only on touch and then it's done
-        //
 
 #if DebugClicking
         bool inisde = false;
@@ -351,17 +370,18 @@ public partial class MainPage : ContentPage
         {
             inisde = true;
         }
-        drawables.AddDot(mp, inisde);
+        //drawables.AddDot(mp, inisde);
         Invalidate();
 #endif
-
+        zoomPos = location;
         switch (e.ActionType)
         {
             case SkiaSharp.Views.Maui.SKTouchAction.Pressed:
                 {
                     if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
-                        offsetMoveLocation = location;
+                        offsetMoveLocation.X = location.X - gameSettings.xoffset;
+                        offsetMoveLocation.Y = location.Y - gameSettings.yoffset;
                         movingBottomStrip = false;
                         movingMap = true;
                         break;
@@ -378,6 +398,7 @@ public partial class MainPage : ContentPage
                     else
                     {
                         startingPoint = location;
+                                        //here add offset
                     }
                     moved.wasTouched = true;
                     break;
@@ -424,26 +445,24 @@ public partial class MainPage : ContentPage
             case SkiaSharp.Views.Maui.SKTouchAction.WheelChanged:
                 {
 
-                    var zoomPrev = gameSettings.zoomFactor;
-                    squir.AnchorX = location.X;
                     if (e.WheelDelta > 0)
                     {
-                        gameSettings.zoomFactor += 0.25f;
+                        gameSettings.zoomFactor += 0.5f;
                     }
-                    else 
+                    else
                     {
                         if (gameSettings.zoomFactor <= 0.5f)
                         {
                             return;
                         }
-                        gameSettings.zoomFactor -= 0.25f;
+                        gameSettings.zoomFactor -= 0.5f;
                     }
-                    var zoomprop = gameSettings.zoomFactor / zoomPrev;
-                    var xfromhere = -gameSettings.xoffset + (e.Location.X / zoomPrev);
-                    var yfromhere = -gameSettings.yoffset + (e.Location.Y / zoomPrev);
-                    gameSettings.xoffset = -location.X + (e.Location.X / gameSettings.zoomFactor);
-                    gameSettings.yoffset = -location.Y + (e.Location.Y / gameSettings.zoomFactor);
-
+                   // var zoomprop = gameSettings.zoomFactor / zoomPrev;
+                   // var xfromhere = -gameSettings.xoffset + (e.Location.X / zoomPrev);
+                   // var yfromhere = -gameSettings.yoffset + (e.Location.Y / zoomPrev);
+                    gameSettings.xoffset = -location.X + gameSettings.xoffset + (e.Location.X / gameSettings.zoomFactor);
+                    gameSettings.yoffset = -location.Y + gameSettings.yoffset + (e.Location.Y / gameSettings.zoomFactor);
+                    
 
                     
 
@@ -473,8 +492,8 @@ public partial class MainPage : ContentPage
                     if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
                         if (movingMap) { 
-                            gameSettings.xoffset += location.X - offsetMoveLocation.X;
-                            gameSettings.yoffset += location.Y - offsetMoveLocation.Y;
+                            gameSettings.xoffset = location.X - offsetMoveLocation.X;
+                            gameSettings.yoffset = location.Y - offsetMoveLocation.Y;
                             Invalidate();
                             break;
                         }
@@ -487,10 +506,31 @@ public partial class MainPage : ContentPage
                     break;
                 }
             }
-
+        
         Invalidate();
-
     }
-    bool wtf = true;
-    int wtfint = 0;
+
+    private void zoomTo(float zoomVal, SKPoint OnMapLocation, SKPoint OnScreenLocation, float previousZoom)
+    {
+            gameSettings.zoomFactor *= zoomVal;
+        if (gameSettings.zoomFactor > 1.5) { gameSettings.zoomFactor = 1.5f; }
+        if (gameSettings.zoomFactor < 0.5) { gameSettings.zoomFactor = 0.5f; }
+
+        var zoomprop = gameSettings.zoomFactor / zoomPrev;
+        var xfromhere = -gameSettings.xoffset + (OnScreenLocation.X / zoomPrev);
+        var yfromhere = -gameSettings.yoffset + (OnScreenLocation.Y / zoomPrev);
+        gameSettings.xoffset = -OnMapLocation.X + gameSettings.xoffset + (OnScreenLocation.X / gameSettings.zoomFactor);
+            //gameSettings.yoffset = -OnMapLocation.Y + gameSettings.yoffset + (OnScreenLocation.Y / gameSettings.zoomFactor);
+    }
+
+    private (int, int) FindSlotOnBottomStrip(SKPoint location)
+    {
+        var bottomStripHeight = squir.Height - ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
+        var onStripLocation = location;
+        onStripLocation.Y -= ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
+        (int, int) selectedCell;
+        selectedCell.Item2 = (int)(onStripLocation.Y / bottomStripHeight * gameSettings.Cols);
+        selectedCell.Item1 = (int)((onStripLocation.X + gameSettings.bottomStripMove) / ((float)squir.Width / gameSettings.VisibleRows));
+        return selectedCell;
+    }
 }
