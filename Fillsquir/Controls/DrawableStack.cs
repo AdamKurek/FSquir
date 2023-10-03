@@ -202,7 +202,8 @@ namespace Fillsquir.Controls
             {
                 return ret;
             }
-            return getNearestFragment(mousePosition);
+            return null;
+            //return getNearestFragment(mousePosition);
         }
 
         protected override void DrawMainShape(SKCanvas canvas)
