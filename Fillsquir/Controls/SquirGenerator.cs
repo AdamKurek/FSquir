@@ -5,6 +5,7 @@ namespace Fillsquir.Controls
 {
     internal static class SquirGenerator
     {
+        static int cringeSum; //delete
         static SKPoint RandomPoint(float minX, float minY, float maxX, float maxY, Random rand)
         {
             return new SKPoint(rand.NextFloat(minX, maxX), rand.NextFloat(minY, maxY));
@@ -98,6 +99,7 @@ namespace Fillsquir.Controls
 
         public static List<SKPoint[]> GenerateCompletelyRandomShapes(int numShapes, SKPoint[] mainShape, Random rand)
         {
+            cringeSum = 0;
             SKPoint center = FSMath.Centroid(mainShape);
             List<SKPoint[]> shapes = new List<SKPoint[]>();
             var squirArea = FSMath.CalculateArea(mainShape);
@@ -108,9 +110,14 @@ namespace Fillsquir.Controls
             {
                 try
                 {
-                    #region generate random figure
+#region generate random figure
                     SKPoint[] figure;
-                    var rng = 0.99; ;
+                    var rng = 0.97;;
+                    cringeSum++;
+                    if(cringeSum == 12)
+                    {
+                        Console.Write("xd");
+                    }
                     if (rng < 0.95)
                     {
                         int points = rand.Next(3, 5);
@@ -205,7 +212,8 @@ namespace Fillsquir.Controls
 
                             if (figureArea < minArea)
                             {
-                                FSMath.MovePointAwayFromPoints(ref figure[2], figure[0], figure[1], MathF.Sqrt(minArea - figureArea));
+                                int index = FSMath.GetNearestPoint(figure,FSMath.Centroid(figure));
+                                FSMath.MovePointAwayFromPoints(ref figure[index], figure[(index+1)%3], figure[(index + 2) % 3], MathF.Sqrt(minArea - figureArea));
                             }
                             else if (figureArea > maxArea)
                             {

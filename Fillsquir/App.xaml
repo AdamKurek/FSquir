@@ -4,12 +4,21 @@
              xmlns:local="clr-namespace:Fillsquir"
              x:Class="Fillsquir.App">
 
-            <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
-                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
-            </ResourceDictionary.MergedDictionaries>
+        <Application.Resources>
+            <ResourceDictionary>
+                <ResourceDictionary.MergedDictionaries>
+                    <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                    <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+                </ResourceDictionary.MergedDictionaries>
+
+
+            <Style x:Key="LevelSelect" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="LightBlue" />
+                <Setter Property="BorderColor" Value="LightSkyBlue" />
+                <Setter Property="BorderWidth" Value="2" />
+                <Setter Property="CornerRadius" Value="0" />
+            </Style>
         </ResourceDictionary>
+       
     </Application.Resources>
 </Application>

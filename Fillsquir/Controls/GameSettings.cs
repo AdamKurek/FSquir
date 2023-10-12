@@ -31,8 +31,16 @@ namespace Fillsquir.Controls
         internal float yoffset = 0;
         internal int fragments;
         internal int vertices;
+        internal float bottomStripRise = 0;
         internal float bottomStripMove = 0;
         internal Fragment[,] untouchedFragments;
+        internal List<Fragment> touchedFragments;
+        internal Fragment touchFragment(int row,int col)
+        {
+            var curr = untouchedFragments[row, col];
+            untouchedFragments[row, col] = null;
+            return curr;
+        }
         
         public float prop1 = 3;
         public float prop2 = 4;
@@ -42,6 +50,7 @@ namespace Fillsquir.Controls
             {
                 Cols = 1;
                 Rows = n;
+                return;
             }
             Cols = 2;
             Rows = n/2;

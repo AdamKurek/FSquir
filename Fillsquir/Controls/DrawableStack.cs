@@ -11,6 +11,7 @@ namespace Fillsquir.Controls
         private float screenHeight = 1000;
         public List<GeometryElement> drawables = new();
         public GeometryElement cover;
+        List<Fragment> visibleFragments= new ();
         internal DrawableStack(GameSettings settings) : base(settings)
         {
         }
@@ -90,17 +91,7 @@ namespace Fillsquir.Controls
             }
             this[0].Draw(canvas);
             cover?.Draw(canvas);
-#if DebugClicking
-            foreach (var circle in clickPoints)
-            {
-                var pt = new SKPaint();
-                pt.Color = SKColors.Green;
-                if(!circle.inBounds)
-                    pt.Color = SKColors.Red;
-                canvas.DrawCircle(circle.point.X, circle.point.Y, 1,pt);
 
-            }
-#endif
 
 #if DebugClickingLines
             if(isCrossing)
@@ -147,6 +138,19 @@ namespace Fillsquir.Controls
                     drawable.DrawVertices(canvas);
                 }
             }
+
+
+#if DebugClicking
+            foreach (var circle in clickPoints)
+            {
+                var pt = new SKPaint();
+                pt.Color = SKColors.Green;
+                if (!circle.inBounds)
+                    pt.Color = SKColors.Red;
+                canvas.DrawCircle(circle.point.X, circle.point.Y, 1, pt);
+
+            }
+#endif
         }
 
         protected override void ResizePrecize(float width, float height)

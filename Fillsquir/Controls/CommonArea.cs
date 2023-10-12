@@ -10,9 +10,9 @@ using SkiaSharp;
 
 namespace Fillsquir.Controls
 {
-    public class CommonArea : GeometryElement
+    internal class CommonArea : GeometryElement
     {
-        public double Area
+        internal double Area
         {
             get{
                 var area = 0.0;
@@ -47,10 +47,10 @@ namespace Fillsquir.Controls
                 return area;
             }
         }
-        public List<SKPoint[]> FiguresP = new();
+        internal List<SKPoint[]> FiguresP = new();
         float Xoffset => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
 
-        public List<SKPoint[]> VisibleFiguresS
+        internal List<SKPoint[]> VisibleFiguresS
         {
             get
             {

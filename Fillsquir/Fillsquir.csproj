@@ -48,4 +48,23 @@
     <PackageReference Include="SkiaSharp.Views.Maui.Core" Version="2.88.6" />
     <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="2.88.6" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Update="GamePage.xaml.cs">
+      <DependentUpon>GamePage.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="MainPage.xaml.cs">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="GameSelectionPage.xaml.cs">
+      <DependentUpon>GameSelectionPage.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <MauiXaml Update="MainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+    <MauiXaml Update="GameSelectionPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+  </ItemGroup>
 </Project>

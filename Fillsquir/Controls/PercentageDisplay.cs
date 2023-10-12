@@ -1,11 +1,4 @@
 ﻿using Fillsquir.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Maui.Graphics.Text;
-using Microsoft.Maui.Graphics;
 using SkiaSharp;
 
 namespace Fillsquir.Controls
@@ -14,12 +7,12 @@ namespace Fillsquir.Controls
     {
         public PercentageDisplay(GameSettings settings) : base(settings)
         {
+
         }
 
         public double Percentage { get 
-            {
-                return gameSettings.percentageFilled / gameSettings.percentageRequired *10000;
-
+            { 
+                return gameSettings.percentageFilled / gameSettings.percentageRequired *100000;
             } 
         }
 
@@ -39,7 +32,7 @@ public string debugString = "pusty text";
                 Style = SKPaintStyle.StrokeAndFill,
             };
 
-            canvas.DrawRect(0, 0, (float)Percentage*scaleX, 30, stripPaint);
+            canvas.DrawRect(0, 0, (float)Percentage*scaleX*(gameSettings.prop2/gameSettings.prop1), 30, stripPaint);
 
 
 

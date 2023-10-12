@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace Fillsquir.Interfaces
 {
-    public abstract class GeometryElement: SKDrawable
+    internal abstract class GeometryElement: SKDrawable
     {
 
-        static public float defaultCanvasWidth = 1000;
-        static public float defaultCanvasHeight = 1000;
-        public float canvasWidth = 1000;
-        public float canvasHeight = 1000;
+        static internal float defaultCanvasWidth = 1000;
+        static internal float defaultCanvasHeight = 1000;
+        internal float canvasWidth = 1000;
+        internal float canvasHeight = 1000;
         internal GameSettings gameSettings;
         private GeometryElement() { }
         internal GeometryElement(GameSettings gameSettings)
@@ -26,7 +26,7 @@ namespace Fillsquir.Interfaces
         protected float scaleX => (canvasWidth / (defaultCanvasWidth / gameSettings.prop1 * gameSettings.prop2));
 
         protected float scaleY => (canvasHeight / (defaultCanvasHeight / gameSettings.prop1 * gameSettings.prop2));
-        public void Resize(float Width, float Height)
+        internal void Resize(float Width, float Height)
         {
             if (Width <= 0 || Height <= 0)
                 return;
@@ -34,9 +34,9 @@ namespace Fillsquir.Interfaces
             canvasWidth = Width;
             canvasHeight = Height;
         }
-        protected virtual void ResizePrecize(float Width, float Height) { } 
+        protected virtual void ResizePrecize(float Width, float Height) { }
 
-        public void Draw(SKCanvas canvas)
+        internal void Draw(SKCanvas canvas)
         {
             DrawMainShape(canvas);
 

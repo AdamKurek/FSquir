@@ -1102,5 +1102,22 @@ namespace Fillsquir.Controls
                 FSMath.ScaleShape(ref figure, newWidth, newHeight);
             }
         }
+
+        internal static int GetNearestPoint(SKPoint[] figure, SKPoint point)
+        {
+            int index = -1;
+            float minDst = float.MaxValue;
+            for (int i = 0; i < figure.Length; i++)
+            {
+                SKPoint p = figure[i];
+                var currmindst = CalculateDistance(p, point);
+                if (currmindst < minDst)
+                {
+                    minDst = currmindst;
+                    index = i;
+                }
+            }
+            return index;
+        }
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.Maui.Graphics;
 using SkiaSharp;
 using System;
 using System.Runtime.ExceptionServices;
-public class Fragment : GeometryElement
+internal class Fragment : GeometryElement
 {
 
     public SKPoint[] PointsP;

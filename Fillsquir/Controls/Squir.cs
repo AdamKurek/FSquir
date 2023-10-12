@@ -2,7 +2,7 @@
 using Fillsquir.Interfaces;
 using SkiaSharp;
 
-public class Squir : GeometryElement 
+internal class Squir : GeometryElement 
 {
     public SKPoint[] PointsP;
     public List<SKPoint[]> shapes;

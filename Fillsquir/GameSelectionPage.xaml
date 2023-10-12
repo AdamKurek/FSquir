@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fillsquir.GameSelectionPage"
+             Title="NewPage1">
+    <Grid
+        BackgroundColor="Black"
+        >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        
+        
+        <CollectionView  
+            x:Name="levelsView"
+            VerticalScrollBarVisibility="Never" 
+            VerticalOptions="FillAndExpand"
+            ItemsUpdatingScrollMode="KeepScrollOffset"
+            Grid.Row="2"
+            Margin="40,0"
+            >
+            <CollectionView.ItemsLayout
+                >
+                <GridItemsLayout Orientation="Vertical"
+                                 x:Name="ListGrid"
+                                 Span="3" 
+                                 VerticalItemSpacing="50"
+                                 HorizontalItemSpacing="50"
+                                 
+                    />
+            </CollectionView.ItemsLayout
+                 
+                >
+            <CollectionView.ItemTemplate
+                
+                >
+                <DataTemplate
+                    
+                    >
+                        <Button
+                            Clicked="LevelButton_Clicked"
+                            WidthRequest="120"
+                            HeightRequest="50"
+                            HorizontalOptions="FillAndExpand"
+                            VerticalOptions="FillAndExpand"
+                            >
+                            <Button.Text>
+                                <Binding/>
+                            </Button.Text>
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource LevelSelect}" />
+                            </Button.Style>
+                        </Button>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+
+        </CollectionView>
+
+
+    </Grid>
+</ContentPage>
