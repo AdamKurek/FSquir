@@ -48,7 +48,7 @@ namespace Fillsquir.Controls
             }
         }
         internal List<SKPoint[]> FiguresP = new();
-        float Xoffset => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
+        //float Xoffset => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
 
         internal List<SKPoint[]> VisibleFiguresS
         {
@@ -60,7 +60,7 @@ namespace Fillsquir.Controls
                     var visibleFigure = new SKPoint[f.Count()];
                     for (int i = 0; i < f.Length; i++)
                     {
-                        visibleFigure[i] = new SKPoint((f[i].X * scaleX) + Xoffset + gameSettings.xoffset, f[i].Y * scaleY + gameSettings.yoffset);
+                        visibleFigure[i] = new SKPoint((f[i].X * scaleX)  + gameSettings.xoffset, f[i].Y * scaleY + gameSettings.yoffset);//+ Xoffset
                     }
                     fgs.Add(visibleFigure);
                 }

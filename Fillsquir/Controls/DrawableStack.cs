@@ -11,7 +11,6 @@ namespace Fillsquir.Controls
         private float screenHeight = 1000;
         public List<GeometryElement> drawables = new();
         public GeometryElement cover;
-        List<Fragment> visibleFragments= new ();
         internal DrawableStack(GameSettings settings) : base(settings)
         {
         }
@@ -82,7 +81,8 @@ namespace Fillsquir.Controls
 #endif
         internal SKCanvas DrawPreZoom(SKCanvas canvas)
         {
-            foreach (Fragment drawable in drawables.Skip(1))
+            //foreach (Fragment drawable in drawables.Skip(1))
+            foreach (Fragment drawable in gameSettings.CenterFragments)
             {
                 if (drawable.wasTouched)
                 {
@@ -91,7 +91,6 @@ namespace Fillsquir.Controls
             }
             this[0].Draw(canvas);
             cover?.Draw(canvas);
-
 
 #if DebugClickingLines
             if(isCrossing)
@@ -106,8 +105,6 @@ namespace Fillsquir.Controls
 #endif
             return canvas;
         }
-
-
         internal SKCanvas DrawPastZoom(SKCanvas canvas)
         {
             //how do i cover 33% of the bottom screen in black colour
@@ -116,8 +113,9 @@ namespace Fillsquir.Controls
             canvas.DrawRegion(new SKRegion(rectl), new SKPaint() { Color = SKColors.Black });
 
             foreach (Fragment drawable in drawables.Skip(1))
-            {
-                if (!drawable.wasTouched)
+            //foreach (Fragment drawable in gameSettings.CenterFragments)
+                {
+                    if (!drawable.wasTouched)
                 {
                     drawable.Draw(canvas);
                 }
@@ -128,12 +126,14 @@ namespace Fillsquir.Controls
 
         internal void DrawFragmentsoutlines(SKCanvas canvas)
         {
-            foreach (Fragment drawable in drawables.Skip(1))
+           // foreach (Fragment drawable in drawables.Skip(1))
+            foreach (Fragment drawable in gameSettings.CenterFragments)
+
             {
 #if DebugVisuals
     drawable.DrawVertices(canvas);
 #endif
-                if (drawable.wasTouched)
+                    if (drawable.wasTouched)
                 {
                     drawable.DrawVertices(canvas);
                 }

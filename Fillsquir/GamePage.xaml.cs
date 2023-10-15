@@ -3,8 +3,13 @@ using SkiaSharp;
 
 namespace Fillsquir;
 
+
 public partial class GamePage : ContentPage, IQueryAttributable
 {
+    float absolute0x = 0f;
+    float absolute0y = 0f;
+    float absolutemaxx = 1000f;
+    float absolutemaxy = 1000f;
     enum moveStatus
     {
         none = 0,
@@ -323,6 +328,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
             wtfstrip = value;
         }
     }
+
+    SKPoint currentMove;
     private void PanGesture_PanUpdated(object sender, PanUpdatedEventArgs e)
     {
         if (e.TotalX == 0) { return; }
@@ -331,9 +338,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         if (was2FingerTouched){ return; }
        
         SKPoint location =new((float)e.TotalX, (float)e.TotalY);
-
-      
-        
         location.X /= gameSettings.zoomFactor;
         location.Y /= gameSettings.zoomFactor;
 
@@ -355,15 +359,79 @@ public partial class GamePage : ContentPage, IQueryAttributable
                         {
                             startingPoint = moved.PositionS;
                         }
-                        moved.wasTouched = true;
+                        TouchFragment(moved);
                         goto case moveStatus.fragment;
                     }
                     break;
                 }
             case moveStatus.map:
                 {
+                    
                     gameSettings.xoffset = location.X + offsetMoveLocation.X;
                     gameSettings.yoffset = location.Y + offsetMoveLocation.Y;
+
+
+                    var xMoveTotal = location.X - currentMove.X;
+                    var yMoveTotal = location.Y - currentMove.Y;
+                  
+                    currentMove.X = location.X;
+                    currentMove.Y = location.Y;
+                    
+                    if (xMoveTotal < 0)
+                    {
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooLeftFragments,
+                            drawable => (((drawable.PositionP.X  + drawable.sizeP.X )* (squir.Width /1000)) + gameSettings.xoffset < absolute0x));
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.TooRightFragments, gameSettings.CenterFragments,
+                            drawable => (((drawable.PositionP.X * (squir.Width / 1000))) + (gameSettings.xoffset ) ) < (squir.Width/gameSettings.zoomFactor));
+                    }
+                    if (xMoveTotal > 0)
+                    {
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.TooLeftFragments, gameSettings.CenterFragments,
+                            drawable => (((drawable.PositionP.X + drawable.sizeP.X) * (squir.Width / 1000)) + gameSettings.xoffset > absolute0x));
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooRightFragments,
+                            drawable => (((drawable.PositionP.X * (squir.Width / 1000))) + (gameSettings.xoffset ) ) > (squir.Width / gameSettings.zoomFactor));
+
+                       //((PercentageDisplay)(drawables.Gui)).debugString = gameSettings.zoomFactor.ToString() + " " + gameSettings.xoffset + " " + absolutemaxx;
+                        //drawables.AddDot(new SKPoint { X = absolutemaxx / gameSettings.zoomFactor, Y = 10 });
+
+                    }
+                    ((PercentageDisplay)drawables.Gui).debugString = gameSettings.CenterFragments.Count.ToString();
+                    //List<int> indexesToMove = new List<int>();
+
+                    //for (int i = 0; i < gameSettings.CenterFragments.Count; i++)
+                    //{
+                    //    var drawable = gameSettings.CenterFragments[i];
+                    //    if (((drawable.PositionP.X + drawable.sizeP.X) * gameSettings.zoomFactor) + gameSettings.xoffset < absolute0x)
+                    //    {
+                    //        indexesToMove.Add(i);
+                    //    }
+                    //}
+                    //foreach (var index in indexesToMove)
+                    //{
+                    //    var item = gameSettings.CenterFragments[index];
+                    //    gameSettings.TooLeftFragments.Add(item);
+                    //    gameSettings.CenterFragments.RemoveAt(index);
+                    //}
+                    if (xMoveTotal > 0)
+                    {
+                        //List<Fragment> itemsToMove = new List<Fragment>();
+                        //foreach (var drawable in gameSettings.TooLeftFragments)
+                        //{
+                        //    if (((drawable.PositionP.X + drawable.sizeP.X) * gameSettings.zoomFactor) + gameSettings.xoffset > absolute0x)
+                        //    {
+                        //        itemsToMove.Add(drawable);
+                        //    }
+                        //}
+
+                        //foreach (var item in itemsToMove)
+                        //{
+                        //    gameSettings.TooLeftFragments.Remove(item);
+                        //    gameSettings.CenterFragments.Add(item);
+                        //}
+                    }
+
+
+                   
                     break;
                 }
             case moveStatus.fragment:
@@ -407,6 +475,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
     float prevXOffset;
     float prevYOffset;
 
+    Fragment theonlypuzzleRemoveitlater;
 
     private void squir_Touch(object sender, SkiaSharp.Views.Maui.SKTouchEventArgs e)
         {
@@ -447,7 +516,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 else
                 {
 #if WINDOWS
-                    moved.wasTouched = true;
+                    TouchFragment(moved);
+
                     movingStatus = moveStatus.fragment;
 #else
                     movingStatus = moveStatus.undecided;
@@ -522,7 +592,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                         startingPoint = location;
                                         //here add offset
                     }
-                    moved.wasTouched = true;
+                    //TouchFragment(moved);
                     movingStatus = moveStatus.fragment;
                     break;
                 }
@@ -639,6 +709,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
         offsetMoveLocation.X =  gameSettings.xoffset;
         offsetMoveLocation.Y =  gameSettings.yoffset;
         movingStatus = moveStatus.map;
+        currentMove = new();
     }
 
     private void zoomTo(float zoomVal, SKPoint OnMapLocation, SKPoint OnScreenLocation, float previousZoom)
@@ -665,5 +736,10 @@ public partial class GamePage : ContentPage, IQueryAttributable
         return selectedCell;
     }
 
+    private void TouchFragment(Fragment ff)
+    {
+        ff.wasTouched = true;
+        gameSettings.CenterFragments.Add(ff);
+    }
    
 }

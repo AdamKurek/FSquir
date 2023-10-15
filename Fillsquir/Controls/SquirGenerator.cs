@@ -112,7 +112,7 @@ namespace Fillsquir.Controls
                 {
 #region generate random figure
                     SKPoint[] figure;
-                    var rng = 0.97;;
+                    var rng = 0.90;
                     cringeSum++;
                     if(cringeSum == 12)
                     {

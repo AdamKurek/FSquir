@@ -32,7 +32,7 @@ public string debugString = "pusty text";
                 Style = SKPaintStyle.StrokeAndFill,
             };
 
-            canvas.DrawRect(0, 0, (float)Percentage*scaleX*(gameSettings.prop2/gameSettings.prop1), 30, stripPaint);
+            canvas.DrawRect(0, 0, (float)Percentage*scaleX, 30, stripPaint);//????
 
 
 
@@ -44,10 +44,8 @@ public string debugString = "pusty text";
 
 #if DebugString
             text = debugString;
-
 #endif
             canvas.DrawText(text, canvasWidth - 20, 150, paint);
-
             //canvas.DrawText(text, canvasWidth - 20, 15, paint);
             //   canvas.DrawString(text, canvasWidth-20, 15, HorizontalAlignment.Right);
         }

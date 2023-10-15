@@ -23,9 +23,9 @@ namespace Fillsquir.Interfaces
         } 
 
 
-        protected float scaleX => (canvasWidth / (defaultCanvasWidth / gameSettings.prop1 * gameSettings.prop2));
+        protected float scaleX => (canvasWidth / defaultCanvasWidth );
 
-        protected float scaleY => (canvasHeight / (defaultCanvasHeight / gameSettings.prop1 * gameSettings.prop2));
+        protected float scaleY => (canvasHeight / (defaultCanvasHeight ));
         internal void Resize(float Width, float Height)
         {
             if (Width <= 0 || Height <= 0)

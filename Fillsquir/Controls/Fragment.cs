@@ -23,7 +23,7 @@ internal class Fragment : GeometryElement
     public SKPoint PositionP { get
         {
             SKPoint ret = new SKPoint();
-            ret.X = (PositionS.X - dravingMoveX )/ scaleX;
+            ret.X = (PositionS.X)/ scaleX;
             ret.Y = PositionS.Y/scaleY;
             return ret;
         }
@@ -71,7 +71,7 @@ internal class Fragment : GeometryElement
 
     public int IndexX;
     public int IndexY;
-    float dravingMoveX => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
+    //float dravingMoveX => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
     private float Xoffset => PositionS.X - (MoveToFillXP * scaleX);
     private float Yoffset => PositionS.Y - (MoveToFillYP *scaleY);
     public SKPoint[] VisiblePointsS

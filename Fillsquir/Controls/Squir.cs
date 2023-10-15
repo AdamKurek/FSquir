@@ -6,7 +6,7 @@ internal class Squir : GeometryElement
 {
     public SKPoint[] PointsP;
     public List<SKPoint[]> shapes;
-    float Xoffset => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
+    //public float Xoffset => (canvasWidth - ((gameSettings.prop1 / gameSettings.prop2) * canvasWidth)) / 2;
     public SKPoint[] VisiblePoints
     {
         get
@@ -14,7 +14,7 @@ internal class Squir : GeometryElement
             var pts = new SKPoint[PointsP.Length];
             for (int i = 0; i < PointsP.Length; i++)
             {
-                pts[i] = new((PointsP[i].X * scaleX) + Xoffset + gameSettings.xoffset, PointsP[i].Y * scaleY + gameSettings.yoffset);
+                pts[i] = new((PointsP[i].X * scaleX) + gameSettings.xoffset, PointsP[i].Y * scaleY + gameSettings.yoffset);//+ Xoffset
             }
             return pts;
         }

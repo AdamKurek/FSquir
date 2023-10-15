@@ -35,11 +35,47 @@ namespace Fillsquir.Controls
         internal float bottomStripMove = 0;
         internal Fragment[,] untouchedFragments;
         internal List<Fragment> touchedFragments;
+
+        internal List<Fragment> CenterFragments = new();
+        internal List<Fragment> TooLeftFragments = new();
+        internal List<Fragment> TooRightFragments = new();
+        internal List<Fragment> TooTopFragments = new();
+        internal List<Fragment> TooBottomFragments = new();
+
+        public static void MoveFragmentsBetweenLists(List<Fragment> sourceList, List<Fragment> destinationList, Func<Fragment, bool> condition)
+        {
+            List<int> indexesToMove = new List<int>();
+
+            for (int i = 0; i < sourceList.Count; i++)
+            {
+                var fragment = sourceList[i];
+
+                if (condition(fragment))
+                {
+                    indexesToMove.Add(i);
+                }
+            }
+
+            foreach (var index in indexesToMove)
+            {
+                var item = sourceList[index];
+                destinationList.Add(item);
+                sourceList.RemoveAt(index);
+            }
+        }
+
         internal Fragment touchFragment(int row,int col)
         {
             var curr = untouchedFragments[row, col];
             untouchedFragments[row, col] = null;
             return curr;
+        }
+        internal bool untouchFragment(Fragment untouchedman, int row,int col)
+        {
+            if (untouchedFragments[row, col] != null) 
+                return false;
+            untouchedFragments[row, col] = untouchedman;
+            return true;
         }
         
         public float prop1 = 3;
