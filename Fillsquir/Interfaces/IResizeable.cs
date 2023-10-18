@@ -39,9 +39,7 @@ namespace Fillsquir.Interfaces
         internal void Draw(SKCanvas canvas)
         {
             DrawMainShape(canvas);
-
         }
-
         protected abstract void DrawMainShape(SKCanvas canvas);
     }
 }

@@ -1,7 +1,5 @@
 ﻿using Fillsquir.Interfaces;
-using Microsoft.Maui.Graphics;
 using SkiaSharp;
-using System;
 
 namespace Fillsquir.Controls
 {
@@ -112,14 +110,34 @@ namespace Fillsquir.Controls
             var rectl = new SKRectI(0, (int)(screenHeight * gameSettings.prop1 / gameSettings.prop2) , (int)screenWidth, (int)screenHeight);
             canvas.DrawRegion(new SKRegion(rectl), new SKPaint() { Color = SKColors.Black });
 
-            foreach (Fragment drawable in drawables.Skip(1))
-            //foreach (Fragment drawable in gameSettings.CenterFragments)
+            //foreach (Fragment drawable in drawables.Skip(1))
+            ////foreach (Fragment drawable in gameSettings.CenterFragments)
+            //    {
+            //        if (!drawable.wasTouched)
+            //    {
+            //        drawable.Draw(canvas);
+            //    }
+            //}
+            var cols = gameSettings.Cols;
+            if (cols > gameSettings.VisibleRows) { cols = gameSettings.VisibleRows; }
+            int colsmove = (int)(gameSettings.bottomStripMove / (screenWidth / gameSettings.VisibleRows));
+            cols += colsmove + 1;
+            //colsmove++;
+            //cols++;
+            if(cols >= gameSettings.untouchedFragments.Length / gameSettings.Rows)
+            {
+                cols = gameSettings.untouchedFragments.Length / gameSettings.Rows;
+            }
+            for (int j = colsmove; j < cols; j++)
+            {
+                for (int i = 0; i < gameSettings.Rows; i++)
                 {
-                    if (!drawable.wasTouched)
-                {
-                    drawable.Draw(canvas);
+                    gameSettings.untouchedFragments[j, i]?.Draw(canvas);
                 }
             }
+
+            //tuteraz
+
             Gui?.Draw(canvas);
             return canvas;
         }

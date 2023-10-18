@@ -317,7 +317,7 @@ namespace Fillsquir.Controls
 
             return result;
         }*/
-        private static Path64 SKPointArrayToPath64(SKPoint[] points)
+        public static Path64 SKPointArrayToPath64(SKPoint[] points)
         {
             Path64 path = new Path64();
             foreach (SKPoint point in points)
@@ -330,7 +330,7 @@ namespace Fillsquir.Controls
             }
             return path;
         }
-        private static List<SKPoint[]> Path64ToSKPointArrayList(Path64 path)
+        public static List<SKPoint[]> Path64ToSKPointArrayList(Path64 path)
         {
             List<SKPoint[]> list = new List<SKPoint[]>();
             SKPoint[] points = new SKPoint[path.Count];
@@ -358,6 +358,11 @@ namespace Fillsquir.Controls
             }
             return result;
         }
+
+        //internal static List<Fragment> CMNARA(SKPoint[] pointsP, List<Fragment> figuresAsPointlists)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public static List<SKPoint[]> SKCommonArea(SKPoint[] p1, List<SKPoint[]> p2)
         {
@@ -1119,5 +1124,7 @@ namespace Fillsquir.Controls
             }
             return index;
         }
+
+        
     }
 }

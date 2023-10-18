@@ -68,8 +68,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
     private void InitializeSquir(GameSettings settings)
     {
         gameSettings = settings;
-        commonArea = new(gameSettings);
         drawa = new Squir(1000, 1000, gameSettings);
+        commonArea = new(gameSettings,drawa);
         gameSettings.MaxArea = FSMath.CalculateArea(drawa.PointsP);
 
         var fragmentpoints = drawa.SplitSquir();
@@ -78,7 +78,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
         for (int r = 0, i = 0; i < gameSettings.fragments; r++) 
         {
-            for(int c = 0; c < gameSettings.Rows; c++)
+            for(int c = 0; c < gameSettings.Cols; c++)
             {
                 try { 
                 var fragment = new Fragment(fragmentpoints[i++], c,r, gameSettings);
@@ -282,15 +282,22 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
     void UpdateCover()
         {
-            var FiguresAsPointlists = new List<SKPoint[]>();
-            foreach (var a in drawables.drawables.Skip(1))
+            List<Fragment> FiguresAsPointlists = new List<Fragment>();
+            foreach (Fragment a in drawables.drawables.Skip(1))
             {
-                FiguresAsPointlists.Add(((Fragment)a).VisiblePointsP);
+                if (a.wasTouched) { 
+                    FiguresAsPointlists.Add((a));
+                }
             }
             //var u1 = ((Fragment)drawables.drawables[1]).VisiblePointsP;
             //var u2 = ((Squir)drawables[0]).PointsP;
-            commonArea.FiguresP = FSMath.CommonArea(((Squir)drawables[0]).PointsP, FiguresAsPointlists);
-            UpdateGui(((CommonArea)drawables.cover).Area);
+           
+            commonArea.FragmentsInside = FiguresAsPointlists;
+
+        //commonArea.FiguresP = FSMath.CommonArea(
+            ///   ((Squir)drawables[0]).PointsP,
+             //  FiguresAsPointlists);
+        UpdateGui(((CommonArea)drawables.cover).Area);
         }
 
         void UpdateGui(double area)
@@ -390,11 +397,22 @@ public partial class GamePage : ContentPage, IQueryAttributable
                             drawable => (((drawable.PositionP.X + drawable.sizeP.X) * (squir.Width / 1000)) + gameSettings.xoffset > absolute0x));
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooRightFragments,
                             drawable => (((drawable.PositionP.X * (squir.Width / 1000))) + (gameSettings.xoffset ) ) > (squir.Width / gameSettings.zoomFactor));
-
-                       //((PercentageDisplay)(drawables.Gui)).debugString = gameSettings.zoomFactor.ToString() + " " + gameSettings.xoffset + " " + absolutemaxx;
-                        //drawables.AddDot(new SKPoint { X = absolutemaxx / gameSettings.zoomFactor, Y = 10 });
-
                     }
+                    if (yMoveTotal < 0)
+                    {
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooTopFragments,
+                            drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset < absolute0y));
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.TooBottomFragments, gameSettings.CenterFragments,
+                            drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + (gameSettings.yoffset)) < (squir.Width / gameSettings.zoomFactor));
+                    }
+                    if (yMoveTotal > 0)
+                    {
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.TooTopFragments, gameSettings.CenterFragments,
+                            drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset > absolute0y));
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooTopFragments,
+                            drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + (gameSettings.yoffset)) > (squir.Height / gameSettings.zoomFactor));
+                    }
+
                     ((PercentageDisplay)drawables.Gui).debugString = gameSettings.CenterFragments.Count.ToString();
                     //List<int> indexesToMove = new List<int>();
 
@@ -455,7 +473,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     }
                     else
                     {
-                        var TotalStripLenth = ((float)gameSettings.Rows / (float)gameSettings.VisibleRows) * (float)squir.Width - (float)squir.Width;
+                        var TotalStripLenth = ((float)gameSettings.Cols / (float)gameSettings.VisibleRows) * (float)squir.Width - (float)squir.Width;
                         if (TotalStripLenth <= pos)
                         {
                             pos = TotalStripLenth;
@@ -731,7 +749,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
         var onStripLocation = location;
         onStripLocation.Y -= ((float)squir.Height * gameSettings.prop1 / gameSettings.prop2);
         (int, int) selectedCell;
-        selectedCell.Item2 = (int)(onStripLocation.Y / bottomStripHeight * gameSettings.Cols);
+        selectedCell.Item2 = (int)(onStripLocation.Y / bottomStripHeight * gameSettings.Rows);
         selectedCell.Item1 = (int)((onStripLocation.X + gameSettings.bottomStripMove) / ((float)squir.Width / gameSettings.VisibleRows));
         return selectedCell;
     }

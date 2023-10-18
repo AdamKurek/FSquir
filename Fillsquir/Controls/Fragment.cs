@@ -148,7 +148,7 @@ internal class Fragment : GeometryElement
                 var cellWidth = canvasWidth / gameSettings.VisibleRows;
                 PositionS.X = (cellWidth * IndexX) + (cellWidth /2);
                 var SQHeight = canvasHeight * (gameSettings.prop1 / gameSettings.prop2);
-                var MovePerColl = (canvasHeight - SQHeight) / gameSettings.Cols;
+                var MovePerColl = (canvasHeight - SQHeight) / gameSettings.Rows;
                 var afterMove = 1/2f * MovePerColl;
                 PositionS.Y = SQHeight + (IndexY*MovePerColl) + afterMove;
             }

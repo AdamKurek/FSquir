@@ -14,12 +14,12 @@ namespace Fillsquir.Controls
             this.fragments = fragments;
             this.vertices = vertices;
             DetermineDimensions(fragments);
-            untouchedFragments = new Fragment[Rows,Cols];
+            untouchedFragments = new Fragment[Cols,Rows];
             rand = new Random(seed);
         }
-        internal int Rows;
         internal int Cols;
-        internal int VisibleRows {get{ return Rows < 5? Rows:5;} }
+        internal int Rows;
+        internal int VisibleRows {get{ return Cols < 5? Cols:5;} }
         internal double AreaFilled;
         internal double percentageRequired = 100;
         internal double percentageFilled
@@ -56,8 +56,9 @@ namespace Fillsquir.Controls
                 }
             }
 
-            foreach (var index in indexesToMove)
+            for (int i = indexesToMove.Count - 1; i >= 0; i--)
             {
+                int index = indexesToMove[i];
                 var item = sourceList[index];
                 destinationList.Add(item);
                 sourceList.RemoveAt(index);
@@ -84,12 +85,12 @@ namespace Fillsquir.Controls
         {
             if (n < 4)
             {
-                Cols = 1;
-                Rows = n;
+                Rows = 1;
+                Cols = n;
                 return;
             }
-            Cols = 2;
-            Rows = n/2;
+            Rows = 2;
+            Cols = n/2;
         return;
 
             int start = (int)Math.Sqrt(n);
@@ -100,14 +101,14 @@ namespace Fillsquir.Controls
                     int c = n / r;
                     if (r / (float) c >= 2.5f && r / (float) c <= 3.5f)
                     {
-                        Rows = r;
-                        Cols = c;
+                        Cols = r;
+                        Rows = c;
                         return;
                     }
                     if (c / (float) r >= 2.5f && c / (float) r <= 3.5f)
                     {
-                        Rows = c;
-                        Cols = r;
+                        Cols = c;
+                        Rows = r;
                         return;
                     }
                 }

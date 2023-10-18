@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Clipper2Lib;
 using Fillsquir.Interfaces;
 using Microsoft.Maui.Graphics;
 using SkiaSharp;
@@ -69,13 +70,39 @@ namespace Fillsquir.Controls
             }
         }
 
-        internal CommonArea(GameSettings settings):base(settings)
-        {
+        private List<Fragment> fragmentsInside = new List<Fragment>();
+        public List<Fragment> FragmentsInside {
+            get { return fragmentsInside; }
+            internal set
+            {
+                fragmentsInside = value;
+                FiguresP = calculateCommonArea(squir.PointsP, fragmentsInside);
+            } 
         }
 
-        internal void AddFigure(SKPoint[] figure)
+
+        public List<SKPoint[]> calculateCommonArea(SKPoint[] p1, List<Fragment> p2)
         {
-            FiguresP.Add(figure);
+            Paths64 subject = new Paths64();
+            Paths64 clip = new Paths64();
+            subject.Add(FSMath.SKPointArrayToPath64(p1));
+            foreach (var figure in p2)
+            {
+                clip.Add(FSMath.SKPointArrayToPath64(figure.VisiblePointsP));
+            }
+            Paths64 commonArea = Clipper.Intersect(subject, clip, FillRule.NonZero);
+            List<SKPoint[]> result = new List<SKPoint[]>();
+            foreach (var path in commonArea)
+            {
+                result.AddRange(FSMath.Path64ToSKPointArrayList(path));
+            }
+            return result;
+        }
+
+        public Squir squir { get; }
+        internal CommonArea(GameSettings settings, Squir squir):base(settings)
+        {
+            this.squir = squir;
         }
 
 

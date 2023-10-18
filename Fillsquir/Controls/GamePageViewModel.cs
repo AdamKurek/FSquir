@@ -13,7 +13,6 @@ namespace Fillsquir.Controls
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
             level = query[key: "Level"] as int?;
-            // Perform any other necessary actions
         }
     }
 }
