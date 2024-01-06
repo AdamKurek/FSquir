@@ -90,7 +90,7 @@ namespace Fillsquir.Controls
                 return;
             }
             Rows = 2;
-            Cols = n/2;
+            Cols = n+1/2;
         return;
 
             int start = (int)Math.Sqrt(n);

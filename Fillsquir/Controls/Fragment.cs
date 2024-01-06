@@ -141,7 +141,6 @@ internal class Fragment : GeometryElement
             IsAntialias = true,
             Color = SKColors.BlueViolet
         };
-
         if (!wasTouched)
         {
             {
@@ -152,12 +151,10 @@ internal class Fragment : GeometryElement
                 var afterMove = 1/2f * MovePerColl;
                 PositionS.Y = SQHeight + (IndexY*MovePerColl) + afterMove;
             }
-
             SKPath path = new();
             path.AddPoly(UntouchedPointsS);
             canvas.DrawPath(path, paintFill);
             canvas.DrawPath(path, paintStroke);
-
             return;
         }
         {
@@ -166,9 +163,7 @@ internal class Fragment : GeometryElement
             canvas.DrawPath(path, paintStroke);
             canvas.DrawPath(path, paintFill);
         }
-
     }
-
     public void DrawVertices(SKCanvas canvas)
     {
         SKPaint paintStroke = new()

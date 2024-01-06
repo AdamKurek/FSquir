@@ -34,20 +34,13 @@ public string debugString = "pusty text";
 
             canvas.DrawRect(0, 0, (float)Percentage*scaleX, 30, stripPaint);//????
 
-
-
             string text = $"{Percentage}%";
             //IAttributedText attributedText = new AttributedText(text, new List<IAttributedTextRun>(),true);
-
-            //why calculating this crashes the app? 
-            // because the canvasWidth is not the same as the defaultCanvasWidth
 
 #if DebugString
             text = debugString;
 #endif
             canvas.DrawText(text, canvasWidth - 20, 150, paint);
-            //canvas.DrawText(text, canvasWidth - 20, 15, paint);
-            //   canvas.DrawString(text, canvasWidth-20, 15, HorizontalAlignment.Right);
         }
     }
 }
