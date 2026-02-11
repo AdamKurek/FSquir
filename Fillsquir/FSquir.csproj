@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>	  
-       <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
-		<!--TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net7.0-windows10.0.19041.0</TargetFrameworks-->
+		<!-- Windows-first: keep local Debug builds fast by targeting Windows only on Windows. -->
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows')) and '$(Configuration)' == 'Debug'">net10.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows')) and '$(Configuration)' != 'Debug'">net10.0-android;net10.0-ios;net10.0-maccatalyst;net10.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows'))">net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
 	  <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
     <!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
     <OutputType>Exe</OutputType>
@@ -40,9 +41,6 @@
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
-    <Content Remove="C:\Users\kurek\.nuget\packages\clipper2\1.2.2\contentFiles\any\netstandard2.0\Clipper2.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="CC.TouchTracking" Version="1.3.1" />
     <PackageReference Include="Clipper2" Version="2.0.0" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
@@ -50,6 +48,9 @@
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="SkiaSharp.Views.Maui.Core" Version="2.88.6" />
     <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="2.88.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\\Fillsquir.Core\\Fillsquir.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="GamePage.xaml.cs">

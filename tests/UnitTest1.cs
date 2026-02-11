@@ -1,25 +1,42 @@
-using System.Runtime.CompilerServices;
+using Fillsquir.Controls;
+using SkiaSharp;
 
+namespace tests;
 
-[assembly: InternalsVisibleTo("FillSquir")]
-
-namespace tests
-
+[TestClass]
+public class FSMathTests
 {
-    [TestClass]
-    public class UnitTest1
+    [TestMethod]
+    public void GetFurtherstDirectionVector_ReturnsOrthogonalEdge_ForHorizontalDirection()
     {
-        [TestMethod]
-        public void TestMethod1()
-        {
-            var DirectionVectorLookingRight = new Class1.SKPoint(1, 0);
-            var result = Class1.GetFurtherstDirectionVector(new Class1.SKPoint[] {
-            new Class1.SKPoint(0,0),
-            new Class1.SKPoint(0,100),
-            new Class1.SKPoint(100,0),
-            },  new Class1.SKPoint(1, 0));
-            Assert.AreEqual(result, new Class1.SKPoint(1,0));
-            
-        }
+        SKPoint[] shape =
+        [
+            new(0, 0),
+            new(0, 100),
+            new(100, 100),
+            new(100, 0),
+        ];
+
+        var result = FSMath.GetFurtherstDirectionVector(shape, new SKPoint(1, 0));
+
+        Assert.AreEqual(0f, result.X, 0.0001f);
+        Assert.AreEqual(1f, result.Y, 0.0001f);
+    }
+
+    [TestMethod]
+    public void GetFurtherstDirectionVector_ReturnsOrthogonalEdge_ForVerticalDirection()
+    {
+        SKPoint[] shape =
+        [
+            new(0, 0),
+            new(0, 100),
+            new(100, 100),
+            new(100, 0),
+        ];
+
+        var result = FSMath.GetFurtherstDirectionVector(shape, new SKPoint(0, 1));
+
+        Assert.AreEqual(1f, result.X, 0.0001f);
+        Assert.AreEqual(0f, result.Y, 0.0001f);
     }
 }

@@ -36,7 +36,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
         int level = int.Parse(query["Level"].ToString());
-        settings = new(0, level, level+4);
+        settings = new(0, level);
         InitializeSquir(settings);
     }
 

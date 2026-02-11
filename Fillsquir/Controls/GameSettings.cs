@@ -9,14 +9,21 @@ namespace Fillsquir.Controls
 {
     internal class GameSettings
     {
-        internal GameSettings(int seed, int fragments, int vertices)
+        internal GameSettings(int seed, int level)
         {
-            this.fragments = fragments;
-            this.vertices = vertices;
+            Level = level;
+            fragments = level;
+            WallAngleCount = WallAngleSet.WallAnglesForLevel(level);
+            WallRotationRadians = WallAngleSet.RotationForLevel(seed, level, WallAngleCount);
+            WallDirectionsUndirected = WallAngleSet.UndirectedDirections(WallAngleCount, WallRotationRadians);
+            WallDirectionsDirected = WallAngleSet.DirectedDirections(WallDirectionsUndirected);
+
             DetermineDimensions(fragments);
             untouchedFragments = new Fragment[Cols,Rows];
             rand = new Random(seed);
         }
+
+        internal int Level;
         internal int Cols;
         internal int Rows;
         internal int VisibleRows {get{ return Cols < 5? Cols:5;} }
@@ -30,7 +37,10 @@ namespace Fillsquir.Controls
         internal float xoffset = 0.5f;
         internal float yoffset = 0;
         internal int fragments;
-        internal int vertices;
+        internal int WallAngleCount;
+        internal float WallRotationRadians;
+        internal SkiaSharp.SKPoint[] WallDirectionsUndirected;
+        internal SkiaSharp.SKPoint[] WallDirectionsDirected;
         internal float bottomStripRise = 0;
         internal float bottomStripMove = 0;
         internal Fragment[,] untouchedFragments;
@@ -83,37 +93,9 @@ namespace Fillsquir.Controls
         public float prop2 = 4;
         private void DetermineDimensions(int n)
         {
-            if (n < 4)
-            {
-                Rows = 1;
-                Cols = n;
-                return;
-            }
-            Rows = 2;
-            Cols = n+1/2;
-        return;
-
-            int start = (int)Math.Sqrt(n);
-            while (true) 
-            {
-                for (int r = start; r > 0; r--)
-                {
-                    int c = n / r;
-                    if (r / (float) c >= 2.5f && r / (float) c <= 3.5f)
-                    {
-                        Cols = r;
-                        Rows = c;
-                        return;
-                    }
-                    if (c / (float) r >= 2.5f && c / (float) r <= 3.5f)
-                    {
-                        Cols = c;
-                        Rows = r;
-                        return;
-                    }
-                }
-                start++;
-            }
+            var (rows, cols) = LevelLayout.FragmentGrid(n);
+            Rows = rows;
+            Cols = cols;
         }
     }
 }

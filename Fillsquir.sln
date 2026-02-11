@@ -5,6 +5,8 @@ VisualStudioVersion = 18.1.11304.174 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSquir", "Fillsquir\FSquir.csproj", "{E6CF2DF1-315F-4F1D-8B7F-00FF280DDA8C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fillsquir.Core", "Fillsquir.Core\Fillsquir.Core.csproj", "{085FD8EB-7925-4AD4-88C1-0B1E92FD8970}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "tests", "tests\tests.csproj", "{604C6617-139A-4711-866E-CC1F2DA35A5C}"
 EndProject
 Global
@@ -19,6 +21,10 @@ Global
 		{E6CF2DF1-315F-4F1D-8B7F-00FF280DDA8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6CF2DF1-315F-4F1D-8B7F-00FF280DDA8C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E6CF2DF1-315F-4F1D-8B7F-00FF280DDA8C}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{085FD8EB-7925-4AD4-88C1-0B1E92FD8970}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{085FD8EB-7925-4AD4-88C1-0B1E92FD8970}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{085FD8EB-7925-4AD4-88C1-0B1E92FD8970}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{085FD8EB-7925-4AD4-88C1-0B1E92FD8970}.Release|Any CPU.Build.0 = Release|Any CPU
 		{604C6617-139A-4711-866E-CC1F2DA35A5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{604C6617-139A-4711-866E-CC1F2DA35A5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{604C6617-139A-4711-866E-CC1F2DA35A5C}.Release|Any CPU.ActiveCfg = Release|Any CPU

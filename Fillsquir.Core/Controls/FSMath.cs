@@ -101,6 +101,73 @@ namespace Fillsquir.Controls
             return (result > 0) ? 1 : -1; // Clockwise or Counterclockwise
         }
 
+        internal static bool IsSimplePolygon(SKPoint[] polygon)
+        {
+            if (polygon is null || polygon.Length < 3)
+            {
+                return false;
+            }
+
+            var uniqueCount = polygon.Distinct().Count();
+            if (uniqueCount != polygon.Length)
+            {
+                return false;
+            }
+
+            int n = polygon.Length;
+            for (int i = 0; i < n; i++)
+            {
+                var a = polygon[i];
+                var b = polygon[(i + 1) % n];
+                if (!float.IsFinite(a.X) || !float.IsFinite(a.Y) || !float.IsFinite(b.X) || !float.IsFinite(b.Y))
+                {
+                    return false;
+                }
+
+                if (a == b)
+                {
+                    return false;
+                }
+            }
+
+            for (int i = 0; i < n; i++)
+            {
+                int i2 = (i + 1) % n;
+                var a1 = polygon[i];
+                var a2 = polygon[i2];
+
+                for (int j = i + 1; j < n; j++)
+                {
+                    int j2 = (j + 1) % n;
+
+                    if (i == j)
+                    {
+                        continue;
+                    }
+
+                    if (i2 == j || j2 == i)
+                    {
+                        continue; // adjacent edges
+                    }
+
+                    if (i == 0 && j == n - 1)
+                    {
+                        continue; // first and last edges are adjacent
+                    }
+
+                    var b1 = polygon[j];
+                    var b2 = polygon[j2];
+
+                    if (DoSegmentsIntersect(a1, a2, b1, b2))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         // common area
         public static SKPoint[] SutherlandHodgman(SKPoint[] p1, SKPoint[] p2)
         {
@@ -435,6 +502,10 @@ namespace Fillsquir.Controls
         private static SKPoint Normalize(SKPoint vector)
         {
             float magnitude = MathF.Sqrt(vector.X * vector.X + vector.Y * vector.Y);
+            if (magnitude == 0f || float.IsNaN(magnitude) || float.IsInfinity(magnitude))
+            {
+                return new SKPoint(0f, 0f);
+            }
             return new SKPoint(vector.X / magnitude, vector.Y / magnitude);
         }
 
@@ -612,13 +683,21 @@ namespace Fillsquir.Controls
                 throw new ArgumentException("Figure must have at least 3 points", "figure");
             }
 
+            var points = figure.Distinct().ToList();
+            if (points.Count < 3)
+            {
+                return false;
+            }
+
             // Find convex hull using Gift Wrapping algorithm
-            List<SKPoint> convexHull = GetConvexHull(figure.ToList());
+            List<SKPoint> convexHull = GetConvexHull(points);
             if(convexHull == null)
             {
                 return false;
             }              
-            List<SKPoint> remainingPoints = figure.Except(convexHull).ToList();
+
+            var hullOnly = convexHull.ToList();
+            List<SKPoint> remainingPoints = points.Except(convexHull).ToList();
 
             foreach (var point in remainingPoints)
             {
@@ -648,7 +727,83 @@ namespace Fillsquir.Controls
             }
             //set figure to convex hull without last point
             //convexHull.RemoveAt(convexHull.Count - 1);
-            figure = convexHull.ToArray();
+            var candidate = convexHull.ToArray();
+            if (IsSimplePolygon(candidate) && CalculateArea(candidate) > 0f)
+            {
+                figure = candidate;
+                return true;
+            }
+
+            if (TryPolygonizeMonotone(points, out var monotone) && IsSimplePolygon(monotone) && CalculateArea(monotone) > 0f)
+            {
+                figure = monotone;
+                return true;
+            }
+
+            candidate = hullOnly.ToArray();
+            if (IsSimplePolygon(candidate) && CalculateArea(candidate) > 0f)
+            {
+                figure = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryPolygonizeMonotone(IReadOnlyList<SKPoint> points, out SKPoint[] polygon)
+        {
+            polygon = Array.Empty<SKPoint>();
+
+            if (points.Count < 3)
+            {
+                return false;
+            }
+
+            var sorted = points.Distinct()
+                .OrderBy(p => p.X)
+                .ThenBy(p => p.Y)
+                .ToList();
+
+            if (sorted.Count < 3)
+            {
+                return false;
+            }
+
+            var left = sorted[0];
+            var right = sorted[^1];
+
+            List<SKPoint> upper = new();
+            List<SKPoint> lower = new();
+
+            for (int i = 1; i < sorted.Count - 1; i++)
+            {
+                var p = sorted[i];
+                var cross = (right.X - left.X) * (p.Y - left.Y) - (right.Y - left.Y) * (p.X - left.X);
+                if (cross >= 0f)
+                {
+                    upper.Add(p);
+                }
+                else
+                {
+                    lower.Add(p);
+                }
+            }
+
+            upper.Sort((a, b) => a.X != b.X ? a.X.CompareTo(b.X) : a.Y.CompareTo(b.Y));
+            lower.Sort((a, b) => a.X != b.X ? b.X.CompareTo(a.X) : b.Y.CompareTo(a.Y));
+
+            List<SKPoint> result = new(capacity: sorted.Count);
+            result.Add(left);
+            result.AddRange(upper);
+            result.Add(right);
+            result.AddRange(lower);
+
+            polygon = result.Distinct().ToArray();
+            if (polygon.Length < 3)
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -777,6 +932,67 @@ namespace Fillsquir.Controls
                 }
             }
             return new SKRect(minX, minY, maxX, maxY);
+        }
+
+        internal static void TranslateToPositive(ref SKPoint[] figure, float padding = 0f)
+        {
+            if (figure is null || figure.Length == 0)
+            {
+                return;
+            }
+
+            var bounds = ShapeBounds(figure);
+            if (!float.IsFinite(bounds.Left) || !float.IsFinite(bounds.Top))
+            {
+                return;
+            }
+
+            for (int i = 0; i < figure.Length; i++)
+            {
+                figure[i].X = (figure[i].X - bounds.Left) + padding;
+                figure[i].Y = (figure[i].Y - bounds.Top) + padding;
+            }
+        }
+
+        internal static void FitShapeUniform(ref SKPoint[] figure, float width, float height, float padding = 0f)
+        {
+            if (figure is null || figure.Length == 0)
+            {
+                return;
+            }
+
+            var bounds = ShapeBounds(figure);
+            float figureWidth = bounds.Right - bounds.Left;
+            float figureHeight = bounds.Bottom - bounds.Top;
+            if (!float.IsFinite(figureWidth) || !float.IsFinite(figureHeight) || figureWidth <= 0f || figureHeight <= 0f)
+            {
+                return;
+            }
+
+            float availableWidth = Math.Max(0f, width - (2f * padding));
+            float availableHeight = Math.Max(0f, height - (2f * padding));
+            if (availableWidth <= 0f || availableHeight <= 0f)
+            {
+                return;
+            }
+
+            float scale = MathF.Min(availableWidth / figureWidth, availableHeight / figureHeight);
+            if (!float.IsFinite(scale) || scale <= 0f)
+            {
+                return;
+            }
+
+            float scaledWidth = figureWidth * scale;
+            float scaledHeight = figureHeight * scale;
+
+            float offsetX = padding + (availableWidth - scaledWidth) / 2f;
+            float offsetY = padding + (availableHeight - scaledHeight) / 2f;
+
+            for (int i = 0; i < figure.Length; i++)
+            {
+                figure[i].X = ((figure[i].X - bounds.Left) * scale) + offsetX;
+                figure[i].Y = ((figure[i].Y - bounds.Top) * scale) + offsetY;
+            }
         }
 
         internal static SKPoint minBounds(SKPoint[] figure)
@@ -986,9 +1202,15 @@ namespace Fillsquir.Controls
         internal static HashSet<SKPoint> GetDirectionVectors(SKPoint[] mainShape)
         {
             HashSet<SKPoint> directionVectors = new HashSet<SKPoint>();
-            for(int i = 0; i < mainShape.Length-1; i++)
+            for (int i = 0; i < mainShape.Length; i++)
             {
-                directionVectors.Add(DirectionVector(mainShape[i], mainShape[i+1]));
+                var nextIndex = (i + 1) % mainShape.Length;
+                var directionVector = DirectionVector(mainShape[i], mainShape[nextIndex]);
+                if (directionVector.X == 0f && directionVector.Y == 0f)
+                {
+                    continue;
+                }
+                directionVectors.Add(directionVector);
             }
             foreach(var directionVector in directionVectors.ToArray())
             {
@@ -999,21 +1221,45 @@ namespace Fillsquir.Controls
 
         internal static SKPoint[] GenerateFigureUsingDirectionVectors(HashSet<SKPoint> directionVectors, Random rand, int points)
         {
+            if (directionVectors.Count == 0)
+            {
+                throw new ArgumentException("At least 1 direction vector is required.", nameof(directionVectors));
+            }
+
+            var vectors = directionVectors.Where(v => !(v.X == 0f && v.Y == 0f)).ToArray();
+            if (vectors.Length == 0)
+            {
+                throw new ArgumentException("At least 1 non-zero direction vector is required.", nameof(directionVectors));
+            }
+
             List<SKPoint> figureVertices = new List<SKPoint>();
 
             // Start with a random point as the origin.
             SKPoint currentPoint = new SKPoint(rand.Next(100, 200), rand.Next(100, 200)); // Adjust as needed
             figureVertices.Add(currentPoint);
-            var index = rand.Next(directionVectors.Count);
-            var directionVector = directionVectors.ElementAt(index);
+            var directionVector = vectors[rand.Next(vectors.Length)];
             for (int i = 1; i < points; i++)
             {
-                do
+                const float minAngle = 0.25f;
+                bool found = false;
+                SKPoint chosenDirection = directionVector;
+                for (int attempts = 0; attempts < 32; attempts++)
                 {
-                    index = rand.Next(directionVectors.Count);
-                }while (AngleBetweenVectorsAbs(directionVector, directionVectors.ElementAt(index)) < 0.25f);
-                directionVector = directionVectors.ElementAt(index);
-                SKPoint chosenDirection = directionVectors.ElementAt(index);
+                    var candidate = vectors[rand.Next(vectors.Length)];
+                    if (AngleBetweenVectorsAbs(directionVector, candidate) >= minAngle)
+                    {
+                        chosenDirection = candidate;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    chosenDirection = vectors[rand.Next(vectors.Length)];
+                }
+
+                directionVector = chosenDirection;
                 float scale = rand.Next(3, 10); // Adjust scaling as needed
                 SKPoint scaledVector = new SKPoint(chosenDirection.X * scale, chosenDirection.Y * scale);
 
