@@ -6,6 +6,66 @@ namespace Fillsquir;
 
 public partial class GamePage : ContentPage, IQueryAttributable
 {
+    private const float WallSnapAngleDotThreshold = 0.998f;
+    private const float WallSnapDistanceThreshold = 24f;
+    private const float WallSnapAlongAxisThreshold = 18f;
+    private const float WallSnapMaxTranslation = 40f;
+    private const float WallSnapTranslationAgreement = 3f;
+
+    private readonly struct WallSegment
+    {
+        internal WallSegment(SKPoint start, SKPoint end, SKPoint direction)
+        {
+            Start = start;
+            End = end;
+            Direction = direction;
+        }
+
+        internal SKPoint Start { get; }
+        internal SKPoint End { get; }
+        internal SKPoint Direction { get; }
+    }
+
+    private readonly struct WallSnapCandidate
+    {
+        internal WallSnapCandidate(SKPoint translation, float score)
+        {
+            Translation = translation;
+            Score = score;
+        }
+
+        internal SKPoint Translation { get; }
+        internal float Score { get; }
+    }
+
+    private sealed class WallSnapCluster
+    {
+        private SKPoint translationSum;
+        private float scoreSum;
+
+        internal int SupportCount { get; private set; }
+
+        internal WallSnapCluster(WallSnapCandidate candidate)
+        {
+            Add(candidate);
+        }
+
+        internal void Add(WallSnapCandidate candidate)
+        {
+            translationSum = new SKPoint(
+                translationSum.X + candidate.Translation.X,
+                translationSum.Y + candidate.Translation.Y);
+            scoreSum += candidate.Score;
+            SupportCount++;
+        }
+
+        internal SKPoint Center => new(
+            translationSum.X / SupportCount,
+            translationSum.Y / SupportCount);
+
+        internal float AverageScore => scoreSum / SupportCount;
+    }
+
     float absolute0x = 0f;
     float absolute0y = 0f;
     float absolutemaxx = 1000f;
@@ -618,34 +678,11 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 {
                     if (moved == null) { return; }
                     if (!moved.wasTouched) { return; }
-                    float min = float.MaxValue;
-                    int i = 0, finalIndex = 0;
-                    SKPoint assignedPoint = new();
-                    int drawableindex = 0;
-                    for (; drawableindex < drawables.drawables.Count; drawableindex++)
+                    if (TryGetWallSnapTranslation(moved, out var snapTranslation))
                     {
-                        if (Object.ReferenceEquals(drawables[drawableindex], moved))
-                        {
-                            break;
-                        }
-                    }
-                    foreach (var pt in moved.VisiblePointsS)
-                    {
-                        foreach (var oneOfMilion in drawables.allActivePoints(drawableindex))
-                        {
-                            float cur = FSMath.CalculateDistance(pt, oneOfMilion);
-                            if (cur < min)
-                            {
-                                min = cur;
-                                finalIndex = i;
-                                assignedPoint = oneOfMilion;
-                            }
-                        }
-                        i++;
-                    }
-                    if (min < 10)
-                    {
-                        moved.SetPositionToPointLocation(assignedPoint, finalIndex);
+                        moved.PositionS = new SKPoint(
+                            moved.PositionS.X + snapTranslation.X,
+                            moved.PositionS.Y + snapTranslation.Y);
                     }
                     moved = null;
                     movingStatus = moveStatus.none;
@@ -720,6 +757,274 @@ public partial class GamePage : ContentPage, IQueryAttributable
             }
         
         Invalidate();
+    }
+
+    private bool TryGetWallSnapTranslation(Fragment movedFragment, out SKPoint snapTranslation)
+    {
+        snapTranslation = default;
+
+        var movedWalls = BuildWallSegments(movedFragment.VisiblePointsS);
+        if (movedWalls.Count == 0)
+        {
+            return false;
+        }
+
+        var targetWalls = GetAllSnapTargetWalls(movedFragment);
+        if (targetWalls.Count == 0)
+        {
+            return false;
+        }
+
+        List<WallSnapCandidate> candidates = new();
+        foreach (var movedWall in movedWalls)
+        {
+            foreach (var targetWall in targetWalls)
+            {
+                if (!AreWallsParallel(movedWall.Direction, targetWall.Direction))
+                {
+                    continue;
+                }
+
+                if (!TryGetWallTranslation(
+                    movedWall,
+                    targetWall,
+                    out SKPoint translation,
+                    out float perpendicularDistance,
+                    out float alongAxisGap))
+                {
+                    continue;
+                }
+
+                float translationLength = VectorLength(translation);
+                if (translationLength > WallSnapMaxTranslation)
+                {
+                    continue;
+                }
+
+                if (perpendicularDistance > WallSnapDistanceThreshold)
+                {
+                    continue;
+                }
+
+                if (alongAxisGap > WallSnapAlongAxisThreshold)
+                {
+                    continue;
+                }
+
+                float score = perpendicularDistance + (0.35f * alongAxisGap);
+                candidates.Add(new WallSnapCandidate(translation, score));
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            return false;
+        }
+
+        return TrySelectBestWallSnap(candidates, out snapTranslation);
+    }
+
+    private List<WallSegment> GetAllSnapTargetWalls(Fragment movedFragment)
+    {
+        List<WallSegment> walls = new();
+        walls.AddRange(BuildWallSegments(drawa.VisiblePoints));
+
+        foreach (var fragment in gameSettings.CenterFragments)
+        {
+            if (!fragment.wasTouched || Object.ReferenceEquals(fragment, movedFragment))
+            {
+                continue;
+            }
+
+            walls.AddRange(BuildWallSegments(fragment.VisiblePointsS));
+        }
+
+        return walls;
+    }
+
+    private static List<WallSegment> BuildWallSegments(SKPoint[] polygon)
+    {
+        List<WallSegment> walls = new();
+        if (polygon is null || polygon.Length < 3)
+        {
+            return walls;
+        }
+
+        for (int i = 0; i < polygon.Length; i++)
+        {
+            SKPoint start = polygon[i];
+            SKPoint end = polygon[(i + 1) % polygon.Length];
+
+            SKPoint direction = Normalize(Subtract(end, start));
+            if (direction.X == 0f && direction.Y == 0f)
+            {
+                continue;
+            }
+
+            walls.Add(new WallSegment(start, end, direction));
+        }
+
+        return walls;
+    }
+
+    private static bool TryGetWallTranslation(
+        WallSegment movedWall,
+        WallSegment targetWall,
+        out SKPoint translation,
+        out float perpendicularDistance,
+        out float alongAxisGap)
+    {
+        translation = default;
+        perpendicularDistance = float.PositiveInfinity;
+        alongAxisGap = float.PositiveInfinity;
+
+        SKPoint axis = targetWall.Direction;
+        SKPoint normal = Perpendicular(axis);
+        if (normal.X == 0f && normal.Y == 0f)
+        {
+            return false;
+        }
+
+        SKPoint delta = Subtract(targetWall.Start, movedWall.Start);
+        float signedPerpendicularDistance = Dot(delta, normal);
+        perpendicularDistance = MathF.Abs(signedPerpendicularDistance);
+
+        translation = Multiply(normal, signedPerpendicularDistance);
+        alongAxisGap = ParallelAxisGap(movedWall, targetWall, axis);
+
+        return float.IsFinite(translation.X)
+            && float.IsFinite(translation.Y)
+            && float.IsFinite(perpendicularDistance)
+            && float.IsFinite(alongAxisGap);
+    }
+
+    private static bool TrySelectBestWallSnap(List<WallSnapCandidate> candidates, out SKPoint translation)
+    {
+        translation = default;
+        if (candidates.Count == 0)
+        {
+            return false;
+        }
+
+        List<WallSnapCluster> clusters = new();
+        foreach (var candidate in candidates)
+        {
+            bool addedToExistingCluster = false;
+            for (int i = 0; i < clusters.Count; i++)
+            {
+                if (PointDistance(candidate.Translation, clusters[i].Center) <= WallSnapTranslationAgreement)
+                {
+                    clusters[i].Add(candidate);
+                    addedToExistingCluster = true;
+                    break;
+                }
+            }
+
+            if (!addedToExistingCluster)
+            {
+                clusters.Add(new WallSnapCluster(candidate));
+            }
+        }
+
+        WallSnapCluster bestCluster = clusters[0];
+        for (int i = 1; i < clusters.Count; i++)
+        {
+            WallSnapCluster candidateCluster = clusters[i];
+            if (candidateCluster.SupportCount > bestCluster.SupportCount)
+            {
+                bestCluster = candidateCluster;
+                continue;
+            }
+
+            if (candidateCluster.SupportCount == bestCluster.SupportCount
+                && candidateCluster.AverageScore < bestCluster.AverageScore)
+            {
+                bestCluster = candidateCluster;
+                continue;
+            }
+
+            if (candidateCluster.SupportCount == bestCluster.SupportCount
+                && Math.Abs(candidateCluster.AverageScore - bestCluster.AverageScore) < 0.001f
+                && VectorLength(candidateCluster.Center) < VectorLength(bestCluster.Center))
+            {
+                bestCluster = candidateCluster;
+            }
+        }
+
+        translation = bestCluster.Center;
+        return float.IsFinite(translation.X) && float.IsFinite(translation.Y);
+    }
+
+    private static bool AreWallsParallel(SKPoint firstDirection, SKPoint secondDirection)
+    {
+        float dot = (firstDirection.X * secondDirection.X) + (firstDirection.Y * secondDirection.Y);
+        return MathF.Abs(dot) >= WallSnapAngleDotThreshold;
+    }
+
+    private static SKPoint Subtract(SKPoint left, SKPoint right)
+    {
+        return new SKPoint(left.X - right.X, left.Y - right.Y);
+    }
+
+    private static SKPoint Multiply(SKPoint point, float scalar)
+    {
+        return new SKPoint(point.X * scalar, point.Y * scalar);
+    }
+
+    private static float Dot(SKPoint left, SKPoint right)
+    {
+        return (left.X * right.X) + (left.Y * right.Y);
+    }
+
+    private static SKPoint Perpendicular(SKPoint vector)
+    {
+        return new SKPoint(-vector.Y, vector.X);
+    }
+
+    private static float ParallelAxisGap(WallSegment movedWall, WallSegment targetWall, SKPoint axis)
+    {
+        float movedA = Dot(movedWall.Start, axis);
+        float movedB = Dot(movedWall.End, axis);
+        float targetA = Dot(targetWall.Start, axis);
+        float targetB = Dot(targetWall.End, axis);
+
+        float movedMin = MathF.Min(movedA, movedB);
+        float movedMax = MathF.Max(movedA, movedB);
+        float targetMin = MathF.Min(targetA, targetB);
+        float targetMax = MathF.Max(targetA, targetB);
+
+        if (movedMax < targetMin)
+        {
+            return targetMin - movedMax;
+        }
+
+        if (targetMax < movedMin)
+        {
+            return movedMin - targetMax;
+        }
+
+        return 0f;
+    }
+
+    private static SKPoint Normalize(SKPoint vector)
+    {
+        float length = VectorLength(vector);
+        if (length <= 1e-6f || !float.IsFinite(length))
+        {
+            return new SKPoint(0f, 0f);
+        }
+
+        return new SKPoint(vector.X / length, vector.Y / length);
+    }
+
+    private static float PointDistance(SKPoint a, SKPoint b)
+    {
+        return VectorLength(Subtract(a, b));
+    }
+
+    private static float VectorLength(SKPoint vector)
+    {
+        return MathF.Sqrt((vector.X * vector.X) + (vector.Y * vector.Y));
     }
 
     private void StartMovingMap()
