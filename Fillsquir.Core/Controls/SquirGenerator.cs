@@ -91,20 +91,63 @@ internal static class SquirGenerator
         return (depthMin, depthMax, widthMin, widthMax);
     }
 
-    private static (int MinEdges, int MaxEdges) PickMainEdgeRange(int wallAngles, int directedCount, Random rand)
+    private static float LevelProgressInTier(int level, int wallAngles)
     {
-        int minEdges = 3;
-        int maxEdges = Math.Min(10, directedCount);
-
-        if (rand.NextDouble() < 0.55)
+        if (wallAngles <= WallAngleSet.EasyWallAngles)
         {
-            maxEdges = Math.Min(5, maxEdges);
+            return Math.Clamp((level - 1f) / 15f, 0f, 1f);
         }
 
-        if (wallAngles >= WallAngleSet.HardWallAngles && rand.NextDouble() < 0.70)
+        if (wallAngles <= WallAngleSet.MediumWallAngles)
+        {
+            return Math.Clamp((level - 17f) / 34f, 0f, 1f);
+        }
+
+        return Math.Clamp((level - 52f) / 48f, 0f, 1f);
+    }
+
+    internal static (float MinAreaDivisor, float MaxAreaDivisor) FragmentAreaDivisorsForLevel(int level)
+    {
+        float t = Math.Clamp((level - 1f) / 99f, 0f, 1f);
+
+        float minDivisor = Lerp(42f, 140f, t);
+        float maxDivisor = Lerp(7f, 30f, t);
+        minDivisor = MathF.Max(minDivisor, maxDivisor + 2f);
+
+        return (minDivisor, maxDivisor);
+    }
+
+    private static float Lerp(float from, float to, float t)
+    {
+        return from + ((to - from) * Math.Clamp(t, 0f, 1f));
+    }
+
+    private static (int MinEdges, int MaxEdges) PickMainEdgeRange(int level, int wallAngles, int directedCount, Random rand)
+    {
+        float tierProgress = LevelProgressInTier(level, wallAngles);
+        int minEdges;
+        int maxEdges;
+
+        if (wallAngles >= WallAngleSet.HardWallAngles)
         {
             minEdges = Math.Min(10, directedCount);
             maxEdges = Math.Min(30, directedCount);
+            minEdges = Math.Min(minEdges, 5 + (int)MathF.Round(5f * tierProgress));
+        }
+        else if (wallAngles >= WallAngleSet.MediumWallAngles)
+        {
+            minEdges = 3;
+            maxEdges = Math.Min(directedCount, 6 + (int)MathF.Round(6f * tierProgress));
+        }
+        else
+        {
+            minEdges = 3;
+            maxEdges = Math.Min(directedCount, 4 + (int)MathF.Round(4f * tierProgress));
+        }
+
+        if (maxEdges <= minEdges)
+        {
+            maxEdges = Math.Min(directedCount, minEdges + 1);
         }
 
         minEdges = Math.Min(minEdges, maxEdges);
@@ -113,23 +156,21 @@ internal static class SquirGenerator
 
     private static (int MinEdges, int MaxEdges, bool LargeTier) PickFragmentEdgeRange(int level, int directedCount, Random rand)
     {
-        double tierChance = Math.Clamp((level - 20) / 60.0, 0.0, 0.55);
+        int wallAngles = WallAngleSet.WallAnglesForLevel(level);
+        float tierProgress = LevelProgressInTier(level, wallAngles);
+        double tierChance = Math.Clamp((level - 20) / 70.0, 0.0, 0.45);
         bool largeTier = rand.NextDouble() < tierChance;
 
         if (largeTier)
         {
-            int minEdges = Math.Min(10, directedCount);
-            int maxEdges = Math.Min(30, directedCount);
+            int minEdges = Math.Min(directedCount, 8 + (int)MathF.Round(2f * tierProgress));
+            int maxEdges = Math.Min(directedCount, 16 + (int)MathF.Round(14f * tierProgress));
             minEdges = Math.Min(minEdges, maxEdges);
             return (minEdges, maxEdges, true);
         }
 
         int minSmall = 3;
-        int maxSmall = Math.Min(10, directedCount);
-        if (rand.NextDouble() < 0.60)
-        {
-            maxSmall = Math.Min(5, maxSmall);
-        }
+        int maxSmall = Math.Min(directedCount, 5 + (int)MathF.Round(7f * tierProgress));
 
         minSmall = Math.Min(minSmall, maxSmall);
         return (minSmall, maxSmall, false);
@@ -155,6 +196,7 @@ internal static class SquirGenerator
     internal static SKPoint[] GenerateMainShape(
         SKPoint[] wallDirectionsUndirected,
         Random rand,
+        int level = 1,
         float minEdgeLength = 80f,
         float maxEdgeLength = 420f)
     {
@@ -170,7 +212,7 @@ internal static class SquirGenerator
         }
 
         int wallAngles = wallDirectionsUndirected.Length;
-        var (minEdges, maxEdges) = PickMainEdgeRange(wallAngles, wallDirectionsDirected.Length, rand);
+        var (minEdges, maxEdges) = PickMainEdgeRange(level, wallAngles, wallDirectionsDirected.Length, rand);
 
         const int maxAttempts = 500;
 

@@ -25,12 +25,14 @@ internal class Squir : GeometryElement
         {
             PointsP = SquirGenerator.GenerateMainShape(
                 gameSettings.WallDirectionsUndirected,
-                gameSettings.rand);
+                gameSettings.rand,
+                gameSettings.Level);
             FSMath.FitShapeUniform(ref PointsP, defaultCanvasWidth, defaultCanvasHeight, padding: 40f);
 
             float squirArea = FSMath.CalculateArea(PointsP);
-            float minArea = squirArea / 42f;
-            float maxArea = squirArea / 7f;
+            var (minDivisor, maxDivisor) = SquirGenerator.FragmentAreaDivisorsForLevel(gameSettings.Level);
+            float minArea = squirArea / minDivisor;
+            float maxArea = squirArea / maxDivisor;
 
             foreach (var shape in SquirGenerator.GenerateFragments(
                 gameSettings.fragments,

@@ -1,9 +1,4 @@
-﻿using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Fillsquir.Domain;
 
 namespace Fillsquir.Controls
 {
@@ -11,27 +6,51 @@ namespace Fillsquir.Controls
     {
         internal GameSettings(int seed, int level)
         {
+            Seed = seed;
             Level = level;
-            fragments = level;
+            fragments = Math.Max(1, level);
             WallAngleCount = WallAngleSet.WallAnglesForLevel(level);
             WallRotationRadians = WallAngleSet.RotationForLevel(seed, level, WallAngleCount);
             WallDirectionsUndirected = WallAngleSet.UndirectedDirections(WallAngleCount, WallRotationRadians);
             WallDirectionsDirected = WallAngleSet.DirectedDirections(WallDirectionsUndirected);
 
             DetermineDimensions(fragments);
-            untouchedFragments = new Fragment[Cols,Rows];
+            untouchedFragments = new Fragment[Cols, Rows];
             rand = new Random(seed);
         }
 
+        internal int Seed { get; }
         internal int Level;
         internal int Cols;
         internal int Rows;
-        internal int VisibleRows {get{ return Cols < 5? Cols:5;} }
+        internal int VisibleRows => Cols < 5 ? Cols : 5;
+
         internal double AreaFilled;
-        internal double percentageRequired = 100;
-        internal double percentageFilled
-        { get { return AreaFilled / MaxArea; } }
         internal double MaxArea;
+
+        internal decimal CoveragePercent
+        {
+            get
+            {
+                if (MaxArea <= 0d)
+                {
+                    return 0m;
+                }
+
+                double ratio = AreaFilled / MaxArea;
+                ratio = Math.Clamp(ratio, 0d, 1d);
+                return Math.Round((decimal)(ratio * 100d), 4, MidpointRounding.AwayFromZero);
+            }
+        }
+
+        internal decimal BestCoveragePercent;
+        internal decimal? WorldRecordCoveragePercent;
+        internal string? WorldRecordHolderInstallId;
+        internal int CurrentStars;
+
+        internal bool SnapEnabled = true;
+        internal string RulesVersion => GameRules.RulesVersion;
+
         internal Random rand;
         internal float zoomFactor = 1.0f;
         internal float xoffset = 0.5f;
@@ -44,7 +63,7 @@ namespace Fillsquir.Controls
         internal float bottomStripRise = 0;
         internal float bottomStripMove = 0;
         internal Fragment[,] untouchedFragments;
-        internal List<Fragment> touchedFragments;
+        internal List<Fragment> touchedFragments = new();
 
         internal List<Fragment> CenterFragments = new();
         internal List<Fragment> TooLeftFragments = new();
@@ -54,12 +73,11 @@ namespace Fillsquir.Controls
 
         public static void MoveFragmentsBetweenLists(List<Fragment> sourceList, List<Fragment> destinationList, Func<Fragment, bool> condition)
         {
-            List<int> indexesToMove = new List<int>();
+            List<int> indexesToMove = new();
 
             for (int i = 0; i < sourceList.Count; i++)
             {
                 var fragment = sourceList[i];
-
                 if (condition(fragment))
                 {
                     indexesToMove.Add(i);
@@ -75,22 +93,27 @@ namespace Fillsquir.Controls
             }
         }
 
-        internal Fragment touchFragment(int row,int col)
+        internal Fragment touchFragment(int row, int col)
         {
             var curr = untouchedFragments[row, col];
             untouchedFragments[row, col] = null;
             return curr;
         }
-        internal bool untouchFragment(Fragment untouchedman, int row,int col)
+
+        internal bool untouchFragment(Fragment untouchedman, int row, int col)
         {
-            if (untouchedFragments[row, col] != null) 
+            if (untouchedFragments[row, col] != null)
+            {
                 return false;
+            }
+
             untouchedFragments[row, col] = untouchedman;
             return true;
         }
-        
+
         public float prop1 = 3;
         public float prop2 = 4;
+
         private void DetermineDimensions(int n)
         {
             var (rows, cols) = LevelLayout.FragmentGrid(n);

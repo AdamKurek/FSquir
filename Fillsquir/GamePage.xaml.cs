@@ -1,4 +1,6 @@
-﻿using Fillsquir.Controls;
+using Fillsquir.Controls;
+using Fillsquir.Domain;
+using Fillsquir.Services;
 using SkiaSharp;
 
 namespace Fillsquir;
@@ -79,25 +81,54 @@ public partial class GamePage : ContentPage, IQueryAttributable
         undecided,
     }
     moveStatus movingStatus = moveStatus.none;
+
+    private readonly IProgressStore progressStore;
+    private readonly ILeaderboardClient leaderboardClient;
+    private readonly IRecordSyncService recordSyncService;
+    private readonly IScoreEvaluator scoreEvaluator;
+    private readonly ICoordinateTransformer coordinateTransformer;
+
+    private readonly GameSessionState sessionState = new();
+    private LevelProgress? levelProgress;
+    private PuzzleKey puzzleKey;
+    private string installId = string.Empty;
+    private const decimal CoverageComparisonTolerance = 0.0001m;
+
     GameSettings settings;
     public GamePage()
     {
         BindingContext = new GamePageViewModel();
 
-        var navigationState = Shell.Current.CurrentState;
-        int xd = 100;
+        IServiceProvider? services = App.Services;
+        progressStore = services?.GetService(typeof(IProgressStore)) as IProgressStore ?? new JsonFileProgressStore();
+        leaderboardClient = services?.GetService(typeof(ILeaderboardClient)) as ILeaderboardClient
+            ?? new HttpLeaderboardClient(new HttpClient { BaseAddress = new Uri("http://localhost:5180/"), Timeout = TimeSpan.FromSeconds(2) });
+        recordSyncService = services?.GetService(typeof(IRecordSyncService)) as IRecordSyncService
+            ?? new RecordSyncService(leaderboardClient, progressStore, new JsonFileSyncQueue());
+        scoreEvaluator = services?.GetService(typeof(IScoreEvaluator)) as IScoreEvaluator ?? new ScoreEvaluator();
+        coordinateTransformer = services?.GetService(typeof(ICoordinateTransformer)) as ICoordinateTransformer ?? new CoordinateTransformer();
 
-        //NavigationPage.SetHasNavigationBar(this, false);
         Shell.SetNavBarIsVisible(this, false);
         InitializeComponent();
-        try { 
-        }catch(Exception ex) { }
+        snapToggle.IsToggled = true;
+        UpdateStatusLabel();
     }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        _ = recordSyncService.TriggerSyncAsync();
+    }
+
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
         int level = int.Parse(query["Level"].ToString());
-        settings = new(0, level);
+        const int seed = 0;
+
+        settings = new(seed, level);
+        puzzleKey = new PuzzleKey(level, seed, GameRules.RulesVersion);
         InitializeSquir(settings);
+        _ = LoadProgressAndRecordsAsync();
     }
 
     Squir drawa;
@@ -128,6 +159,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
     private void InitializeSquir(GameSettings settings)
     {
         gameSettings = settings;
+        gameSettings.SnapEnabled = sessionState.SnapEnabled;
         drawa = new Squir(1000, 1000, gameSettings);
         commonArea = new(gameSettings,drawa);
         gameSettings.MaxArea = FSMath.CalculateArea(drawa.PointsP);
@@ -363,6 +395,13 @@ public partial class GamePage : ContentPage, IQueryAttributable
         void UpdateGui(double area)
         {
             gameSettings.AreaFilled = area;
+            decimal coveragePercent = scoreEvaluator.ComputeCoveragePercent(gameSettings.AreaFilled, gameSettings.MaxArea);
+            sessionState.CoveragePercent = coveragePercent;
+            gameSettings.CurrentStars = scoreEvaluator.ComputeStars(
+                coveragePercent,
+                gameSettings.WorldRecordCoveragePercent,
+                gameSettings.BestCoveragePercent > 0m ? gameSettings.BestCoveragePercent : null);
+            UpdateStatusLabel();
         }
 
 
@@ -373,13 +412,13 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
         private void squir_SizeChanged(object sender, EventArgs e)
         {
-            if (drawa != null)
+            if (drawa != null && drawables != null)
             {
                 //drawa.Resize(squir.Width, squir.Height);
                 drawables.Resize((float)squir.Width, (float)squir.Height);
+                drawables.cover.Resize((float)squir.Width, (float)squir.Height);
+                drawables.Gui.Resize((float)squir.Width, (float)squir.Height);
             }
-            drawables.cover.Resize((float)squir.Width, (float)squir.Height);
-            drawables.Gui.Resize((float)squir.Width, (float)squir.Height);
         //(sender as SKCanvasView).ScaleX.ToString();
     }
 
@@ -463,13 +502,13 @@ public partial class GamePage : ContentPage, IQueryAttributable
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooTopFragments,
                             drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset < absolute0y));
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.TooBottomFragments, gameSettings.CenterFragments,
-                            drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + (gameSettings.yoffset)) < (squir.Width / gameSettings.zoomFactor));
+                            drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + (gameSettings.yoffset)) < (squir.Height / gameSettings.zoomFactor));
                     }
                     if (yMoveTotal > 0)
                     {
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.TooTopFragments, gameSettings.CenterFragments,
                             drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset > absolute0y));
-                        GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooTopFragments,
+                        GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooBottomFragments,
                             drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + (gameSettings.yoffset)) > (squir.Height / gameSettings.zoomFactor));
                     }
 
@@ -678,7 +717,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 {
                     if (moved == null) { return; }
                     if (!moved.wasTouched) { return; }
-                    if (TryGetWallSnapTranslation(moved, out var snapTranslation))
+                    if (gameSettings.SnapEnabled && TryGetWallSnapTranslation(moved, out var snapTranslation))
                     {
                         moved.PositionS = new SKPoint(
                             moved.PositionS.X + snapTranslation.X,
@@ -687,6 +726,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     moved = null;
                     movingStatus = moveStatus.none;
                     UpdateCover();
+                    _ = SaveBestIfImprovedAsync();
                     //UpdateGui();
                     Invalidate();
                     break;
@@ -1061,8 +1101,232 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
     private void TouchFragment(Fragment ff)
     {
+        if (ff is null)
+        {
+            return;
+        }
+
         ff.wasTouched = true;
-        gameSettings.CenterFragments.Add(ff);
+        if (!gameSettings.CenterFragments.Contains(ff))
+        {
+            gameSettings.CenterFragments.Add(ff);
+        }
+    }
+
+    private IEnumerable<Fragment> AllFragments()
+    {
+        if (drawables is null)
+        {
+            return Enumerable.Empty<Fragment>();
+        }
+
+        return drawables.drawables.Skip(1).OfType<Fragment>();
+    }
+
+    private async Task LoadProgressAndRecordsAsync()
+    {
+        installId = await progressStore.GetOrCreateInstallIdAsync();
+
+        levelProgress = await progressStore.LoadLevelProgressAsync(puzzleKey);
+        if (levelProgress.BestSnapshot is null)
+        {
+            levelProgress.BestSnapshot = await progressStore.LoadSnapshotAsync(puzzleKey);
+        }
+
+        gameSettings.BestCoveragePercent = levelProgress.BestCoveragePercent;
+        gameSettings.WorldRecordCoveragePercent = levelProgress.WorldRecordCoveragePercent;
+        gameSettings.WorldRecordHolderInstallId = levelProgress.WorldRecordHolderInstallId;
+        restoreBestButton.IsEnabled = levelProgress.BestSnapshot is not null;
+
+        try
+        {
+            RecordSnapshot? remote = await leaderboardClient.GetRecordAsync(puzzleKey, installId);
+            if (remote is not null)
+            {
+                gameSettings.WorldRecordCoveragePercent = remote.WorldRecordCoveragePercent;
+                gameSettings.WorldRecordHolderInstallId = remote.WorldRecordHolderInstallId;
+                gameSettings.BestCoveragePercent = Math.Max(gameSettings.BestCoveragePercent, remote.PlayerBestCoveragePercent ?? 0m);
+
+                levelProgress.WorldRecordCoveragePercent = remote.WorldRecordCoveragePercent;
+                levelProgress.WorldRecordHolderInstallId = remote.WorldRecordHolderInstallId;
+                levelProgress.BestCoveragePercent = gameSettings.BestCoveragePercent;
+                levelProgress.LastSyncedAtUtc = remote.UpdatedAtUtc ?? DateTimeOffset.UtcNow;
+
+                await progressStore.SaveLevelProgressAsync(levelProgress);
+            }
+        }
+        catch
+        {
+            // Offline or unreachable server is expected; local progress remains authoritative until next sync.
+        }
+
+        UpdateGui(gameSettings.AreaFilled);
+        Invalidate();
+    }
+
+    private void UpdateStatusLabel()
+    {
+        if (recordStatusLabel is null || gameSettings is null)
+        {
+            return;
+        }
+
+        string world = gameSettings.WorldRecordCoveragePercent.HasValue
+            ? $"{gameSettings.WorldRecordCoveragePercent.Value:F2}%"
+            : "--";
+
+        recordStatusLabel.Text =
+            $"Best {gameSettings.BestCoveragePercent:F2}% | World {world} | Stars {gameSettings.CurrentStars}/3";
+    }
+
+    private async Task SaveBestIfImprovedAsync()
+    {
+        decimal currentCoverage = sessionState.CoveragePercent;
+        if (currentCoverage <= gameSettings.BestCoveragePercent + CoverageComparisonTolerance)
+        {
+            return;
+        }
+
+        gameSettings.BestCoveragePercent = currentCoverage;
+        LevelSnapshot snapshot = BuildCurrentSnapshot(currentCoverage);
+        sessionState.CurrentPlacements = snapshot.PlacedFragments;
+
+        levelProgress ??= new LevelProgress
+        {
+            PuzzleKey = puzzleKey
+        };
+
+        levelProgress.PuzzleKey = puzzleKey;
+        levelProgress.BestCoveragePercent = currentCoverage;
+        levelProgress.BestSnapshot = snapshot;
+
+        await progressStore.SaveSnapshotAsync(snapshot);
+        await progressStore.SaveLevelProgressAsync(levelProgress);
+
+        restoreBestButton.IsEnabled = true;
+
+        if (!string.IsNullOrWhiteSpace(installId))
+        {
+            ScoreSubmission submission = new()
+            {
+                PuzzleKey = puzzleKey,
+                InstallId = installId,
+                CoveragePercent = currentCoverage,
+                AchievedAtUtc = DateTimeOffset.UtcNow
+            };
+            await recordSyncService.EnqueueBestScoreAsync(submission);
+        }
+
+        UpdateGui(gameSettings.AreaFilled);
+        Invalidate();
+    }
+
+    private LevelSnapshot BuildCurrentSnapshot(decimal coveragePercent)
+    {
+        LevelSnapshot snapshot = new()
+        {
+            PuzzleKey = puzzleKey,
+            CoveragePercent = coveragePercent
+        };
+
+        List<Fragment> fragments = AllFragments().ToList();
+        for (int index = 0; index < fragments.Count; index++)
+        {
+            Fragment fragment = fragments[index];
+            if (!fragment.wasTouched)
+            {
+                continue;
+            }
+
+            snapshot.PlacedFragments.Add(new PlacedFragmentState
+            {
+                FragmentIndex = index,
+                PositionXWorld = fragment.PositionP.X,
+                PositionYWorld = fragment.PositionP.Y,
+                WasTouched = true
+            });
+        }
+
+        return snapshot;
+    }
+
+    private void ApplySnapshot(LevelSnapshot snapshot)
+    {
+        List<Fragment> fragments = AllFragments().ToList();
+
+        gameSettings.CenterFragments.Clear();
+        gameSettings.TooLeftFragments.Clear();
+        gameSettings.TooRightFragments.Clear();
+        gameSettings.TooTopFragments.Clear();
+        gameSettings.TooBottomFragments.Clear();
+
+        for (int row = 0; row < gameSettings.Rows; row++)
+        {
+            for (int col = 0; col < gameSettings.Cols; col++)
+            {
+                gameSettings.untouchedFragments[col, row] = null;
+            }
+        }
+
+        foreach (Fragment fragment in fragments)
+        {
+            fragment.wasTouched = false;
+            gameSettings.untouchedFragments[fragment.IndexX, fragment.IndexY] = fragment;
+        }
+
+        foreach (PlacedFragmentState placed in snapshot.PlacedFragments)
+        {
+            if (placed.FragmentIndex < 0 || placed.FragmentIndex >= fragments.Count)
+            {
+                continue;
+            }
+
+            Fragment fragment = fragments[placed.FragmentIndex];
+            fragment.wasTouched = placed.WasTouched;
+            if (!fragment.wasTouched)
+            {
+                continue;
+            }
+
+            SKPoint screenPosition = coordinateTransformer.WorldToScreen(
+                new SKPoint(placed.PositionXWorld, placed.PositionYWorld),
+                (float)squir.Width,
+                (float)squir.Height,
+                zoomFactor: 1f,
+                cameraOffsetWorld: new SKPoint(0f, 0f));
+
+            fragment.PositionS = screenPosition;
+            gameSettings.untouchedFragments[fragment.IndexX, fragment.IndexY] = null;
+            gameSettings.CenterFragments.Add(fragment);
+        }
+
+        UpdateCover();
+        Invalidate();
+    }
+
+    private async void RestoreBestButton_Clicked(object sender, EventArgs e)
+    {
+        LevelSnapshot? snapshot = levelProgress?.BestSnapshot ?? await progressStore.LoadSnapshotAsync(puzzleKey);
+        if (snapshot is null)
+        {
+            restoreBestButton.IsEnabled = false;
+            return;
+        }
+
+        ApplySnapshot(snapshot);
+    }
+
+    private void SnapToggle_Toggled(object sender, ToggledEventArgs e)
+    {
+        sessionState.SnapEnabled = e.Value;
+        if (gameSettings is not null)
+        {
+            gameSettings.SnapEnabled = e.Value;
+        }
+
+        UpdateStatusLabel();
     }
    
 }
+
+

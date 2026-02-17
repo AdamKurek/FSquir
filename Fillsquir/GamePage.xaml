@@ -2,43 +2,46 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fillsquir.GamePage"
-             xmlns:skiae="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
-             
-             >
-    
-    <Grid
-        x:Name="grid"
-        BackgroundColor="Black"
-        
-        >
-        <Grid.GestureRecognizers>
-            <PanGestureRecognizer
-                PanUpdated="PanGesture_PanUpdated"
-                >
-            </PanGestureRecognizer>
-        </Grid.GestureRecognizers>
-        
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
+             xmlns:skiae="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls">
 
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
+    <Grid x:Name="grid" BackgroundColor="Black">
         <skiae:SKCanvasView
-
-                    
-            
             x:Name="squir"
             Touch="squir_Touch"
             EnableTouchEvents="True"
-            
             BackgroundColor="Black"
             IgnorePixelScaling="True"
-            SizeChanged="squir_SizeChanged">
-                        
-        </skiae:SKCanvasView>
+            SizeChanged="squir_SizeChanged" />
+
+        <Grid Margin="12,8"
+              RowSpacing="6"
+              VerticalOptions="Start"
+              HorizontalOptions="Fill"
+              InputTransparent="False">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <HorizontalStackLayout Grid.Row="0" Spacing="12">
+                <Label Text="Snap"
+                       TextColor="White"
+                       VerticalTextAlignment="Center" />
+                <Switch x:Name="snapToggle"
+                        IsToggled="True"
+                        Toggled="SnapToggle_Toggled" />
+                <Button x:Name="restoreBestButton"
+                        Text="Restore Best"
+                        IsEnabled="False"
+                        Clicked="RestoreBestButton_Clicked" />
+            </HorizontalStackLayout>
+
+            <Label x:Name="recordStatusLabel"
+                   Grid.Row="1"
+                   TextColor="White"
+                   FontSize="12"
+                   LineBreakMode="WordWrap"
+                   Text="Best -- | World -- | Stars 0/3" />
+        </Grid>
     </Grid>
 </ContentPage>
-

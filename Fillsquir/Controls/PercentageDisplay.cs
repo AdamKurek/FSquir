@@ -1,4 +1,4 @@
-﻿using Fillsquir.Interfaces;
+using Fillsquir.Interfaces;
 using SkiaSharp;
 
 namespace Fillsquir.Controls
@@ -7,40 +7,48 @@ namespace Fillsquir.Controls
     {
         public PercentageDisplay(GameSettings settings) : base(settings)
         {
-
-        }
-
-        public double Percentage { get 
-            { 
-                return gameSettings.percentageFilled / gameSettings.percentageRequired *100000;
-            } 
         }
 
 #if DebugString
-public string debugString = "pusty text";
+        public string debugString = "";
 #endif
+
         protected override void DrawMainShape(SKCanvas canvas)
         {
-            SKPaint paint = new SKPaint() { 
-                Color = SKColors.Red,
-                TextAlign = SKTextAlign.Right,
-                TextSize = 20,
-            };
-            SKPaint stripPaint = new SKPaint()
+            float barHeight = 28f;
+            float progress = (float)Math.Clamp(gameSettings.CoveragePercent / 100m, 0m, 1m);
+
+            using SKPaint bgPaint = new()
             {
-                Color = SKColors.WhiteSmoke,
-                Style = SKPaintStyle.StrokeAndFill,
+                Color = new SKColor(20, 20, 20, 180),
+                Style = SKPaintStyle.Fill
+            };
+            using SKPaint fillPaint = new()
+            {
+                Color = SKColors.Orange,
+                Style = SKPaintStyle.Fill
+            };
+            using SKPaint textPaint = new()
+            {
+                Color = SKColors.White,
+                TextSize = 16,
+                IsAntialias = true
             };
 
-            canvas.DrawRect(0, 0, (float)Percentage*scaleX, 30, stripPaint);//????
+            canvas.DrawRect(0, 0, canvasWidth, barHeight, bgPaint);
+            canvas.DrawRect(0, 0, canvasWidth * progress, barHeight, fillPaint);
 
-            string text = $"{Percentage}%";
-            //IAttributedText attributedText = new AttributedText(text, new List<IAttributedTextRun>(),true);
-
+            string world = gameSettings.WorldRecordCoveragePercent.HasValue
+                ? $"{gameSettings.WorldRecordCoveragePercent.Value:F2}%"
+                : "--";
+            string text = $"Coverage {gameSettings.CoveragePercent:F2}%  Best {gameSettings.BestCoveragePercent:F2}%  World {world}  Stars {gameSettings.CurrentStars}/3";
 #if DebugString
-            text = debugString;
+            if (!string.IsNullOrWhiteSpace(debugString))
+            {
+                text = debugString;
+            }
 #endif
-            canvas.DrawText(text, canvasWidth - 20, 150, paint);
+            canvas.DrawText(text, 12, 20, textPaint);
         }
     }
 }

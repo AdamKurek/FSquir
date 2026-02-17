@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: fsquir-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fsquir_records
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - fsquir-postgres-data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: FSquir.Api/Dockerfile
+    container_name: fsquir-api
+    depends_on:
+      - postgres
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      FSQUIR_RECORDS_DB: Host=postgres;Port=5432;Database=fsquir_records;Username=postgres;Password=postgres
+    ports:
+      - "5180:8080"
+
+volumes:
+  fsquir-postgres-data:
