@@ -14,6 +14,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\\Fillsquir\\Visuals\\GraphicsQualityTier.cs" Link="Visuals\\GraphicsQualityTier.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\TextureMappingMode.cs" Link="Visuals\\TextureMappingMode.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\VisualSettings.cs" Link="Visuals\\VisualSettings.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\SkinDefinition.cs" Link="Visuals\\SkinDefinition.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\SkinCatalog.cs" Link="Visuals\\SkinCatalog.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\MaterialEffectFlags.cs" Link="Visuals\\MaterialEffectFlags.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\IVisualSettingsStore.cs" Link="Visuals\\IVisualSettingsStore.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\VisualSettingsState.cs" Link="Visuals\\VisualSettingsState.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\WorldTextureProvider.cs" Link="Visuals\\WorldTextureProvider.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\IPuzzleMaterialService.cs" Link="Visuals\\IPuzzleMaterialService.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\PuzzleMaterialService.cs" Link="Visuals\\PuzzleMaterialService.cs" />
+    <Compile Include="..\\Fillsquir\\Domain\\PuzzleKey.cs" Link="Domain\\PuzzleKey.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
     <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Fillsquir.SettingsPage"
+             BackgroundColor="#101316">
+    <Grid Padding="16" RowDefinitions="Auto,*" RowSpacing="16">
+        <HorizontalStackLayout Grid.Row="0" Spacing="12">
+            <Button Text="Back"
+                    Clicked="BackButton_Clicked" />
+            <Label Text="Board Visuals"
+                   TextColor="White"
+                   FontSize="22"
+                   VerticalTextAlignment="Center" />
+        </HorizontalStackLayout>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="14">
+                <Label Text="Skin"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Picker x:Name="skinPicker"
+                        SelectedIndexChanged="AnySettingChanged" />
+
+                <Label Text="Quality"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Picker x:Name="qualityPicker"
+                        SelectedIndexChanged="AnySettingChanged" />
+
+                <Label Text="Texture Mapping"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Picker x:Name="mappingPicker"
+                        SelectedIndexChanged="AnySettingChanged" />
+
+                <HorizontalStackLayout Spacing="12">
+                    <Label Text="Strong Outlines"
+                           TextColor="White"
+                           VerticalTextAlignment="Center"
+                           FontAttributes="Bold" />
+                    <Switch x:Name="outlineSwitch"
+                            Toggled="AnySettingChanged" />
+                </HorizontalStackLayout>
+
+                <Label x:Name="depthValueLabel"
+                       Text="Depth Intensity"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Slider x:Name="depthSlider"
+                        Minimum="0.2"
+                        Maximum="1.0"
+                        ValueChanged="AnySliderChanged" />
+
+                <Label x:Name="stripOpacityValueLabel"
+                       Text="Strip Opacity"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Slider x:Name="stripOpacitySlider"
+                        Minimum="0.25"
+                        Maximum="0.9"
+                        ValueChanged="AnySliderChanged" />
+
+                <Label x:Name="stripFrostValueLabel"
+                       Text="Strip Frost"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Slider x:Name="stripFrostSlider"
+                        Minimum="0"
+                        Maximum="1"
+                        ValueChanged="AnySliderChanged" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

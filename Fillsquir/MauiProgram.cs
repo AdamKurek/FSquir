@@ -1,4 +1,5 @@
 using Fillsquir.Services;
+using Fillsquir.Visuals;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace Fillsquir;
@@ -22,6 +23,10 @@ public static class MauiProgram
         builder.Services.AddSingleton<IScoreEvaluator, ScoreEvaluator>();
         builder.Services.AddSingleton<ICoordinateTransformer, CoordinateTransformer>();
         builder.Services.AddSingleton<IRecordSyncService, RecordSyncService>();
+        builder.Services.AddSingleton<IVisualSettingsStore, VisualSettingsStore>();
+        builder.Services.AddSingleton<VisualSettingsState>();
+        builder.Services.AddSingleton<WorldTextureProvider>();
+        builder.Services.AddSingleton<IPuzzleMaterialService, PuzzleMaterialService>();
 
         builder.Services.AddSingleton<ILeaderboardClient>(_ =>
             new HttpLeaderboardClient(new HttpClient

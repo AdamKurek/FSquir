@@ -1,4 +1,5 @@
 using Fillsquir.Domain;
+using Fillsquir.Visuals;
 
 namespace Fillsquir.Controls
 {
@@ -49,6 +50,15 @@ namespace Fillsquir.Controls
         internal int CurrentStars;
 
         internal bool SnapEnabled = true;
+        internal string SkinId = SkinCatalog.DefaultSkinId;
+        internal GraphicsQualityTier QualityTier = GraphicsQualityTier.Medium;
+        internal TextureMappingMode MappingMode = TextureMappingMode.WorldLocked;
+        internal bool ShowStrongOutlines = true;
+        internal float DepthIntensity = VisualSettings.DefaultDepthIntensity;
+        internal float StripOpacity = VisualSettings.DefaultStripOpacity;
+        internal float StripFrostAmount = VisualSettings.DefaultStripFrostAmount;
+        internal Fragment? ActiveDraggedFragment;
+        internal Fragment? HoveredFragment;
         internal string RulesVersion => GameRules.RulesVersion;
 
         internal Random rand;

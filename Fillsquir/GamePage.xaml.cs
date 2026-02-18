@@ -1,6 +1,8 @@
 using Fillsquir.Controls;
 using Fillsquir.Domain;
 using Fillsquir.Services;
+using Fillsquir.Visuals;
+using Microsoft.Maui.ApplicationModel;
 using SkiaSharp;
 
 namespace Fillsquir;
@@ -87,12 +89,16 @@ public partial class GamePage : ContentPage, IQueryAttributable
     private readonly IRecordSyncService recordSyncService;
     private readonly IScoreEvaluator scoreEvaluator;
     private readonly ICoordinateTransformer coordinateTransformer;
+    private readonly VisualSettingsState visualSettingsState;
+    private readonly IPuzzleMaterialService puzzleMaterialService;
 
     private readonly GameSessionState sessionState = new();
     private LevelProgress? levelProgress;
     private PuzzleKey puzzleKey;
     private string installId = string.Empty;
     private const decimal CoverageComparisonTolerance = 0.0001m;
+    private VisualSettings currentVisualSettings = new();
+    private bool subscribedToVisualSettings;
 
     GameSettings settings;
     public GamePage()
@@ -107,6 +113,10 @@ public partial class GamePage : ContentPage, IQueryAttributable
             ?? new RecordSyncService(leaderboardClient, progressStore, new JsonFileSyncQueue());
         scoreEvaluator = services?.GetService(typeof(IScoreEvaluator)) as IScoreEvaluator ?? new ScoreEvaluator();
         coordinateTransformer = services?.GetService(typeof(ICoordinateTransformer)) as ICoordinateTransformer ?? new CoordinateTransformer();
+        visualSettingsState = services?.GetService(typeof(VisualSettingsState)) as VisualSettingsState
+            ?? new VisualSettingsState(new VisualSettingsStore());
+        puzzleMaterialService = services?.GetService(typeof(IPuzzleMaterialService)) as IPuzzleMaterialService
+            ?? new PuzzleMaterialService(new WorldTextureProvider());
 
         Shell.SetNavBarIsVisible(this, false);
         InitializeComponent();
@@ -117,7 +127,26 @@ public partial class GamePage : ContentPage, IQueryAttributable
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        if (!subscribedToVisualSettings)
+        {
+            visualSettingsState.Changed += VisualSettingsState_Changed;
+            subscribedToVisualSettings = true;
+        }
+
         _ = recordSyncService.TriggerSyncAsync();
+        _ = LoadAndApplyVisualSettingsAsync();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        if (!subscribedToVisualSettings)
+        {
+            return;
+        }
+
+        visualSettingsState.Changed -= VisualSettingsState_Changed;
+        subscribedToVisualSettings = false;
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -127,8 +156,10 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
         settings = new(seed, level);
         puzzleKey = new PuzzleKey(level, seed, GameRules.RulesVersion);
+        ApplyVisualSettingsToSettings(settings, currentVisualSettings, invalidateTextureCache: false);
         InitializeSquir(settings);
         _ = LoadProgressAndRecordsAsync();
+        _ = LoadAndApplyVisualSettingsAsync();
     }
 
     Squir drawa;
@@ -320,22 +351,31 @@ public partial class GamePage : ContentPage, IQueryAttributable
         panGesture.PanUpdated += PanGesture_PanUpdated;
         squir.EnableTouchEvents = true;
 
-        pointGesture.PointerEntered += (s, e) =>
+        pointGesture.PointerEntered += (_, e) =>
         {
-            var wtwd =  e.GetPosition(grid);
-            
-            drawables.AddDot(new SKPoint((float)wtwd.Value.X, (float)wtwd.Value.Y));
-
+            Microsoft.Maui.Graphics.Point? pointerPosition = e.GetPosition(squir);
+            if (pointerPosition.HasValue)
+            {
+                UpdateHoveredFragmentFromPointer(new SKPoint((float)pointerPosition.Value.X, (float)pointerPosition.Value.Y));
+            }
         };
 
-        pointGesture.PointerMoved += (s, e) => {
+        pointGesture.PointerMoved += (_, e) =>
+        {
+            Microsoft.Maui.Graphics.Point? pointerPosition = e.GetPosition(squir);
+            if (pointerPosition.HasValue)
+            {
+                UpdateHoveredFragmentFromPointer(new SKPoint((float)pointerPosition.Value.X, (float)pointerPosition.Value.Y));
+            }
+            else
+            {
+                SetHoveredFragment(null);
+            }
+        };
 
-#if windows
-            mousePosition = (Point)e.GetPosition(this);
-#endif
-
-
-            return;
+        pointGesture.PointerExited += (_, _) =>
+        {
+            SetHoveredFragment(null);
         };
 
 #if DebugClickingLines
@@ -410,6 +450,80 @@ public partial class GamePage : ContentPage, IQueryAttributable
             squir.InvalidateSurface();
         }
 
+        private async Task LoadAndApplyVisualSettingsAsync()
+        {
+            try
+            {
+                VisualSettings loaded = await visualSettingsState.LoadAsync();
+                currentVisualSettings = loaded.Normalize();
+            }
+            catch
+            {
+                currentVisualSettings = new VisualSettings();
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                if (gameSettings is not null)
+                {
+                    ApplyVisualSettingsToSettings(gameSettings, currentVisualSettings, invalidateTextureCache: true);
+                    Invalidate();
+                    return;
+                }
+
+                if (settings is not null)
+                {
+                    ApplyVisualSettingsToSettings(settings, currentVisualSettings, invalidateTextureCache: false);
+                }
+            });
+        }
+
+        private void VisualSettingsState_Changed(object? sender, VisualSettings updated)
+        {
+            currentVisualSettings = updated.Normalize();
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (gameSettings is null)
+                {
+                    return;
+                }
+
+                ApplyVisualSettingsToSettings(gameSettings, currentVisualSettings, invalidateTextureCache: true);
+                Invalidate();
+            });
+        }
+
+        private void ApplyVisualSettingsToSettings(GameSettings targetSettings, VisualSettings visualSettings, bool invalidateTextureCache)
+        {
+            VisualSettings normalized = visualSettings.Normalize();
+            string previousSkinId = targetSettings.SkinId;
+            GraphicsQualityTier previousQuality = targetSettings.QualityTier;
+
+            targetSettings.SkinId = normalized.SelectedSkinId;
+            targetSettings.QualityTier = normalized.QualityTier;
+            targetSettings.MappingMode = normalized.MappingMode;
+            targetSettings.ShowStrongOutlines = normalized.ShowStrongOutlines;
+            targetSettings.DepthIntensity = normalized.DepthIntensity;
+            targetSettings.StripOpacity = normalized.StripOpacity;
+            targetSettings.StripFrostAmount = normalized.StripFrostAmount;
+
+            bool cacheKeyChanged =
+                !string.Equals(previousSkinId, targetSettings.SkinId, StringComparison.OrdinalIgnoreCase)
+                || previousQuality != targetSettings.QualityTier;
+
+            if (!invalidateTextureCache || !cacheKeyChanged)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(previousSkinId))
+            {
+                puzzleMaterialService.InvalidateCacheForSkinOrSeed(puzzleKey, previousSkinId);
+            }
+
+            puzzleMaterialService.InvalidateCacheForSkinOrSeed(puzzleKey, targetSettings.SkinId);
+        }
+
         private void squir_SizeChanged(object sender, EventArgs e)
         {
             if (drawa != null && drawables != null)
@@ -456,6 +570,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (Math.Abs(e.TotalX) > Math.Abs(e.TotalY) + 5)
                     {
                         movingStatus = moveStatus.bottomStrip;
+                        gameSettings.ActiveDraggedFragment = null;
                         goto case moveStatus.bottomStrip;
                     }
                     if (Math.Abs(e.TotalY) > Math.Abs(e.TotalX) + 5)
@@ -472,6 +587,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 }
             case moveStatus.map:
                 {
+                    gameSettings.ActiveDraggedFragment = null;
                     
                     gameSettings.xoffset = location.X + offsetMoveLocation.X;
                     gameSettings.yoffset = location.Y + offsetMoveLocation.Y;
@@ -556,6 +672,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if(moved == null)
                     {
                         movingStatus = moveStatus.none;
+                        gameSettings.ActiveDraggedFragment = null;
                         return;
                     }
                     moved.PositionS.X = startingPoint.X + location.X;
@@ -565,6 +682,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 }
             case moveStatus.bottomStrip: 
                 {
+                    gameSettings.ActiveDraggedFragment = null;
                     var pos = bottomStripMovePre - (float)e.TotalX;
                     if (pos <= 0)
                     {
@@ -603,10 +721,21 @@ public partial class GamePage : ContentPage, IQueryAttributable
         {
             if(e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Left)
             {
-                (int,int) selectedCell = FindSlotOnBottomStrip(e.Location);
-                moved = gameSettings.untouchedFragments[selectedCell.Item1,selectedCell.Item2];
-                movingStatus = moveStatus.fragment;
-                gameSettings.untouchedFragments[selectedCell.Item1, selectedCell.Item2] = null;
+                SetHoveredFragment(null);
+                if (TryGetStripCell(e.Location, out int selectedCol, out int selectedRow))
+                {
+                    moved = gameSettings.untouchedFragments[selectedCol, selectedRow];
+                    movingStatus = moveStatus.fragment;
+                    gameSettings.untouchedFragments[selectedCol, selectedRow] = null;
+                }
+                else
+                {
+                    moved = null;
+                    movingStatus = moveStatus.bottomStrip;
+                    gameSettings.ActiveDraggedFragment = null;
+                    bottomStripMovePre = gameSettings.bottomStripMove;
+                    return;
+                }
 #if DebugString
                 //((PercentageDisplay)(drawables.Gui)).debugString = selectedCell.ToString();
 #endif
@@ -620,9 +749,11 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (moved == null)
                     {
                         movingStatus = moveStatus.bottomStrip;
+                        gameSettings.ActiveDraggedFragment = null;
                         bottomStripMovePre = gameSettings.bottomStripMove;
                         return;
                     }
+                    gameSettings.ActiveDraggedFragment = moved.wasTouched ? moved : null;
                     location.X -= gameSettings.xoffset;
                     location.Y -= gameSettings.yoffset;
                     startingPoint = location;
@@ -639,6 +770,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
 #else
                     movingStatus = moveStatus.undecided;
 #endif
+                    gameSettings.ActiveDraggedFragment = moved.wasTouched ? moved : null;
                     bottomStripMovePre = gameSettings.bottomStripMove;
                     location.X /= gameSettings.zoomFactor;
                     location.Y /= gameSettings.zoomFactor;
@@ -650,7 +782,9 @@ public partial class GamePage : ContentPage, IQueryAttributable
             }
             else if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
             {
+                SetHoveredFragment(null);
                 movingStatus = moveStatus.bottomStrip;
+                gameSettings.ActiveDraggedFragment = null;
                 bottomStripMovePre = gameSettings.bottomStripMove;
                 Invalidate();
                 return;
@@ -678,6 +812,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
         {
             case SkiaSharp.Views.Maui.SKTouchAction.Pressed:
                 {
+                    SetHoveredFragment(null);
                     if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
                         StartMovingMap();
@@ -694,19 +829,22 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (moved == null) {
 #if WINDOWS
                         bottomStripMovePre = gameSettings.bottomStripMove;
+                        gameSettings.ActiveDraggedFragment = null;
 
 #else
                         StartMovingMap();
-                    
+                     
 #endif
                         return;
                     }//probably will be needed one day
                     if(moved.wasTouched) {
                         startingPoint = moved.PositionS;
+                        gameSettings.ActiveDraggedFragment = moved;
                     }
                     else
                     {
                         startingPoint = location;
+                        gameSettings.ActiveDraggedFragment = null;
                                         //here add offset
                     }
                     //TouchFragment(moved);
@@ -715,16 +853,31 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 }
             case SkiaSharp.Views.Maui.SKTouchAction.Released:
                 {
-                    if (moved == null) { return; }
-                    if (!moved.wasTouched) { return; }
+                    if (moved == null)
+                    {
+                        gameSettings.ActiveDraggedFragment = null;
+                        SetHoveredFragment(null);
+                        return;
+                    }
+
+                    if (!moved.wasTouched)
+                    {
+                        gameSettings.ActiveDraggedFragment = null;
+                        SetHoveredFragment(null);
+                        return;
+                    }
+
                     if (gameSettings.SnapEnabled && TryGetWallSnapTranslation(moved, out var snapTranslation))
                     {
                         moved.PositionS = new SKPoint(
                             moved.PositionS.X + snapTranslation.X,
                             moved.PositionS.Y + snapTranslation.Y);
                     }
+                    moved.TriggerReleaseSettle();
                     moved = null;
                     movingStatus = moveStatus.none;
+                    gameSettings.ActiveDraggedFragment = null;
+                    SetHoveredFragment(null);
                     UpdateCover();
                     _ = SaveBestIfImprovedAsync();
                     //UpdateGui();
@@ -1071,6 +1224,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
     {
         offsetMoveLocation.X =  gameSettings.xoffset;
         offsetMoveLocation.Y =  gameSettings.yoffset;
+        gameSettings.ActiveDraggedFragment = null;
+        gameSettings.HoveredFragment = null;
         movingStatus = moveStatus.map;
         currentMove = new();
     }
@@ -1086,6 +1241,90 @@ public partial class GamePage : ContentPage, IQueryAttributable
         var yfromhere = -gameSettings.yoffset + (OnScreenLocation.Y / zoomPrev);
         gameSettings.xoffset = -OnMapLocation.X + gameSettings.xoffset + (OnScreenLocation.X / gameSettings.zoomFactor);
             //gameSettings.yoffset = -OnMapLocation.Y + gameSettings.yoffset + (OnScreenLocation.Y / gameSettings.zoomFactor);
+    }
+
+    private void UpdateHoveredFragmentFromPointer(SKPoint screenLocation)
+    {
+        if (gameSettings is null || drawables is null)
+        {
+            return;
+        }
+
+        if (movingStatus == moveStatus.fragment || movingStatus == moveStatus.map || gameSettings.ActiveDraggedFragment is not null)
+        {
+            SetHoveredFragment(null);
+            return;
+        }
+
+        Fragment? hovered = ResolveFragmentForScreenLocation(screenLocation);
+        SetHoveredFragment(hovered);
+    }
+
+    private Fragment? ResolveFragmentForScreenLocation(SKPoint screenLocation)
+    {
+        float stripTop = (float)squir.Height * gameSettings.prop1 / gameSettings.prop2;
+        if (screenLocation.Y > stripTop)
+        {
+            if (TryGetStripCell(screenLocation, out int stripCol, out int stripRow))
+            {
+                return gameSettings.untouchedFragments[stripCol, stripRow];
+            }
+
+            return null;
+        }
+
+        SKPoint normalized = new(screenLocation.X / gameSettings.zoomFactor, screenLocation.Y / gameSettings.zoomFactor);
+        Fragment? selected = drawables.SelectFragmentOnClick(normalized);
+
+#if WINDOWS
+        if (selected is null)
+        {
+            selected = drawables.getNearestFragment(normalized);
+        }
+#endif
+
+        return selected;
+    }
+
+    private bool TryGetStripCell(SKPoint location, out int col, out int row)
+    {
+        col = 0;
+        row = 0;
+
+        if (squir is null || gameSettings is null)
+        {
+            return false;
+        }
+
+        float stripTop = (float)squir.Height * gameSettings.prop1 / gameSettings.prop2;
+        if (location.Y <= stripTop)
+        {
+            return false;
+        }
+
+        (int candidateCol, int candidateRow) = FindSlotOnBottomStrip(location);
+        int maxCols = gameSettings.untouchedFragments.GetLength(0);
+        int maxRows = gameSettings.untouchedFragments.GetLength(1);
+
+        if (candidateCol < 0 || candidateCol >= maxCols || candidateRow < 0 || candidateRow >= maxRows)
+        {
+            return false;
+        }
+
+        col = candidateCol;
+        row = candidateRow;
+        return true;
+    }
+
+    private void SetHoveredFragment(Fragment? hovered)
+    {
+        if (gameSettings is null || ReferenceEquals(gameSettings.HoveredFragment, hovered))
+        {
+            return;
+        }
+
+        gameSettings.HoveredFragment = hovered;
+        Invalidate();
     }
 
     private (int, int) FindSlotOnBottomStrip(SKPoint location)
@@ -1111,6 +1350,9 @@ public partial class GamePage : ContentPage, IQueryAttributable
         {
             gameSettings.CenterFragments.Add(ff);
         }
+
+        gameSettings.ActiveDraggedFragment = ff;
+        gameSettings.HoveredFragment = null;
     }
 
     private IEnumerable<Fragment> AllFragments()
@@ -1253,6 +1495,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
     private void ApplySnapshot(LevelSnapshot snapshot)
     {
         List<Fragment> fragments = AllFragments().ToList();
+        gameSettings.ActiveDraggedFragment = null;
+        gameSettings.HoveredFragment = null;
 
         gameSettings.CenterFragments.Clear();
         gameSettings.TooLeftFragments.Clear();
@@ -1314,6 +1558,11 @@ public partial class GamePage : ContentPage, IQueryAttributable
         }
 
         ApplySnapshot(snapshot);
+    }
+
+    private async void SettingsButton_Clicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync(nameof(SettingsPage));
     }
 
     private void SnapToggle_Toggled(object sender, ToggledEventArgs e)

@@ -1,18 +1,21 @@
 using Fillsquir.Controls;
+using Fillsquir.Domain;
 using Fillsquir.Services;
+using Fillsquir.Visuals;
 using SkiaSharp;
 
 namespace Fillsquir.Interfaces
 {
     internal abstract class GeometryElement : SKDrawable
     {
-        static internal float defaultCanvasWidth = 1000;
-        static internal float defaultCanvasHeight = 1000;
+        internal static float defaultCanvasWidth = 1000;
+        internal static float defaultCanvasHeight = 1000;
         internal float canvasWidth = 1000;
         internal float canvasHeight = 1000;
         internal GameSettings gameSettings;
 
         private ICoordinateTransformer? coordinateTransformer;
+        private IPuzzleMaterialService? puzzleMaterialService;
 
         private GeometryElement()
         {
@@ -41,6 +44,37 @@ namespace Fillsquir.Interfaces
         protected float scaleX => CoordinateTransformer.MapScaleX(canvasWidth);
 
         protected float scaleY => CoordinateTransformer.MapScaleY(canvasHeight);
+
+        protected IPuzzleMaterialService PuzzleMaterialService
+        {
+            get
+            {
+                if (puzzleMaterialService is not null)
+                {
+                    return puzzleMaterialService;
+                }
+
+                puzzleMaterialService = App.Services?.GetService(typeof(IPuzzleMaterialService)) as IPuzzleMaterialService;
+                puzzleMaterialService ??= new PuzzleMaterialService(new WorldTextureProvider());
+                return puzzleMaterialService;
+            }
+        }
+
+        protected PuzzleKey CurrentPuzzleKey => new(
+            gameSettings.Level,
+            gameSettings.Seed,
+            gameSettings.RulesVersion);
+
+        protected VisualSettings CurrentVisualSettings => new()
+        {
+            SelectedSkinId = gameSettings.SkinId,
+            QualityTier = gameSettings.QualityTier,
+            MappingMode = gameSettings.MappingMode,
+            ShowStrongOutlines = gameSettings.ShowStrongOutlines,
+            DepthIntensity = gameSettings.DepthIntensity,
+            StripOpacity = gameSettings.StripOpacity,
+            StripFrostAmount = gameSettings.StripFrostAmount
+        };
 
         protected SKPoint WorldToScaledScreen(SKPoint worldPoint)
         {

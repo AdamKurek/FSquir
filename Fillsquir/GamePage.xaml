@@ -24,6 +24,9 @@
             </Grid.RowDefinitions>
 
             <HorizontalStackLayout Grid.Row="0" Spacing="12">
+                <Button x:Name="settingsButton"
+                        Text="Gear"
+                        Clicked="SettingsButton_Clicked" />
                 <Label Text="Snap"
                        TextColor="White"
                        VerticalTextAlignment="Center" />

@@ -1,4 +1,5 @@
 using Fillsquir.Services;
+using Fillsquir.Visuals;
 
 namespace Fillsquir;
 
@@ -8,7 +9,10 @@ public partial class App : Application
     private readonly CancellationTokenSource syncCts = new();
     private Page? rootPage;
 
-    public App(IServiceProvider services, IRecordSyncService recordSyncService)
+    public App(
+        IServiceProvider services,
+        IRecordSyncService recordSyncService,
+        VisualSettingsState visualSettingsState)
     {
         InitializeComponent();
 
@@ -20,6 +24,7 @@ public partial class App : Application
             try
             {
                 await recordSyncService.TriggerSyncAsync();
+                await visualSettingsState.LoadAsync();
 
                 using PeriodicTimer timer = new(TimeSpan.FromSeconds(20));
                 while (await timer.WaitForNextTickAsync(syncCts.Token))
