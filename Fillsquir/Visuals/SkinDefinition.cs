@@ -22,7 +22,8 @@ public sealed class SkinDefinition
         float vignetteIntensity,
         float accentIntensity,
         float bevelStrength,
-        float shadowStrength)
+        float shadowStrength,
+        DropParticleProfile dropParticleProfile)
     {
         Id = id;
         DisplayName = displayName;
@@ -42,6 +43,7 @@ public sealed class SkinDefinition
         AccentIntensity = accentIntensity;
         BevelStrength = bevelStrength;
         ShadowStrength = shadowStrength;
+        DropParticleProfile = dropParticleProfile;
     }
 
     public string Id { get; }
@@ -65,4 +67,5 @@ public sealed class SkinDefinition
     public float AccentIntensity { get; }
     public float BevelStrength { get; }
     public float ShadowStrength { get; }
+    public DropParticleProfile DropParticleProfile { get; }
 }

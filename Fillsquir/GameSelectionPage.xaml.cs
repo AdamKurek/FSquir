@@ -89,12 +89,10 @@ public partial class GameSelectionPage : ContentPage
     {
         Button button = (Button)sender;
         int levelNumber = Int32.Parse(button.Text);
-        // Navigate to the selected level
-        Routing.RegisterRoute($"//GamePage{levelNumber}", typeof(GamePage));
         var navigationParameter = new Dictionary<string, object>
         {
             { "Level", levelNumber }
         };
-        await Shell.Current.GoToAsync($"//GamePage{levelNumber}", true, navigationParameter);
+        await Shell.Current.GoToAsync(nameof(GamePage), true, navigationParameter);
     }
 }

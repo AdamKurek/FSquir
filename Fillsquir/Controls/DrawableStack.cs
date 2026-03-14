@@ -1,4 +1,6 @@
+using Clipper2Lib;
 using Fillsquir.Interfaces;
+using Fillsquir.Visuals;
 using SkiaSharp;
 
 namespace Fillsquir.Controls
@@ -7,6 +9,7 @@ namespace Fillsquir.Controls
     {
         private float screenWidth = 1000;
         private float screenHeight = 1000;
+        private readonly DropParticleSystem dropParticleSystem = new();
         public List<GeometryElement> drawables = new();
         public GeometryElement cover;
 
@@ -94,7 +97,7 @@ namespace Fillsquir.Controls
         }
 #endif
 
-        internal SKCanvas DrawPreZoom(SKCanvas canvas)
+        internal SKCanvas DrawPreZoom(SKCanvas canvas, double nowSeconds)
         {
             this[0].Draw(canvas);
 
@@ -107,7 +110,9 @@ namespace Fillsquir.Controls
             }
 
             cover?.Draw(canvas);
+            DrawOverlapCues(canvas);
             DrawOutsideBoardDeadZone(canvas);
+            dropParticleSystem.Draw(canvas, nowSeconds);
 
 #if DebugClickingLines
             if (isCrossing)
@@ -126,6 +131,136 @@ namespace Fillsquir.Controls
 #endif
             return canvas;
         }
+
+        private void DrawOverlapCues(SKCanvas canvas)
+        {
+            List<Fragment> activeFragments = gameSettings.CenterFragments
+                .Where(static fragment => fragment.wasTouched)
+                .ToList();
+            if (activeFragments.Count < 2)
+            {
+                return;
+            }
+
+            VisualSettings visualSettings = CurrentVisualSettings.Normalize();
+            SkinDefinition skin = SkinCatalog.Resolve(visualSettings.SelectedSkinId);
+
+            byte fillAlpha = visualSettings.QualityTier switch
+            {
+                GraphicsQualityTier.Low => 42,
+                GraphicsQualityTier.Medium => 58,
+                _ => 72
+            };
+            byte strokeAlpha = visualSettings.QualityTier switch
+            {
+                GraphicsQualityTier.Low => 84,
+                GraphicsQualityTier.Medium => 108,
+                _ => 132
+            };
+            byte glowAlpha = visualSettings.QualityTier switch
+            {
+                GraphicsQualityTier.High => 54,
+                GraphicsQualityTier.Medium => 34,
+                _ => 0
+            };
+
+            using SKPaint fillPaint = new()
+            {
+                Style = SKPaintStyle.Fill,
+                IsAntialias = true,
+                BlendMode = SKBlendMode.Screen,
+                Color = BlendColor(skin.HoverColor, skin.FillLightColor, 0.42f).WithAlpha(fillAlpha)
+            };
+
+            using SKPaint strokePaint = new()
+            {
+                Style = SKPaintStyle.Stroke,
+                IsAntialias = true,
+                StrokeJoin = SKStrokeJoin.Round,
+                StrokeCap = SKStrokeCap.Round,
+                StrokeWidth = 1.35f + (0.95f * visualSettings.DepthIntensity),
+                BlendMode = SKBlendMode.Screen,
+                Color = BlendColor(skin.KeyLightColor, skin.HoverColor, 0.35f).WithAlpha(strokeAlpha)
+            };
+
+            using SKPaint glowPaint = new()
+            {
+                Style = SKPaintStyle.Fill,
+                IsAntialias = true,
+                BlendMode = SKBlendMode.Screen,
+                Color = skin.KeyLightColor.WithAlpha(glowAlpha)
+            };
+
+            if (glowAlpha > 0)
+            {
+                float blurRadius = visualSettings.QualityTier == GraphicsQualityTier.High ? 9f : 5f;
+                glowPaint.ImageFilter = SKImageFilter.CreateBlur(blurRadius, blurRadius);
+            }
+
+            for (int i = 0; i < activeFragments.Count; i++)
+            {
+                Fragment first = activeFragments[i];
+                SKPoint[] firstPoints = first.VisiblePointsS;
+                SKRect firstBounds = ComputeBounds(firstPoints);
+
+                for (int j = i + 1; j < activeFragments.Count; j++)
+                {
+                    Fragment second = activeFragments[j];
+                    SKPoint[] secondPoints = second.VisiblePointsS;
+                    if (!firstBounds.IntersectsWith(ComputeBounds(secondPoints)))
+                    {
+                        continue;
+                    }
+
+                    foreach (SKPoint[] overlapShape in IntersectPolygons(firstPoints, secondPoints))
+                    {
+                        if (overlapShape.Length < 3 || MathF.Abs(FSMath.CalculateArea(overlapShape)) < 1f)
+                        {
+                            continue;
+                        }
+
+                        using SKPath overlapPath = new();
+                        overlapPath.AddPoly(overlapShape);
+
+                        if (glowAlpha > 0)
+                        {
+                            canvas.DrawPath(overlapPath, glowPaint);
+                        }
+
+                        canvas.DrawPath(overlapPath, fillPaint);
+                        canvas.DrawPath(overlapPath, strokePaint);
+                    }
+                }
+            }
+        }
+
+        internal void SpawnDropParticles(Fragment fragment, double nowSeconds)
+        {
+            if (fragment is null)
+            {
+                return;
+            }
+
+            VisualSettings visualSettings = CurrentVisualSettings.Normalize();
+            SkinDefinition skin = SkinCatalog.Resolve(visualSettings.SelectedSkinId);
+            int baseCount = visualSettings.QualityTier switch
+            {
+                GraphicsQualityTier.Low => 14,
+                GraphicsQualityTier.Medium => 22,
+                _ => 30
+            };
+            int count = Math.Max(8, (int)MathF.Round(baseCount * Math.Clamp(skin.DropParticleProfile.CountScale, 0.5f, 2f)));
+
+            dropParticleSystem.Spawn(
+                fragment.VisiblePointsS,
+                skin.HoverColor.WithAlpha(220),
+                skin.KeyLightColor.WithAlpha(235),
+                count,
+                skin.DropParticleProfile,
+                nowSeconds);
+        }
+
+        internal bool HasActiveDropParticles => dropParticleSystem.HasActiveParticles;
 
         private void DrawOutsideBoardDeadZone(SKCanvas canvas)
         {
@@ -257,57 +392,83 @@ namespace Fillsquir.Controls
             cover?.Resize(width, height);
         }
 
-        internal Fragment getNearestFragment(SKPoint mousePosition)
-        {
-            float nearest = float.MaxValue;
-            int index = 0;
-            for (int i = 1; i < drawables.Count; i++)
-            {
-                var f = drawables[i] as Fragment;
-                if (f.wasTouched)
-                {
-                    float a = f.Distance(mousePosition);
-                    if (a < nearest)
-                    {
-                        nearest = a;
-                        index = i;
-                    }
-                }
-            }
-
-            return drawables[index] as Fragment;
-        }
-
         internal Fragment SelectFragmentOnClick(SKPoint mousePosition)
         {
-            List<Fragment> fragments = new();
-            foreach (Fragment drawable in drawables.Skip(1))
+            float nearestDistance = float.MaxValue;
+            Fragment? nearestFragment = null;
+
+            foreach (Fragment fragment in drawables.Skip(1).OfType<Fragment>())
             {
-                if (FSMath.IsPointInShape(mousePosition, drawable.VisiblePointsS))
+                if (!fragment.wasTouched)
                 {
-                    fragments.Add(drawable);
+                    continue;
+                }
+
+                if (!FSMath.IsPointInShape(mousePosition, fragment.VisiblePointsS))
+                {
+                    continue;
+                }
+
+                float distance = fragment.Distance(mousePosition);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestFragment = fragment;
                 }
             }
 
-            float nearest = float.MaxValue;
-            Fragment ret = null;
-            foreach (var clickedFr in fragments)
+            return nearestFragment;
+        }
+
+        private static List<SKPoint[]> IntersectPolygons(SKPoint[] first, SKPoint[] second)
+        {
+            Paths64 subject = new() { FSMath.SKPointArrayToPath64(first) };
+            Paths64 clip = new() { FSMath.SKPointArrayToPath64(second) };
+            Paths64 overlap = Clipper.Intersect(subject, clip, FillRule.NonZero);
+
+            List<SKPoint[]> result = new();
+            foreach (Path64 path in overlap)
             {
-                if (clickedFr.wasTouched)
-                {
-                    if (clickedFr.Distance(mousePosition) < nearest)
-                    {
-                        ret = clickedFr;
-                    }
-                }
+                result.AddRange(FSMath.Path64ToSKPointArrayList(path));
             }
 
-            if (ret is not null)
+            return result;
+        }
+
+        private static SKRect ComputeBounds(SKPoint[] points)
+        {
+            if (points.Length == 0)
             {
-                return ret;
+                return SKRect.Empty;
             }
 
-            return null;
+            float minX = points[0].X;
+            float minY = points[0].Y;
+            float maxX = points[0].X;
+            float maxY = points[0].Y;
+
+            for (int i = 1; i < points.Length; i++)
+            {
+                SKPoint point = points[i];
+                if (point.X < minX) minX = point.X;
+                if (point.Y < minY) minY = point.Y;
+                if (point.X > maxX) maxX = point.X;
+                if (point.Y > maxY) maxY = point.Y;
+            }
+
+            return new SKRect(minX, minY, maxX, maxY);
+        }
+
+        private static SKColor BlendColor(SKColor from, SKColor to, float amount)
+        {
+            float t = Math.Clamp(amount, 0f, 1f);
+
+            byte r = (byte)Math.Clamp((int)MathF.Round(from.Red + ((to.Red - from.Red) * t)), 0, 255);
+            byte g = (byte)Math.Clamp((int)MathF.Round(from.Green + ((to.Green - from.Green) * t)), 0, 255);
+            byte b = (byte)Math.Clamp((int)MathF.Round(from.Blue + ((to.Blue - from.Blue) * t)), 0, 255);
+            byte a = (byte)Math.Clamp((int)MathF.Round(from.Alpha + ((to.Alpha - from.Alpha) * t)), 0, 255);
+
+            return new SKColor(r, g, b, a);
         }
 
         protected override void DrawMainShape(SKCanvas canvas)

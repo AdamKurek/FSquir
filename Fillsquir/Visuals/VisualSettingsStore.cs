@@ -8,6 +8,7 @@ public sealed class VisualSettingsStore : IVisualSettingsStore
     private const string QualityTierKey = "visual.quality";
     private const string MappingModeKey = "visual.mapping";
     private const string ShowStrongOutlinesKey = "visual.outlines";
+    private const string GlintMotionModeKey = "visual.glint_motion";
     private const string DepthIntensityKey = "visual.depth_intensity";
     private const string StripOpacityKey = "visual.strip_opacity";
     private const string StripFrostAmountKey = "visual.strip_frost";
@@ -32,6 +33,7 @@ public sealed class VisualSettingsStore : IVisualSettingsStore
         string qualityValue = preferences.Get(QualityTierKey, GraphicsQualityTier.Medium.ToString());
         string mappingValue = preferences.Get(MappingModeKey, TextureMappingMode.WorldLocked.ToString());
         bool showStrongOutlines = preferences.Get(ShowStrongOutlinesKey, true);
+        string glintMotionValue = preferences.Get(GlintMotionModeKey, GlintMotionMode.Hybrid.ToString());
         float depthIntensity = preferences.Get(DepthIntensityKey, VisualSettings.DefaultDepthIntensity);
         float stripOpacity = preferences.Get(StripOpacityKey, VisualSettings.DefaultStripOpacity);
         float stripFrostAmount = preferences.Get(StripFrostAmountKey, VisualSettings.DefaultStripFrostAmount);
@@ -46,12 +48,18 @@ public sealed class VisualSettingsStore : IVisualSettingsStore
             mappingMode = TextureMappingMode.WorldLocked;
         }
 
+        if (!Enum.TryParse(glintMotionValue, ignoreCase: true, out GlintMotionMode glintMotionMode))
+        {
+            glintMotionMode = GlintMotionMode.Hybrid;
+        }
+
         VisualSettings settings = new()
         {
             SelectedSkinId = skinId,
             QualityTier = qualityTier,
             MappingMode = mappingMode,
             ShowStrongOutlines = showStrongOutlines,
+            GlintMotionMode = glintMotionMode,
             DepthIntensity = depthIntensity,
             StripOpacity = stripOpacity,
             StripFrostAmount = stripFrostAmount
@@ -70,6 +78,7 @@ public sealed class VisualSettingsStore : IVisualSettingsStore
         preferences.Set(QualityTierKey, normalized.QualityTier.ToString());
         preferences.Set(MappingModeKey, normalized.MappingMode.ToString());
         preferences.Set(ShowStrongOutlinesKey, normalized.ShowStrongOutlines);
+        preferences.Set(GlintMotionModeKey, normalized.GlintMotionMode.ToString());
         preferences.Set(DepthIntensityKey, normalized.DepthIntensity);
         preferences.Set(StripOpacityKey, normalized.StripOpacity);
         preferences.Set(StripFrostAmountKey, normalized.StripFrostAmount);

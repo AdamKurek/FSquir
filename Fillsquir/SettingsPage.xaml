@@ -33,6 +33,12 @@
                 <Picker x:Name="mappingPicker"
                         SelectedIndexChanged="AnySettingChanged" />
 
+                <Label Text="Glint Motion"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Picker x:Name="glintMotionPicker"
+                        SelectedIndexChanged="AnySettingChanged" />
+
                 <HorizontalStackLayout Spacing="12">
                     <Label Text="Strong Outlines"
                            TextColor="White"

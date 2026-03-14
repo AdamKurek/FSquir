@@ -26,7 +26,20 @@ public static class SkinCatalog
             vignetteIntensity: 0.24f,
             accentIntensity: 0.10f,
             bevelStrength: 0.95f,
-            shadowStrength: 0.82f),
+            shadowStrength: 0.82f,
+            dropParticleProfile: new DropParticleProfile(
+                CountScale: 0.95f,
+                SpeedMin: 36f,
+                SpeedMax: 128f,
+                LifeMinSeconds: 0.46f,
+                LifeMaxSeconds: 0.88f,
+                RadiusMin: 1.5f,
+                RadiusMax: 4.3f,
+                GravityMin: 72f,
+                GravityMax: 172f,
+                OutwardBias: 0.72f,
+                TangentJitter: 0.18f,
+                SpawnJitter: 1.8f)),
         new SkinDefinition(
             id: "neon",
             displayName: "Neon",
@@ -45,7 +58,20 @@ public static class SkinCatalog
             vignetteIntensity: 0.12f,
             accentIntensity: 0.42f,
             bevelStrength: 1.15f,
-            shadowStrength: 0.92f),
+            shadowStrength: 0.92f,
+            dropParticleProfile: new DropParticleProfile(
+                CountScale: 1.16f,
+                SpeedMin: 72f,
+                SpeedMax: 222f,
+                LifeMinSeconds: 0.24f,
+                LifeMaxSeconds: 0.52f,
+                RadiusMin: 1.2f,
+                RadiusMax: 3.7f,
+                GravityMin: 110f,
+                GravityMax: 286f,
+                OutwardBias: 1.05f,
+                TangentJitter: 0.12f,
+                SpawnJitter: 0.95f)),
         new SkinDefinition(
             id: "nature",
             displayName: "Nature",
@@ -64,7 +90,20 @@ public static class SkinCatalog
             vignetteIntensity: 0.28f,
             accentIntensity: 0.17f,
             bevelStrength: 0.9f,
-            shadowStrength: 0.78f)
+            shadowStrength: 0.78f,
+            dropParticleProfile: new DropParticleProfile(
+                CountScale: 1.02f,
+                SpeedMin: 50f,
+                SpeedMax: 170f,
+                LifeMinSeconds: 0.34f,
+                LifeMaxSeconds: 0.74f,
+                RadiusMin: 1.7f,
+                RadiusMax: 4.9f,
+                GravityMin: 86f,
+                GravityMax: 224f,
+                OutwardBias: 0.86f,
+                TangentJitter: 0.30f,
+                SpawnJitter: 1.5f))
     ];
 
     private static readonly Dictionary<string, SkinDefinition> byId =

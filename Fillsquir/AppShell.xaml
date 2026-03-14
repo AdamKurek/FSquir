@@ -11,10 +11,6 @@
         ContentTemplate="{DataTemplate local:MainPage}"
         />
     <ShellContent 
-        Route="GamePage"
-        ContentTemplate="{DataTemplate local:GamePage}" 
-        />
-    <ShellContent 
     Route="GameSelectionPage"
     ContentTemplate="{DataTemplate local:GameSelectionPage}" 
     />

@@ -16,6 +16,8 @@
   <ItemGroup>
     <Compile Include="..\\Fillsquir\\Visuals\\GraphicsQualityTier.cs" Link="Visuals\\GraphicsQualityTier.cs" />
     <Compile Include="..\\Fillsquir\\Visuals\\TextureMappingMode.cs" Link="Visuals\\TextureMappingMode.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\GlintMotionMode.cs" Link="Visuals\\GlintMotionMode.cs" />
+    <Compile Include="..\\Fillsquir\\Visuals\\DropParticleProfile.cs" Link="Visuals\\DropParticleProfile.cs" />
     <Compile Include="..\\Fillsquir\\Visuals\\VisualSettings.cs" Link="Visuals\\VisualSettings.cs" />
     <Compile Include="..\\Fillsquir\\Visuals\\SkinDefinition.cs" Link="Visuals\\SkinDefinition.cs" />
     <Compile Include="..\\Fillsquir\\Visuals\\SkinCatalog.cs" Link="Visuals\\SkinCatalog.cs" />

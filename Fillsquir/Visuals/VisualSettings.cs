@@ -10,6 +10,7 @@ public sealed class VisualSettings
     public GraphicsQualityTier QualityTier { get; set; } = GraphicsQualityTier.Medium;
     public TextureMappingMode MappingMode { get; set; } = TextureMappingMode.WorldLocked;
     public bool ShowStrongOutlines { get; set; } = true;
+    public GlintMotionMode GlintMotionMode { get; set; } = GlintMotionMode.Hybrid;
     public float DepthIntensity { get; set; } = DefaultDepthIntensity;
     public float StripOpacity { get; set; } = DefaultStripOpacity;
     public float StripFrostAmount { get; set; } = DefaultStripFrostAmount;
@@ -22,6 +23,7 @@ public sealed class VisualSettings
             QualityTier = QualityTier,
             MappingMode = MappingMode,
             ShowStrongOutlines = ShowStrongOutlines,
+            GlintMotionMode = GlintMotionMode,
             DepthIntensity = DepthIntensity,
             StripOpacity = StripOpacity,
             StripFrostAmount = StripFrostAmount

@@ -5,6 +5,7 @@ using SkiaSharp;
 
 internal class Fragment : GeometryElement
 {
+    private const float GlintDriftCycleSeconds = 9.5f;
     public SKPoint[] PointsP;
 
     private SKPoint[] UntouchedPointsS
@@ -12,10 +13,13 @@ internal class Fragment : GeometryElement
         get
         {
             var up = new SKPoint[PointsP.Length];
+            float untouchedFitScale = GetUntouchedFitScale();
             for (int i = 0; i < PointsP.Length; i++)
             {
-                up[i].X = scaleToMiddleX((PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X)) * scaleX / 8f + PositionS.X - gameSettings.bottomStripMove;
-                up[i].Y = scaleToMiddleY((PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y)) * scaleY / 8f + PositionS.Y;
+                float centeredX = (PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X);
+                float centeredY = (PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y);
+                up[i].X = (centeredX * scaleX * untouchedFitScale) + PositionS.X - gameSettings.bottomStripMove;
+                up[i].Y = (centeredY * scaleY * untouchedFitScale) + PositionS.Y;
             }
 
             return up;
@@ -327,7 +331,7 @@ internal class Fragment : GeometryElement
         canvas.DrawPath(path, rimPaint);
     }
 
-    private static void DrawGlintOverlay(SKCanvas canvas, SKPath path, VisualSettings settings)
+    private void DrawGlintOverlay(SKCanvas canvas, SKPath path, VisualSettings settings)
     {
         SKRect bounds = path.Bounds;
         if (bounds.Width < 1f || bounds.Height < 1f)
@@ -335,12 +339,27 @@ internal class Fragment : GeometryElement
             return;
         }
 
-        double cycle = 1900d;
-        double now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        float phase = (float)((now % cycle) / cycle);
+        SkinDefinition skin = SkinCatalog.Resolve(settings.SelectedSkinId);
+        float driftPhase = SmoothCycle01(gameSettings.RenderTimeSeconds / GlintDriftCycleSeconds);
+
+        float pointerBias = 0f;
+        if (gameSettings.HasGlintPointer)
+        {
+            float normalizedPointerX =
+                (gameSettings.GlintPointerPosition.X - bounds.Left) / Math.Max(bounds.Width, 1f);
+            pointerBias = (Math.Clamp(normalizedPointerX, 0f, 1f) - 0.5f) * 0.9f;
+        }
+
+        float phase = gameSettings.GlintMotionMode switch
+        {
+            GlintMotionMode.AlwaysDrift => driftPhase,
+            GlintMotionMode.MouseDriven => Math.Clamp(0.5f + (pointerBias * 0.82f), 0f, 1f),
+            _ => Math.Clamp(driftPhase + (pointerBias * 0.28f), 0f, 1f)
+        };
 
         float startX = bounds.Left - (bounds.Width * 0.35f) + (phase * bounds.Width * 1.55f);
         float endX = startX + (bounds.Width * 0.28f);
+        float glintAlpha = 68f + (settings.DepthIntensity * 8f) + (skin.AccentIntensity * 24f);
 
         using SKShader shader = SKShader.CreateLinearGradient(
             new SKPoint(startX, bounds.Top),
@@ -348,7 +367,7 @@ internal class Fragment : GeometryElement
             new[]
             {
                 SKColors.Transparent,
-                new SKColor(255, 255, 255, (byte)Math.Clamp((int)MathF.Round(72f * settings.DepthIntensity), 20, 96)),
+                new SKColor(255, 255, 255, (byte)Math.Clamp((int)MathF.Round(glintAlpha), 20, 112)),
                 SKColors.Transparent
             },
             new[] { 0f, 0.52f, 1f },
@@ -363,6 +382,12 @@ internal class Fragment : GeometryElement
         };
 
         canvas.DrawPath(path, glintPaint);
+    }
+
+    private static float SmoothCycle01(float value)
+    {
+        // Continuous oscillation in [0, 1] with no hard reset/jump at cycle boundaries.
+        return 0.5f + (0.5f * MathF.Sin((value * (2f * MathF.PI)) - (MathF.PI * 0.5f)));
     }
 
     private static void DrawHoverCue(SKCanvas canvas, SKPath path, VisualSettings settings, bool isTouched)
@@ -419,6 +444,24 @@ internal class Fragment : GeometryElement
         return FSMath.CalculateDistance(mousePosition, Centroid);
     }
 
+    private float GetUntouchedFitScale()
+    {
+        float visibleCols = Math.Max(1, gameSettings.VisibleRows);
+        float stripRows = Math.Max(1, gameSettings.Rows);
+        float cellWidth = canvasWidth / visibleCols;
+        float stripTop = canvasHeight * (gameSettings.prop1 / gameSettings.prop2);
+        float stripHeight = Math.Max(1f, canvasHeight - stripTop);
+        float cellHeight = stripHeight / stripRows;
+
+        float targetWidth = Math.Max(1f, cellWidth * 0.78f);
+        float targetHeight = Math.Max(1f, cellHeight * 0.72f);
+        float baseWidth = Math.Max(1f, sizeP.X * scaleX);
+        float baseHeight = Math.Max(1f, sizeP.Y * scaleY);
+
+        float fitScale = MathF.Min(targetWidth / baseWidth, targetHeight / baseHeight);
+        return Math.Clamp(fitScale, 0.03f, 1f);
+    }
+
     public float scaleToMiddleX(float from)
     {
         return from * canvasWidth / defaultCanvasWidth;
@@ -426,6 +469,6 @@ internal class Fragment : GeometryElement
 
     public float scaleToMiddleY(float from)
     {
-        return from * canvasWidth / defaultCanvasWidth;
+        return from * canvasHeight / defaultCanvasHeight;
     }
 }

@@ -1,4 +1,5 @@
 using Fillsquir.Visuals;
+using System.Diagnostics;
 
 namespace Fillsquir;
 
@@ -25,6 +26,12 @@ public partial class SettingsPage : ContentPage
         {
             "World-Locked",
             "Piece-Local"
+        };
+        glintMotionPicker.ItemsSource = new List<string>
+        {
+            "Always Drift",
+            "Mouse Driven",
+            "Hybrid"
         };
     }
 
@@ -56,6 +63,12 @@ public partial class SettingsPage : ContentPage
 
         qualityPicker.SelectedIndex = (int)normalized.QualityTier;
         mappingPicker.SelectedIndex = normalized.MappingMode == TextureMappingMode.WorldLocked ? 0 : 1;
+        glintMotionPicker.SelectedIndex = normalized.GlintMotionMode switch
+        {
+            GlintMotionMode.AlwaysDrift => 0,
+            GlintMotionMode.MouseDriven => 1,
+            _ => 2
+        };
         outlineSwitch.IsToggled = normalized.ShowStrongOutlines;
         depthSlider.Value = normalized.DepthIntensity;
         stripOpacitySlider.Value = normalized.StripOpacity;
@@ -95,12 +108,20 @@ public partial class SettingsPage : ContentPage
             ? TextureMappingMode.PieceLocal
             : TextureMappingMode.WorldLocked;
 
+        GlintMotionMode glintMotionMode = glintMotionPicker.SelectedIndex switch
+        {
+            0 => GlintMotionMode.AlwaysDrift,
+            1 => GlintMotionMode.MouseDriven,
+            _ => GlintMotionMode.Hybrid
+        };
+
         VisualSettings updated = new()
         {
             SelectedSkinId = skins[skinIndex].Id,
             QualityTier = (GraphicsQualityTier)qualityIndex,
             MappingMode = mappingMode,
             ShowStrongOutlines = outlineSwitch.IsToggled,
+            GlintMotionMode = glintMotionMode,
             DepthIntensity = (float)depthSlider.Value,
             StripOpacity = (float)stripOpacitySlider.Value,
             StripFrostAmount = (float)stripFrostSlider.Value
@@ -118,6 +139,34 @@ public partial class SettingsPage : ContentPage
 
     private async void BackButton_Clicked(object sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("..");
+        await NavigateBackAsync();
+    }
+
+    protected override bool OnBackButtonPressed()
+    {
+        _ = NavigateBackAsync();
+        return true;
+    }
+
+    private async Task NavigateBackAsync()
+    {
+        try
+        {
+            await Shell.Current.GoToAsync("..");
+            return;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsPage] Back navigation failed: {ex}");
+        }
+
+        try
+        {
+            await Shell.Current.GoToAsync("//MainPage");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsPage] Fallback navigation failed: {ex}");
+        }
     }
 }
