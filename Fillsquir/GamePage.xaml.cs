@@ -365,7 +365,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         var canvas = e.Surface.Canvas;
         canvas.Clear();
         canvas.ResetMatrix();
-        ApplyLogicalCanvasScale(canvas);
 
         canvas.Save();
         canvas.Scale(gameSettings.zoomFactor);
@@ -378,57 +377,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         canvas.Scale(gameSettings.zoomFactor);
         drawables.DrawFragmentsoutlines(canvas);
         canvas.Restore();
-    }
-
-    private void ApplyLogicalCanvasScale(SKCanvas canvas)
-    {
-        if (squir is null)
-        {
-            return;
-        }
-
-        float viewWidth = Math.Max((float)squir.Width, 1f);
-        float viewHeight = Math.Max((float)squir.Height, 1f);
-        SKRectI clipBounds = canvas.DeviceClipBounds;
-        float scaleX = clipBounds.Width / viewWidth;
-        float scaleY = clipBounds.Height / viewHeight;
-
-        if (!float.IsFinite(scaleX) || scaleX <= 0f)
-        {
-            scaleX = 1f;
-        }
-
-        if (!float.IsFinite(scaleY) || scaleY <= 0f)
-        {
-            scaleY = 1f;
-        }
-
-        canvas.Scale(scaleX, scaleY);
-    }
-
-    private SKPoint NormalizeSurfaceTouchLocation(SKPoint location)
-    {
-        if (squir is null)
-        {
-            return location;
-        }
-
-        float viewWidth = (float)squir.Width;
-        float viewHeight = (float)squir.Height;
-        if (viewWidth <= 0f || viewHeight <= 0f)
-        {
-            return location;
-        }
-
-        var canvasSize = squir.CanvasSize;
-        if (canvasSize.Width <= 0 || canvasSize.Height <= 0)
-        {
-            return location;
-        }
-
-        return new SKPoint(
-            location.X * viewWidth / canvasSize.Width,
-            location.Y * viewHeight / canvasSize.Height);
     }
 
     private void ZoomGesture_PinchUpdated(object? sender, PinchGestureUpdatedEventArgs e)
@@ -929,17 +877,16 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
     private void squir_Touch(object sender, SkiaSharp.Views.Maui.SKTouchEventArgs e)
         {
-        SKPoint touchLocation = NormalizeSurfaceTouchLocation(e.Location);
-        TapPosition = touchLocation;
-        var location = touchLocation;
+        TapPosition = e.Location;
+        var location = e.Location;
         if (e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Pressed)
         {
             ClearPendingStripGrabAnchor();
             isTouchInteractionActive = true;
             hasLastTouchLocation = true;
-            lastTouchLocation = touchLocation;
+            lastTouchLocation = e.Location;
             touchDragTotal = default;
-            UpdateGlintPointer(touchLocation, isActive: true);
+            UpdateGlintPointer(e.Location, isActive: true);
         }
         else if (e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Released
             || e.ActionType == SkiaSharp.Views.Maui.SKTouchAction.Cancelled)
@@ -953,7 +900,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
         if ((was2FingerTouched || isZooming > 0) && e.ActionType != SkiaSharp.Views.Maui.SKTouchAction.WheelChanged)
         {
             hasLastTouchLocation = true;
-            lastTouchLocation = touchLocation;
+            lastTouchLocation = e.Location;
             e.Handled = true;
             return;
         }
@@ -963,14 +910,14 @@ public partial class GamePage : ContentPage, IQueryAttributable
             if(e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Left)
             {
                 SetHoveredFragment(null);
-                if (TryGetStripCell(touchLocation, out int selectedCol, out int selectedRow))
+                if (TryGetStripCell(e.Location, out int selectedCol, out int selectedRow))
                 {
                     moved = gameSettings.untouchedFragments[selectedCol, selectedRow];
                     movingStatus = moveStatus.fragment;
                     gameSettings.untouchedFragments[selectedCol, selectedRow] = null;
                     if (moved is not null)
                     {
-                        CapturePendingStripGrabAnchor(moved, touchLocation);
+                        CapturePendingStripGrabAnchor(moved, e.Location);
                     }
                 }
                 else
@@ -1010,7 +957,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 {
 #if WINDOWS
                     TouchFragment(moved);
-                    AlignDraggedFragmentToPointer(moved, touchLocation);
+                    AlignDraggedFragmentToPointer(moved, e.Location);
 
                     movingStatus = moveStatus.fragment;
 #else
@@ -1058,7 +1005,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
         {
             case SkiaSharp.Views.Maui.SKTouchAction.Pressed:
                 {
-                    Fragment? hoveredAtPress = ResolveFragmentForScreenLocation(touchLocation);
+                    Fragment? hoveredAtPress = ResolveFragmentForScreenLocation(e.Location);
                     SetHoveredFragment(hoveredAtPress);
                     if (e.MouseButton == SkiaSharp.Views.Maui.SKMouseButton.Middle)
                     {
@@ -1163,8 +1110,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     // var zoomprop = gameSettings.zoomFactor / zoomPrev;
                    // var xfromhere = -gameSettings.xoffset + (e.Location.X / zoomPrev);
                    // var yfromhere = -gameSettings.yoffset + (e.Location.Y / zoomPrev);
-                    gameSettings.xoffset = -location.X + gameSettings.xoffset + (touchLocation.X / gameSettings.zoomFactor);
-                    gameSettings.yoffset = -location.Y + gameSettings.yoffset + (touchLocation.Y / gameSettings.zoomFactor);
+                    gameSettings.xoffset = -location.X + gameSettings.xoffset + (e.Location.X / gameSettings.zoomFactor);
+                    gameSettings.yoffset = -location.Y + gameSettings.yoffset + (e.Location.Y / gameSettings.zoomFactor);
                     
 
                     
@@ -1191,12 +1138,12 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 }
                 case SkiaSharp.Views.Maui.SKTouchAction.Moved:
                 {
-                    UpdateGlintPointer(touchLocation, isActive: true);
+                    UpdateGlintPointer(e.Location, isActive: true);
 
                     if (was2FingerTouched || isZooming > 0)
                     {
                         hasLastTouchLocation = true;
-                        lastTouchLocation = touchLocation;
+                        lastTouchLocation = e.Location;
                         shouldInvalidate = true;
                         break;
                     }
@@ -1204,13 +1151,13 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (!hasLastTouchLocation)
                     {
                         hasLastTouchLocation = true;
-                        lastTouchLocation = touchLocation;
+                        lastTouchLocation = e.Location;
                         return;
                     }
 
-                    float deltaScreenX = touchLocation.X - lastTouchLocation.X;
-                    float deltaScreenY = touchLocation.Y - lastTouchLocation.Y;
-                    lastTouchLocation = touchLocation;
+                    float deltaScreenX = e.Location.X - lastTouchLocation.X;
+                    float deltaScreenY = e.Location.Y - lastTouchLocation.Y;
+                    lastTouchLocation = e.Location;
 
                     touchDragTotal.X += deltaScreenX;
                     touchDragTotal.Y += deltaScreenY;

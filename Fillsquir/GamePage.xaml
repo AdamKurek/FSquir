@@ -10,6 +10,7 @@
             Touch="squir_Touch"
             EnableTouchEvents="True"
             BackgroundColor="Black"
+            IgnorePixelScaling="True"
             SizeChanged="squir_SizeChanged" />
 
         <Grid Margin="12,8"
