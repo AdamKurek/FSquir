@@ -556,6 +556,10 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 coveragePercent,
                 gameSettings.WorldRecordCoveragePercent,
                 gameSettings.BestCoveragePercent > 0m ? gameSettings.BestCoveragePercent : null);
+            if (drawables?.Gui is PercentageDisplay percentageDisplay)
+            {
+                percentageDisplay.SyncStars(gameSettings.CurrentStars);
+            }
             UpdateStatusLabel();
         }
 
@@ -1511,6 +1515,11 @@ public partial class GamePage : ContentPage, IQueryAttributable
         }
 
         if (drawables.HasActiveDropParticles)
+        {
+            return true;
+        }
+
+        if (drawables.HasActiveGuiAnimations)
         {
             return true;
         }

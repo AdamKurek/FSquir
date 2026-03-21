@@ -262,6 +262,9 @@ namespace Fillsquir.Controls
 
         internal bool HasActiveDropParticles => dropParticleSystem.HasActiveParticles;
 
+        internal bool HasActiveGuiAnimations =>
+            Gui is PercentageDisplay percentageDisplay && percentageDisplay.HasActiveStarAnimations;
+
         private void DrawOutsideBoardDeadZone(SKCanvas canvas)
         {
             if (drawables.Count == 0 || drawables[0] is not Squir board)
