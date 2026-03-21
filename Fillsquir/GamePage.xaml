@@ -5,12 +5,11 @@
              xmlns:skiae="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls">
 
     <Grid x:Name="grid" BackgroundColor="Black">
-        <skiae:SKCanvasView
+        <skiae:SKGLView
             x:Name="squir"
             Touch="squir_Touch"
             EnableTouchEvents="True"
             BackgroundColor="Black"
-            IgnorePixelScaling="True"
             SizeChanged="squir_SizeChanged" />
 
         <Grid Margin="12,8"

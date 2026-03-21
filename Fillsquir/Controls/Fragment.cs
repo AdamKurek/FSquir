@@ -7,23 +7,31 @@ internal class Fragment : GeometryElement
 {
     private const float GlintDriftCycleSeconds = 9.5f;
     public SKPoint[] PointsP;
+    private readonly SKPoint[] touchedScreenPointsCache;
+    private readonly SKPoint[] untouchedScreenPointsCache;
+    private readonly SKPoint[] visibleWorldPointsCache;
+    private bool hasTouchedScreenGeometryCache;
+    private bool hasUntouchedScreenGeometryCache;
+    private bool hasVisibleWorldPointsCache;
+    private SKPoint cachedTouchedScreenPositionS;
+    private float cachedTouchedScreenScaleX;
+    private float cachedTouchedScreenScaleY;
+    private float cachedTouchedScreenGameXOffset;
+    private float cachedTouchedScreenGameYOffset;
+    private SKRect cachedTouchedScreenBounds;
+    private SKPoint cachedUntouchedScreenPositionS;
+    private float cachedUntouchedScreenScaleX;
+    private float cachedUntouchedScreenScaleY;
+    private float cachedUntouchedScreenBottomStripMove;
+    private float cachedUntouchedScreenFitScale;
+    private SKRect cachedUntouchedScreenBounds;
+    private SKPoint cachedVisibleWorldPositionS;
+    private float cachedVisibleWorldScaleX;
+    private float cachedVisibleWorldScaleY;
 
     private SKPoint[] UntouchedPointsS
     {
-        get
-        {
-            var up = new SKPoint[PointsP.Length];
-            float untouchedFitScale = GetUntouchedFitScale();
-            for (int i = 0; i < PointsP.Length; i++)
-            {
-                float centeredX = (PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X);
-                float centeredY = (PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y);
-                up[i].X = (centeredX * scaleX * untouchedFitScale) + PositionS.X - gameSettings.bottomStripMove;
-                up[i].Y = (centeredY * scaleY * untouchedFitScale) + PositionS.Y;
-            }
-
-            return up;
-        }
+        get => GetUntouchedScreenPoints();
     }
 
     public SKPoint PositionS;
@@ -31,9 +39,11 @@ internal class Fragment : GeometryElement
     {
         get
         {
+            float safeScaleX = scaleX == 0f ? 1f : scaleX;
+            float safeScaleY = scaleY == 0f ? 1f : scaleY;
             SKPoint ret = new();
-            ret.X = PositionS.X / scaleX;
-            ret.Y = PositionS.Y / scaleY;
+            ret.X = PositionS.X / safeScaleX;
+            ret.Y = PositionS.Y / safeScaleY;
             return ret;
         }
     }
@@ -62,7 +72,7 @@ internal class Fragment : GeometryElement
         }
     }
 
-    public SKPoint Centroid => FSMath.Centroid(VisiblePointsS);
+    public SKPoint Centroid => FSMath.Centroid(GetVisibleScreenPoints());
 
 #if DebugVisuals
     public float RadiusS
@@ -90,34 +100,15 @@ internal class Fragment : GeometryElement
 
     public SKPoint[] VisiblePointsS
     {
-        get
-        {
-            if (!wasTouched)
-            {
-                return UntouchedPointsS;
-            }
-
-            var pts = new SKPoint[PointsP.Length];
-            for (int i = 0; i < PointsP.Length; i++)
-            {
-                pts[i] = new SKPoint((PointsP[i].X * scaleX) + Xoffset + gameSettings.xoffset, (PointsP[i].Y * scaleY) + Yoffset + gameSettings.yoffset);
-            }
-
-            return pts;
-        }
+        get => GetVisibleScreenPoints();
     }
 
     public SKPoint[] VisiblePointsP
     {
         get
         {
-            var pts = new SKPoint[PointsP.Length];
-            for (int i = 0; i < PointsP.Length; i++)
-            {
-                pts[i] = new SKPoint(PointsP[i].X + PositionP.X - MoveToFillXP, PointsP[i].Y + PositionP.Y - MoveToFillYP);
-            }
-
-            return pts;
+            EnsureVisibleWorldPoints();
+            return visibleWorldPointsCache;
         }
     }
 
@@ -158,6 +149,9 @@ internal class Fragment : GeometryElement
         MoveToFillYP = yMin;
         IndexX = indexX;
         IndexY = indexY;
+        touchedScreenPointsCache = new SKPoint[PointsP.Length];
+        untouchedScreenPointsCache = new SKPoint[PointsP.Length];
+        visibleWorldPointsCache = new SKPoint[PointsP.Length];
     }
 
     internal void TriggerReleaseSettle()
@@ -177,7 +171,8 @@ internal class Fragment : GeometryElement
             PositionS.Y = sqHeight + (IndexY * movePerCell) + rowOffset;
         }
 
-        SKPoint[] points = wasTouched ? VisiblePointsS : UntouchedPointsS;
+        SKPoint[] points = GetVisibleScreenPoints();
+        SKRect bounds = GetVisibleScreenBounds();
         using SKPath path = new();
         path.AddPoly(points);
 
@@ -197,14 +192,14 @@ internal class Fragment : GeometryElement
 
         if (wasTouched && qualityEffects.UseShadow)
         {
-            DrawPieceShadow(canvas, path, visualSettings, isDragging, elevationMultiplier);
+            DrawPieceShadow(canvas, path, bounds, visualSettings, isDragging, elevationMultiplier);
         }
 
         SKPaint fillPaint = PuzzleMaterialService.GetPieceFillPaint(
             CurrentPuzzleKey,
             visualSettings,
             boardRect,
-            path.Bounds,
+            bounds,
             forcePieceLocal: !wasTouched);
 
         canvas.DrawPath(path, fillPaint);
@@ -216,8 +211,8 @@ internal class Fragment : GeometryElement
 
         if (wasTouched && qualityEffects.UseBevel)
         {
-            SKPaint darkBevel = PuzzleMaterialService.GetPieceBevelPaint(visualSettings, path.Bounds, darkPass: true);
-            SKPaint lightBevel = PuzzleMaterialService.GetPieceBevelPaint(visualSettings, path.Bounds, darkPass: false);
+            SKPaint darkBevel = PuzzleMaterialService.GetPieceBevelPaint(visualSettings, bounds, darkPass: true);
+            SKPaint lightBevel = PuzzleMaterialService.GetPieceBevelPaint(visualSettings, bounds, darkPass: false);
             canvas.DrawPath(path, darkBevel);
             canvas.DrawPath(path, lightBevel);
         }
@@ -229,7 +224,7 @@ internal class Fragment : GeometryElement
 
         if (wasTouched && qualityEffects.UseGlintOverlay)
         {
-            DrawGlintOverlay(canvas, path, visualSettings);
+            DrawGlintOverlay(canvas, path, bounds, visualSettings);
         }
 
         SKPaint outlinePaint = PuzzleMaterialService.GetOutlinePaint(visualSettings);
@@ -244,15 +239,7 @@ internal class Fragment : GeometryElement
     public void DrawVertices(SKCanvas canvas)
     {
         using SKPath path = new();
-
-        if (!wasTouched)
-        {
-            path.AddPoly(UntouchedPointsS);
-        }
-        else
-        {
-            path.AddPoly(VisiblePointsS);
-        }
+        path.AddPoly(GetVisibleScreenPoints());
 
         SKPaint outlinePaint = PuzzleMaterialService.GetOutlinePaint(CurrentVisualSettings.Normalize());
         canvas.DrawPath(path, outlinePaint);
@@ -286,9 +273,9 @@ internal class Fragment : GeometryElement
 #endif
     }
 
-    private void DrawPieceShadow(SKCanvas canvas, SKPath path, VisualSettings settings, bool isDragging, float elevationMultiplier)
+    private void DrawPieceShadow(SKCanvas canvas, SKPath path, SKRect bounds, VisualSettings settings, bool isDragging, float elevationMultiplier)
     {
-        float sizeFactor = Math.Clamp(Math.Max(path.Bounds.Width, path.Bounds.Height) / 220f, 0.65f, 1.45f);
+        float sizeFactor = Math.Clamp(Math.Max(bounds.Width, bounds.Height) / 220f, 0.65f, 1.45f);
         float shadowX = (2.1f + (sizeFactor * 1.4f)) * settings.DepthIntensity * elevationMultiplier;
         float shadowY = (2.9f + (sizeFactor * 1.6f)) * settings.DepthIntensity * elevationMultiplier;
 
@@ -331,9 +318,8 @@ internal class Fragment : GeometryElement
         canvas.DrawPath(path, rimPaint);
     }
 
-    private void DrawGlintOverlay(SKCanvas canvas, SKPath path, VisualSettings settings)
+    private void DrawGlintOverlay(SKCanvas canvas, SKPath path, SKRect bounds, VisualSettings settings)
     {
-        SKRect bounds = path.Bounds;
         if (bounds.Width < 1f || bounds.Height < 1f)
         {
             return;
@@ -419,6 +405,172 @@ internal class Fragment : GeometryElement
 
         canvas.DrawPath(path, glowFill);
         canvas.DrawPath(path, glowStroke);
+    }
+
+    private SKPoint[] GetVisibleScreenPoints()
+    {
+        if (wasTouched)
+        {
+            EnsureTouchedScreenGeometry();
+            return touchedScreenPointsCache;
+        }
+
+        EnsureUntouchedScreenGeometry();
+        return untouchedScreenPointsCache;
+    }
+
+    private SKPoint[] GetUntouchedScreenPoints()
+    {
+        EnsureUntouchedScreenGeometry();
+        return untouchedScreenPointsCache;
+    }
+
+    private SKRect GetVisibleScreenBounds()
+    {
+        if (wasTouched)
+        {
+            EnsureTouchedScreenGeometry();
+            return cachedTouchedScreenBounds;
+        }
+
+        EnsureUntouchedScreenGeometry();
+        return cachedUntouchedScreenBounds;
+    }
+
+    private void EnsureTouchedScreenGeometry()
+    {
+        float currentScaleX = scaleX;
+        float currentScaleY = scaleY;
+        float currentGameXOffset = gameSettings.xoffset;
+        float currentGameYOffset = gameSettings.yoffset;
+
+        if (hasTouchedScreenGeometryCache
+            && cachedTouchedScreenPositionS.X == PositionS.X
+            && cachedTouchedScreenPositionS.Y == PositionS.Y
+            && cachedTouchedScreenScaleX == currentScaleX
+            && cachedTouchedScreenScaleY == currentScaleY
+            && cachedTouchedScreenGameXOffset == currentGameXOffset
+            && cachedTouchedScreenGameYOffset == currentGameYOffset)
+        {
+            return;
+        }
+
+        float xoffset = PositionS.X - (MoveToFillXP * currentScaleX);
+        float yoffset = PositionS.Y - (MoveToFillYP * currentScaleY);
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
+
+        for (int i = 0; i < PointsP.Length; i++)
+        {
+            SKPoint point = new(
+                (PointsP[i].X * currentScaleX) + xoffset + currentGameXOffset,
+                (PointsP[i].Y * currentScaleY) + yoffset + currentGameYOffset);
+            touchedScreenPointsCache[i] = point;
+            UpdateBounds(point, ref minX, ref minY, ref maxX, ref maxY);
+        }
+
+        cachedTouchedScreenPositionS = PositionS;
+        cachedTouchedScreenScaleX = currentScaleX;
+        cachedTouchedScreenScaleY = currentScaleY;
+        cachedTouchedScreenGameXOffset = currentGameXOffset;
+        cachedTouchedScreenGameYOffset = currentGameYOffset;
+        cachedTouchedScreenBounds = CreateBounds(minX, minY, maxX, maxY);
+        hasTouchedScreenGeometryCache = true;
+    }
+
+    private void EnsureUntouchedScreenGeometry()
+    {
+        float currentScaleX = scaleX;
+        float currentScaleY = scaleY;
+        float currentBottomStripMove = gameSettings.bottomStripMove;
+        float untouchedFitScale = GetUntouchedFitScale();
+
+        if (hasUntouchedScreenGeometryCache
+            && cachedUntouchedScreenPositionS.X == PositionS.X
+            && cachedUntouchedScreenPositionS.Y == PositionS.Y
+            && cachedUntouchedScreenScaleX == currentScaleX
+            && cachedUntouchedScreenScaleY == currentScaleY
+            && cachedUntouchedScreenBottomStripMove == currentBottomStripMove
+            && cachedUntouchedScreenFitScale == untouchedFitScale)
+        {
+            return;
+        }
+
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
+
+        for (int i = 0; i < PointsP.Length; i++)
+        {
+            float centeredX = (PointsP[i].X - MoveToFillXP) - (0.5f * sizeP.X);
+            float centeredY = (PointsP[i].Y - MoveToFillYP) - (0.5f * sizeP.Y);
+            SKPoint point = new(
+                (centeredX * currentScaleX * untouchedFitScale) + PositionS.X - currentBottomStripMove,
+                (centeredY * currentScaleY * untouchedFitScale) + PositionS.Y);
+            untouchedScreenPointsCache[i] = point;
+            UpdateBounds(point, ref minX, ref minY, ref maxX, ref maxY);
+        }
+
+        cachedUntouchedScreenPositionS = PositionS;
+        cachedUntouchedScreenScaleX = currentScaleX;
+        cachedUntouchedScreenScaleY = currentScaleY;
+        cachedUntouchedScreenBottomStripMove = currentBottomStripMove;
+        cachedUntouchedScreenFitScale = untouchedFitScale;
+        cachedUntouchedScreenBounds = CreateBounds(minX, minY, maxX, maxY);
+        hasUntouchedScreenGeometryCache = true;
+    }
+
+    private void EnsureVisibleWorldPoints()
+    {
+        float currentScaleX = scaleX;
+        float currentScaleY = scaleY;
+
+        if (hasVisibleWorldPointsCache
+            && cachedVisibleWorldPositionS.X == PositionS.X
+            && cachedVisibleWorldPositionS.Y == PositionS.Y
+            && cachedVisibleWorldScaleX == currentScaleX
+            && cachedVisibleWorldScaleY == currentScaleY)
+        {
+            return;
+        }
+
+        float safeScaleX = currentScaleX == 0f ? 1f : currentScaleX;
+        float safeScaleY = currentScaleY == 0f ? 1f : currentScaleY;
+        float positionWorldX = PositionS.X / safeScaleX;
+        float positionWorldY = PositionS.Y / safeScaleY;
+
+        for (int i = 0; i < PointsP.Length; i++)
+        {
+            visibleWorldPointsCache[i] = new SKPoint(
+                PointsP[i].X + positionWorldX - MoveToFillXP,
+                PointsP[i].Y + positionWorldY - MoveToFillYP);
+        }
+
+        cachedVisibleWorldPositionS = PositionS;
+        cachedVisibleWorldScaleX = currentScaleX;
+        cachedVisibleWorldScaleY = currentScaleY;
+        hasVisibleWorldPointsCache = true;
+    }
+
+    private static void UpdateBounds(SKPoint point, ref float minX, ref float minY, ref float maxX, ref float maxY)
+    {
+        if (point.X < minX) minX = point.X;
+        if (point.Y < minY) minY = point.Y;
+        if (point.X > maxX) maxX = point.X;
+        if (point.Y > maxY) maxY = point.Y;
+    }
+
+    private static SKRect CreateBounds(float minX, float minY, float maxX, float maxY)
+    {
+        if (minX == float.MaxValue || minY == float.MaxValue || maxX == float.MinValue || maxY == float.MinValue)
+        {
+            return SKRect.Empty;
+        }
+
+        return new SKRect(minX, minY, maxX, maxY);
     }
 
     private float GetReleaseSettleBoost()
