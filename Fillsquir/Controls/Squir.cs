@@ -56,25 +56,26 @@ internal class Squir : GeometryElement
         using SKPath path = new();
         path.AddPoly(VisiblePoints);
 
-        SKRect boardRect = new(
-            gameSettings.xoffset,
-            gameSettings.yoffset,
-            gameSettings.xoffset + (defaultCanvasWidth * scaleX),
-            gameSettings.yoffset + (defaultCanvasHeight * scaleY));
+        // Sample from stable board-local space and project onto the visible board surface.
+        SKRect boardTextureRect = new(
+            0f,
+            0f,
+            defaultCanvasWidth * scaleX,
+            defaultCanvasHeight * scaleY);
+        SKRect boardSourceRect = GetBoardLocalBounds();
+        SKRect boardEffectRect = path.Bounds;
 
         VisualSettings visualSettings = CurrentVisualSettings.Normalize();
         SkinDefinition skin = SkinCatalog.Resolve(visualSettings.SelectedSkinId);
 
-        using SKShader boardShader = PuzzleMaterialService.GetBoardShader(CurrentPuzzleKey, visualSettings, boardRect);
-        using SKPaint fillPaint = new()
-        {
-            Style = SKPaintStyle.Fill,
-            IsAntialias = true,
-            Shader = boardShader,
-            Color = SKColors.White
-        };
-
-        canvas.DrawPath(path, fillPaint);
+        PuzzleMaterialService.DrawBoardFill(
+            canvas,
+            path,
+            CurrentPuzzleKey,
+            visualSettings,
+            boardTextureRect,
+            boardSourceRect,
+            boardEffectRect);
 
         DrawBoardInsetShadow(canvas, path, skin, visualSettings);
         DrawBoardLightSweep(canvas, path, skin, visualSettings);
@@ -130,5 +131,31 @@ internal class Squir : GeometryElement
     public List<SKPoint[]> SplitSquir()
     {
         return shapes;
+    }
+
+    private SKRect GetBoardLocalBounds()
+    {
+        if (PointsP.Length == 0)
+        {
+            return SKRect.Empty;
+        }
+
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
+
+        for (int i = 0; i < PointsP.Length; i++)
+        {
+            float x = PointsP[i].X * scaleX;
+            float y = PointsP[i].Y * scaleY;
+
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+
+        return new SKRect(minX, minY, maxX, maxY);
     }
 }

@@ -176,11 +176,13 @@ internal class Fragment : GeometryElement
         using SKPath path = new();
         path.AddPoly(points);
 
-        SKRect boardRect = new(
-            gameSettings.xoffset,
-            gameSettings.yoffset,
-            gameSettings.xoffset + (defaultCanvasWidth * scaleX),
-            gameSettings.yoffset + (defaultCanvasHeight * scaleY));
+        // Map each fragment from its original board-local region onto its current visible bounds.
+        SKRect boardTextureRect = new(
+            0f,
+            0f,
+            defaultCanvasWidth * scaleX,
+            defaultCanvasHeight * scaleY);
+        SKRect boardSourceRect = GetBoardSourceBounds();
 
         VisualSettings visualSettings = CurrentVisualSettings.Normalize();
         MaterialEffectFlags qualityEffects = PuzzleMaterialService.GetQualityEffects(visualSettings.QualityTier);
@@ -198,9 +200,11 @@ internal class Fragment : GeometryElement
         SKPaint fillPaint = PuzzleMaterialService.GetPieceFillPaint(
             CurrentPuzzleKey,
             visualSettings,
-            boardRect,
+            boardTextureRect,
+            boardSourceRect,
             bounds,
-            forcePieceLocal: !wasTouched);
+            bounds,
+            forcePieceLocal: false);
 
         canvas.DrawPath(path, fillPaint);
 
@@ -583,6 +587,15 @@ internal class Fragment : GeometryElement
         TimeSpan remaining = releaseBoostUntilUtc - DateTimeOffset.UtcNow;
         const float settleDurationMs = 170f;
         return Math.Clamp((float)remaining.TotalMilliseconds / settleDurationMs, 0f, 1f);
+    }
+
+    private SKRect GetBoardSourceBounds()
+    {
+        float left = MoveToFillXP * scaleX;
+        float top = MoveToFillYP * scaleY;
+        float right = left + (sizeP.X * scaleX);
+        float bottom = top + (sizeP.Y * scaleY);
+        return new SKRect(left, top, right, bottom);
     }
 
     public void SetPositionToPointLocation(SKPoint VisiblePointToAdjust, int finalIndex)

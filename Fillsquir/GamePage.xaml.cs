@@ -364,7 +364,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         gameSettings.RenderTimeSeconds = (float)nowSeconds;
         var canvas = e.Surface.Canvas;
         canvas.Clear();
-        canvas.ResetMatrix();
 
         canvas.Save();
         canvas.Scale(gameSettings.zoomFactor);

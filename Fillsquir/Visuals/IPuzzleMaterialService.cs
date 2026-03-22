@@ -5,8 +5,9 @@ namespace Fillsquir.Visuals;
 
 public interface IPuzzleMaterialService
 {
-    SKShader GetBoardShader(PuzzleKey puzzleKey, VisualSettings settings, SKRect boardRect);
-    SKPaint GetPieceFillPaint(PuzzleKey puzzleKey, VisualSettings settings, SKRect boardRect, SKRect pieceRect, bool forcePieceLocal);
+    void DrawBoardFill(SKCanvas canvas, SKPath path, PuzzleKey puzzleKey, VisualSettings settings, SKRect textureRect, SKRect sourceRect, SKRect surfaceRect);
+    SKShader GetBoardShader(PuzzleKey puzzleKey, VisualSettings settings, SKRect textureRect, SKRect sourceRect, SKRect effectRect, SKRect textureSurfaceRect);
+    SKPaint GetPieceFillPaint(PuzzleKey puzzleKey, VisualSettings settings, SKRect textureRect, SKRect sourceRect, SKRect effectRect, SKRect textureSurfaceRect, bool forcePieceLocal);
     SKPaint GetPieceShadowPaint(VisualSettings settings, bool isDragging, float elevationMultiplier);
     SKPaint GetPieceBevelPaint(VisualSettings settings, SKRect pieceRect, bool darkPass);
     SKPaint GetStripBackgroundPaint(PuzzleKey puzzleKey, VisualSettings settings, SKRect stripRect);

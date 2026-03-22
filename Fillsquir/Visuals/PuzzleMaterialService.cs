@@ -52,24 +52,141 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
         this.worldTextureProvider = worldTextureProvider;
     }
 
-    public SKShader GetBoardShader(PuzzleKey puzzleKey, VisualSettings settings, SKRect boardRect)
+    public void DrawBoardFill(SKCanvas canvas, SKPath path, PuzzleKey puzzleKey, VisualSettings settings, SKRect textureRect, SKRect sourceRect, SKRect surfaceRect)
+    {
+        SkinDefinition skin = SkinCatalog.Resolve(settings.SelectedSkinId);
+        VisualSettings normalized = settings.Normalize();
+        SKRect safeTextureRect = NormalizeRect(textureRect);
+        SKRect safeSourceRect = NormalizeRect(sourceRect);
+        SKRect safeSurfaceRect = NormalizeRect(surfaceRect);
+
+        SKColor litTop = BlendColor(skin.BoardColor, skin.KeyLightColor, 0.54f);
+        SKColor litBottom = BlendColor(skin.BoardColor, skin.ShadowColor, 0.18f);
+
+        using SKShader baseShader = SKShader.CreateLinearGradient(
+            new SKPoint(safeSurfaceRect.Left, safeSurfaceRect.Top),
+            new SKPoint(safeSurfaceRect.Right, safeSurfaceRect.Bottom),
+            new[] { litTop, litBottom },
+            new[] { 0f, 1f },
+            SKShaderTileMode.Clamp);
+        using SKPaint basePaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Shader = baseShader,
+            Color = SKColors.White
+        };
+
+        canvas.DrawPath(path, basePaint);
+
+        MaterialEffectFlags effects = GetQualityEffects(normalized.QualityTier);
+        if (!effects.UseTexture)
+        {
+            return;
+        }
+
+        SKImage texture = worldTextureProvider.GetTexture(puzzleKey, skin, normalized.QualityTier);
+        SKRect texturePixelSourceRect = CreateTextureSourcePixelRect(safeTextureRect, safeSourceRect, texture);
+
+        using SKPaint texturePaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Overlay,
+            Color = SKColors.White
+        };
+
+        canvas.Save();
+        canvas.ClipPath(path, SKClipOperation.Intersect, antialias: true);
+        canvas.DrawImage(texture, texturePixelSourceRect, safeSurfaceRect, texturePaint);
+        canvas.Restore();
+
+        float depth = normalized.DepthIntensity;
+        byte directionalAlpha = (byte)Math.Clamp((int)MathF.Round(75f * depth), 16, 90);
+        using SKShader directionalShader = SKShader.CreateLinearGradient(
+            new SKPoint(safeSurfaceRect.Left, safeSurfaceRect.Top),
+            new SKPoint(safeSurfaceRect.Left + (safeSurfaceRect.Width * 0.78f), safeSurfaceRect.Top + (safeSurfaceRect.Height * 0.78f)),
+            new[]
+            {
+                skin.KeyLightColor.WithAlpha(directionalAlpha),
+                SKColors.Transparent
+            },
+            new[] { 0f, 1f },
+            SKShaderTileMode.Clamp);
+        using SKPaint directionalPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Screen,
+            Shader = directionalShader
+        };
+
+        canvas.DrawPath(path, directionalPaint);
+
+        if (!effects.UseRimHighlight)
+        {
+            return;
+        }
+
+        byte centerAlpha = (byte)Math.Clamp((int)MathF.Round(58f * depth), 10, 72);
+        using SKShader centerShader = SKShader.CreateRadialGradient(
+            new SKPoint((safeSurfaceRect.Left + safeSurfaceRect.Right) * 0.5f, (safeSurfaceRect.Top + safeSurfaceRect.Bottom) * 0.5f),
+            Math.Max(safeSurfaceRect.Width, safeSurfaceRect.Height) * 0.82f,
+            new[]
+            {
+                skin.FillLightColor.WithAlpha(centerAlpha),
+                SKColors.Transparent
+            },
+            new[] { 0f, 1f },
+            SKShaderTileMode.Clamp);
+        using SKPaint centerPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.SoftLight,
+            Shader = centerShader
+        };
+
+        canvas.DrawPath(path, centerPaint);
+    }
+
+    public SKShader GetBoardShader(PuzzleKey puzzleKey, VisualSettings settings, SKRect textureRect, SKRect sourceRect, SKRect effectRect, SKRect textureSurfaceRect)
     {
         SkinDefinition skin = SkinCatalog.Resolve(settings.SelectedSkinId);
         VisualSettings normalized = settings.Normalize();
         SKImage texture = worldTextureProvider.GetTexture(puzzleKey, skin, normalized.QualityTier);
-        return BuildCompositeShader(texture, skin, normalized, boardRect, normalized.QualityTier, forBoard: true);
+        return BuildCompositeShader(
+            texture,
+            skin,
+            normalized,
+            textureRect,
+            sourceRect,
+            effectRect,
+            textureSurfaceRect,
+            normalized.QualityTier,
+            forBoard: true);
     }
 
-    public SKPaint GetPieceFillPaint(PuzzleKey puzzleKey, VisualSettings settings, SKRect boardRect, SKRect pieceRect, bool forcePieceLocal)
+    public SKPaint GetPieceFillPaint(PuzzleKey puzzleKey, VisualSettings settings, SKRect textureRect, SKRect sourceRect, SKRect effectRect, SKRect textureSurfaceRect, bool forcePieceLocal)
     {
         SkinDefinition skin = SkinCatalog.Resolve(settings.SelectedSkinId);
         VisualSettings normalized = settings.Normalize();
         SKImage texture = worldTextureProvider.GetTexture(puzzleKey, skin, normalized.QualityTier);
 
         bool pieceLocal = forcePieceLocal || normalized.MappingMode == TextureMappingMode.PieceLocal;
-        SKRect mappedRect = pieceLocal ? pieceRect : boardRect;
+        SKRect mappedTextureRect = pieceLocal ? textureSurfaceRect : textureRect;
+        SKRect mappedSourceRect = pieceLocal ? textureSurfaceRect : sourceRect;
 
-        SKShader shader = BuildCompositeShader(texture, skin, normalized, mappedRect, normalized.QualityTier, forBoard: false);
+        SKShader shader = BuildCompositeShader(
+            texture,
+            skin,
+            normalized,
+            mappedTextureRect,
+            mappedSourceRect,
+            effectRect,
+            textureSurfaceRect,
+            normalized.QualityTier,
+            forBoard: false);
         ReplaceShader(ref pieceShader, pieceFillPaint, shader);
 
         pieceFillPaint.Color = SKColors.White;
@@ -182,7 +299,7 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
             : GraphicsQualityTier.Low;
 
         SKImage texture = worldTextureProvider.GetTexture(puzzleKey, skin, frostQuality);
-        SKMatrix textureMatrix = CreateRectToTextureMatrix(safeRect, texture);
+        SKMatrix textureMatrix = CreateSurfaceToTextureMatrix(safeRect, safeRect, safeRect, texture);
         SKShader textureShader = SKShader.CreateImage(
             texture,
             SKShaderTileMode.Repeat,
@@ -382,11 +499,17 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
         SKImage texture,
         SkinDefinition skin,
         VisualSettings settings,
-        SKRect targetRect,
+        SKRect textureSpaceRect,
+        SKRect sourceRect,
+        SKRect effectRect,
+        SKRect textureSurfaceRect,
         GraphicsQualityTier qualityTier,
         bool forBoard)
     {
-        SKRect safeRect = NormalizeRect(targetRect);
+        SKRect safeTextureSpaceRect = NormalizeRect(textureSpaceRect);
+        SKRect safeSourceRect = NormalizeRect(sourceRect);
+        SKRect safeEffectRect = NormalizeRect(effectRect);
+        SKRect safeTextureSurfaceRect = NormalizeRect(textureSurfaceRect);
 
         SKColor litTop = forBoard
             ? BlendColor(skin.BoardColor, skin.KeyLightColor, 0.54f)
@@ -397,8 +520,8 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
             : BlendColor(skin.PieceBaseColor, skin.ShadowColor, 0.24f);
 
         SKShader lightingGradient = SKShader.CreateLinearGradient(
-            new SKPoint(safeRect.Left, safeRect.Top),
-            new SKPoint(safeRect.Right, safeRect.Bottom),
+            new SKPoint(safeEffectRect.Left, safeEffectRect.Top),
+            new SKPoint(safeEffectRect.Right, safeEffectRect.Bottom),
             new[] { litTop, litBottom },
             new[] { 0f, 1f },
             SKShaderTileMode.Clamp);
@@ -409,7 +532,7 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
             return lightingGradient;
         }
 
-        SKMatrix matrix = CreateRectToTextureMatrix(safeRect, texture);
+        SKMatrix matrix = CreateSurfaceToTextureMatrix(safeTextureSpaceRect, safeSourceRect, safeTextureSurfaceRect, texture);
         SKShader textureShader = SKShader.CreateImage(
             texture,
             SKShaderTileMode.Clamp,
@@ -423,8 +546,8 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
         float depth = settings.DepthIntensity;
         byte directionalAlpha = (byte)Math.Clamp((int)MathF.Round(75f * depth), 16, 90);
         SKShader directionalLight = SKShader.CreateLinearGradient(
-            new SKPoint(safeRect.Left, safeRect.Top),
-            new SKPoint(safeRect.Left + (safeRect.Width * 0.78f), safeRect.Top + (safeRect.Height * 0.78f)),
+            new SKPoint(safeEffectRect.Left, safeEffectRect.Top),
+            new SKPoint(safeEffectRect.Left + (safeEffectRect.Width * 0.78f), safeEffectRect.Top + (safeEffectRect.Height * 0.78f)),
             new[]
             {
                 skin.KeyLightColor.WithAlpha(directionalAlpha),
@@ -444,8 +567,8 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
 
         byte centerAlpha = (byte)Math.Clamp((int)MathF.Round(58f * depth), 10, 72);
         SKShader centerHighlight = SKShader.CreateRadialGradient(
-            new SKPoint((safeRect.Left + safeRect.Right) * 0.5f, (safeRect.Top + safeRect.Bottom) * 0.5f),
-            Math.Max(safeRect.Width, safeRect.Height) * 0.82f,
+            new SKPoint((safeEffectRect.Left + safeEffectRect.Right) * 0.5f, (safeEffectRect.Top + safeEffectRect.Bottom) * 0.5f),
+            Math.Max(safeEffectRect.Width, safeEffectRect.Height) * 0.82f,
             new[]
             {
                 skin.FillLightColor.WithAlpha(centerAlpha),
@@ -474,15 +597,44 @@ public sealed class PuzzleMaterialService : IPuzzleMaterialService, IDisposable
         return new SKRect(rect.Left, rect.Top, rect.Left + width, rect.Top + height);
     }
 
-    private static SKMatrix CreateRectToTextureMatrix(SKRect targetRect, SKImage texture)
+    private static SKRect CreateTextureSourcePixelRect(SKRect textureSpaceRect, SKRect sourceRect, SKImage texture)
     {
-        SKRect safeRect = NormalizeRect(targetRect);
+        SKRect safeTextureSpaceRect = NormalizeRect(textureSpaceRect);
+        SKRect safeSourceRect = NormalizeRect(sourceRect);
 
-        float scaleX = texture.Width / safeRect.Width;
-        float scaleY = texture.Height / safeRect.Height;
+        float scaleX = texture.Width / safeTextureSpaceRect.Width;
+        float scaleY = texture.Height / safeTextureSpaceRect.Height;
 
-        float translateX = -safeRect.Left * scaleX;
-        float translateY = -safeRect.Top * scaleY;
+        float left = (safeSourceRect.Left - safeTextureSpaceRect.Left) * scaleX;
+        float top = (safeSourceRect.Top - safeTextureSpaceRect.Top) * scaleY;
+        float right = (safeSourceRect.Right - safeTextureSpaceRect.Left) * scaleX;
+        float bottom = (safeSourceRect.Bottom - safeTextureSpaceRect.Top) * scaleY;
+
+        return new SKRect(
+            Math.Clamp(left, 0f, texture.Width),
+            Math.Clamp(top, 0f, texture.Height),
+            Math.Clamp(right, 0f, texture.Width),
+            Math.Clamp(bottom, 0f, texture.Height));
+    }
+
+    private static SKMatrix CreateSurfaceToTextureMatrix(SKRect textureSpaceRect, SKRect sourceRect, SKRect surfaceRect, SKImage texture)
+    {
+        SKRect safeTextureSpaceRect = NormalizeRect(textureSpaceRect);
+        SKRect safeSourceRect = NormalizeRect(sourceRect);
+        SKRect safeSurfaceRect = NormalizeRect(surfaceRect);
+
+        float textureSpaceScaleX = texture.Width / safeTextureSpaceRect.Width;
+        float textureSpaceScaleY = texture.Height / safeTextureSpaceRect.Height;
+
+        float scaleX = textureSpaceScaleX * (safeSourceRect.Width / safeSurfaceRect.Width);
+        float scaleY = textureSpaceScaleY * (safeSourceRect.Height / safeSurfaceRect.Height);
+
+        float translateX =
+            ((safeSourceRect.Left - safeTextureSpaceRect.Left) * textureSpaceScaleX)
+            - (safeSurfaceRect.Left * scaleX);
+        float translateY =
+            ((safeSourceRect.Top - safeTextureSpaceRect.Top) * textureSpaceScaleY)
+            - (safeSurfaceRect.Top * scaleY);
 
         return SKMatrix.CreateScaleTranslation(scaleX, scaleY, translateX, translateY);
     }
