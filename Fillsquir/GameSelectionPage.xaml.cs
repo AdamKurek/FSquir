@@ -3,12 +3,15 @@ using Fillsquir.Domain;
 using Fillsquir.Services;
 using Microsoft.Maui.Controls.Shapes;
 using Microsoft.Maui.Graphics;
+using System.Diagnostics;
 
 namespace Fillsquir;
 
 public partial class GameSelectionPage : ContentPage
 {
     private const int PageSize = 12;
+    private const int InitialSectionCount = 2;
+    private const int InitialSectionCap = 3;
     private const int SectionBatchSize = 2;
     private const double ScrollPrefetchThreshold = 320d;
 
@@ -17,11 +20,16 @@ public partial class GameSelectionPage : ContentPage
     private readonly List<CampaignSectionModel> loadedSections = new();
 
     private CampaignCatalogState? catalogState;
+    private bool hasBootstrappedLayout;
+    private bool hasResolvedProgress;
+    private bool isProgressHydrating;
     private bool isRefreshing;
     private bool isLoadingSections;
+    private bool isRebuildingSections;
     private bool hasAnimatedChrome;
     private int nextSectionIndex;
     private int currentColumnCount = 3;
+    private int sectionGeneration;
 
     public GameSelectionPage()
     {
@@ -41,18 +49,21 @@ public partial class GameSelectionPage : ContentPage
         PrimeForEntry(loadPanel, 10, 0.995);
     }
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
         base.OnAppearing();
-        await RefreshCampaignAsync();
+
+        BootstrapLayout();
 
         if (hasAnimatedChrome)
         {
+            _ = SafeRefreshCampaignAsync();
             return;
         }
 
         hasAnimatedChrome = true;
-        await AnimateChromeAsync();
+        _ = AnimateChromeAsync();
+        _ = SafeRefreshCampaignAsync();
     }
 
     protected override bool OnBackButtonPressed()
@@ -69,7 +80,9 @@ public partial class GameSelectionPage : ContentPage
         }
 
         isRefreshing = true;
-        SetLoadingState(isActive: true, "Loading");
+        isProgressHydrating = true;
+        UpdateSummary();
+        SetLoadingState(isActive: true, "Syncing progress");
 
         try
         {
@@ -86,21 +99,30 @@ public partial class GameSelectionPage : ContentPage
                 .ToList();
 
             catalogState = progressionService.BuildCatalog(progressEntries);
+            hasResolvedProgress = true;
             currentColumnCount = DetermineColumnCount(Width);
 
-            loadedSections.Clear();
-            nextSectionIndex = 0;
-            sectionsHost.Children.Clear();
-
-            UpdateSummary();
-
             int currentSectionIndex = (catalogState.CurrentLevel - 1) / PageSize;
-            int initialSectionCount = Math.Max(2, currentSectionIndex + 1);
-            await EnsureSectionsLoadedAsync(initialSectionCount, animate: hasAnimatedChrome);
+            int hydratedTargetSectionCount = Math.Min(InitialSectionCap, Math.Max(InitialSectionCount, currentSectionIndex + 1));
+
+            isRebuildingSections = true;
+            try
+            {
+                ResetLoadedSections();
+                isProgressHydrating = false;
+                UpdateSummary();
+                EnsureSectionsLoadedImmediate(hydratedTargetSectionCount);
+            }
+            finally
+            {
+                isRebuildingSections = false;
+            }
         }
         finally
         {
             isRefreshing = false;
+            isProgressHydrating = false;
+            UpdateSummary();
             if (!isLoadingSections)
             {
                 SetLoadingState(isActive: false, "Ready");
@@ -108,24 +130,50 @@ public partial class GameSelectionPage : ContentPage
         }
     }
 
+    private async Task SafeRefreshCampaignAsync()
+    {
+        try
+        {
+            await RefreshCampaignAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[GameSelectionPage] Refresh failed: {ex}");
+            isProgressHydrating = false;
+            isRebuildingSections = false;
+            SetLoadingState(isActive: false, "Load failed");
+        }
+    }
+
     private async Task EnsureSectionsLoadedAsync(int targetSectionCount, bool animate)
     {
-        if (catalogState is null || isLoadingSections)
+        if (catalogState is null || isLoadingSections || isRebuildingSections || isProgressHydrating)
         {
             return;
         }
 
         isLoadingSections = true;
         SetLoadingState(isActive: true, "Loading");
+        int activeGeneration = sectionGeneration;
 
         try
         {
             while (loadedSections.Count < targetSectionCount)
             {
+                if (activeGeneration != sectionGeneration || catalogState is null)
+                {
+                    break;
+                }
+
                 CampaignSectionModel section = progressionService.BuildSection(nextSectionIndex, PageSize, catalogState);
                 loadedSections.Add(section);
 
                 View sectionView = CreateSectionView(section, animate);
+                if (activeGeneration != sectionGeneration)
+                {
+                    break;
+                }
+
                 sectionsHost.Children.Add(sectionView);
                 nextSectionIndex++;
 
@@ -146,6 +194,16 @@ public partial class GameSelectionPage : ContentPage
 
     private void UpdateSummary()
     {
+        if (isProgressHydrating && !hasResolvedProgress)
+        {
+            statusPillLabel.Text = "SYNC";
+            campaignSummaryLabel.Text = "Campaign";
+            campaignSubSummaryLabel.Text = "Loading";
+            clearedCounterLabel.Text = "--";
+            sectorCounterLabel.Text = $"{PageSize}";
+            return;
+        }
+
         if (catalogState is null)
         {
             statusPillLabel.Text = "CURRENT";
@@ -166,6 +224,8 @@ public partial class GameSelectionPage : ContentPage
 
     private void SetLoadingState(bool isActive, string message)
     {
+        headerLoadIndicator.IsVisible = isActive;
+        headerLoadIndicator.IsRunning = isActive;
         loadMoreIndicator.IsVisible = isActive;
         loadMoreIndicator.IsRunning = isActive;
         loadStatusLabel.Text = message;
@@ -189,6 +249,48 @@ public partial class GameSelectionPage : ContentPage
         foreach (CampaignSectionModel section in loadedSections)
         {
             sectionsHost.Children.Add(CreateSectionView(section, animateOnEntry: false));
+        }
+    }
+
+    private void BootstrapLayout()
+    {
+        if (hasBootstrappedLayout)
+        {
+            return;
+        }
+
+        hasBootstrappedLayout = true;
+        isProgressHydrating = true;
+        catalogState = progressionService.BuildCatalog(Array.Empty<CampaignProgressEntry>());
+        currentColumnCount = DetermineColumnCount(Width);
+
+        ResetLoadedSections();
+        UpdateSummary();
+        EnsureSectionsLoadedImmediate(InitialSectionCount);
+        SetLoadingState(isActive: true, "Syncing progress");
+    }
+
+    private void ResetLoadedSections()
+    {
+        sectionGeneration++;
+        loadedSections.Clear();
+        nextSectionIndex = 0;
+        sectionsHost.Children.Clear();
+    }
+
+    private void EnsureSectionsLoadedImmediate(int targetSectionCount)
+    {
+        if (catalogState is null)
+        {
+            return;
+        }
+
+        while (loadedSections.Count < targetSectionCount)
+        {
+            CampaignSectionModel section = progressionService.BuildSection(nextSectionIndex, PageSize, catalogState);
+            loadedSections.Add(section);
+            sectionsHost.Children.Add(CreateSectionView(section, animateOnEntry: false));
+            nextSectionIndex++;
         }
     }
 
@@ -342,6 +444,10 @@ public partial class GameSelectionPage : ContentPage
         Color muted = Color.FromArgb("#97AAC9");
         Color panel = Color.FromArgb("#10192B");
         bool isLegacyOpen = card.State == CampaignLevelState.Locked && card.IsPlayable;
+        bool showLoadingPlaceholder = isProgressHydrating && !hasResolvedProgress;
+        bool isFreshPlayable = !showLoadingPlaceholder
+            && card.State == CampaignLevelState.Current
+            && card.BestCoveragePercent <= 0m;
 
         Border cardBorder = new()
         {
@@ -350,7 +456,42 @@ public partial class GameSelectionPage : ContentPage
             StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(22) }
         };
 
-        if (card.State == CampaignLevelState.Current)
+        if (showLoadingPlaceholder)
+        {
+            cardBorder.Background = new LinearGradientBrush(
+                new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb("#0D1727"), 0f),
+                    new GradientStop(Color.FromArgb("#122036"), 1f)
+                },
+                new Point(0, 0),
+                new Point(1, 1));
+            cardBorder.Stroke = new SolidColorBrush(Color.FromArgb("#35506F"));
+            cardBorder.StrokeThickness = 1;
+            cardBorder.Opacity = 0.78;
+        }
+        else if (isFreshPlayable)
+        {
+            cardBorder.Background = new LinearGradientBrush(
+                new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb("#152338"), 0f),
+                    new GradientStop(ApplyAlpha(accent, 0.16f), 0.5f),
+                    new GradientStop(Color.FromArgb("#1A2A42"), 1f)
+                },
+                new Point(0, 0),
+                new Point(1, 1));
+            cardBorder.Stroke = new SolidColorBrush(ApplyAlpha(accent, 0.58f));
+            cardBorder.StrokeThickness = 1.5;
+            cardBorder.Shadow = new Shadow
+            {
+                Brush = new SolidColorBrush(ApplyAlpha(glow, 0.16f)),
+                Opacity = 0.7f,
+                Radius = 14f,
+                Offset = new Point(0, 8)
+            };
+        }
+        else if (card.State == CampaignLevelState.Current)
         {
             cardBorder.Background = new LinearGradientBrush(
                 new GradientStopCollection
@@ -423,7 +564,9 @@ public partial class GameSelectionPage : ContentPage
         topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
 
-        string pillText = card.State switch
+        string pillText = showLoadingPlaceholder
+            ? "SYNC"
+            : card.State switch
         {
             CampaignLevelState.Current => "CURRENT",
             CampaignLevelState.Completed => "CLEAR",
@@ -435,12 +578,16 @@ public partial class GameSelectionPage : ContentPage
             Padding = new Thickness(10, 6),
             StrokeThickness = 0,
             StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(14) },
-            Background = new SolidColorBrush(GetPillColor(card.State, accent, card.IsPlayable)),
+            Background = new SolidColorBrush(showLoadingPlaceholder
+                ? ApplyAlpha(Color.FromArgb("#6D8AA8"), 0.34f)
+                : GetPillColor(card.State, accent, card.IsPlayable)),
             Content = new Label
             {
                 Text = pillText,
                 Style = GetStyle("ArcadeCaptionText"),
-                TextColor = card.State == CampaignLevelState.Current ? Color.FromArgb("#08111F") : text
+                TextColor = showLoadingPlaceholder
+                    ? Color.FromArgb("#E8F1FF")
+                    : card.State == CampaignLevelState.Current ? Color.FromArgb("#08111F") : text
             }
         };
 
@@ -475,12 +622,12 @@ public partial class GameSelectionPage : ContentPage
 
         Border bestChip = CreateStatCard(
             "BEST",
-            card.BestCoveragePercent > 0m ? $"{card.BestCoveragePercent:F1}%" : "--",
+            showLoadingPlaceholder ? "--" : card.BestCoveragePercent > 0m ? $"{card.BestCoveragePercent:F1}%" : "--",
             accent,
             panel);
         Border worldChip = CreateStatCard(
             "WORLD",
-            card.WorldRecordCoveragePercent is decimal world ? $"{world:F1}%" : "--",
+            showLoadingPlaceholder ? "--" : card.WorldRecordCoveragePercent is decimal world ? $"{world:F1}%" : "--",
             glow,
             panel);
 
@@ -491,24 +638,30 @@ public partial class GameSelectionPage : ContentPage
 
         ProgressBar progressBar = new()
         {
-            Progress = Math.Clamp((double)(card.BestCoveragePercent / 100m), 0d, 1d),
-            ProgressColor = card.IsPlayable ? accent : Color.FromArgb("#41556F"),
+            Progress = showLoadingPlaceholder ? 0d : Math.Clamp((double)(card.BestCoveragePercent / 100m), 0d, 1d),
+            ProgressColor = showLoadingPlaceholder ? Color.FromArgb("#587493") : card.IsPlayable ? accent : Color.FromArgb("#41556F"),
             BackgroundColor = Color.FromArgb("#1C2A42"),
             HeightRequest = 6
         };
 
-        View stars = CreateStarStrip(card, accent, muted);
+        View stars = CreateStarStrip(card, accent, muted, showLoadingPlaceholder);
 
         Label status = new()
         {
-            Text = card.State switch
+            Text = showLoadingPlaceholder
+                ? "Syncing"
+                : card.State switch
             {
                 CampaignLevelState.Current => "Next",
                 CampaignLevelState.Completed => "Replay",
                 _ => card.IsPlayable ? "Saved" : "Locked"
             },
             Style = GetStyle("ArcadeCaptionText"),
-            TextColor = card.State == CampaignLevelState.Current ? Color.FromArgb("#FFD89E") : muted
+            TextColor = showLoadingPlaceholder
+                ? Color.FromArgb("#AFC7E5")
+                : isFreshPlayable
+                    ? Color.FromArgb("#C7DAF2")
+                : card.State == CampaignLevelState.Current ? Color.FromArgb("#FFD89E") : muted
         };
 
         content.Children.Add(topRow);
@@ -526,7 +679,7 @@ public partial class GameSelectionPage : ContentPage
 
         cardBorder.Content = content;
 
-        if (card.IsPlayable)
+        if (card.IsPlayable && !showLoadingPlaceholder)
         {
             TapGestureRecognizer tapGesture = new();
             tapGesture.Tapped += async (_, _) => await NavigateToLevelAsync(card.Level);
@@ -567,7 +720,7 @@ public partial class GameSelectionPage : ContentPage
         };
     }
 
-    private View CreateStarStrip(CampaignLevelCard card, Color accent, Color muted)
+    private View CreateStarStrip(CampaignLevelCard card, Color accent, Color muted, bool showLoadingPlaceholder)
     {
         HorizontalStackLayout stars = new()
         {
@@ -589,7 +742,7 @@ public partial class GameSelectionPage : ContentPage
 
         stars.Children.Add(new Label
         {
-            Text = $"{card.Stars}/3",
+            Text = showLoadingPlaceholder ? "--" : $"{card.Stars}/3",
             Style = GetStyle("ArcadeCaptionText"),
             TextColor = muted,
             VerticalTextAlignment = TextAlignment.Center
@@ -691,19 +844,27 @@ public partial class GameSelectionPage : ContentPage
 
     private async void CampaignScroll_Scrolled(object sender, ScrolledEventArgs e)
     {
-        if (isRefreshing || isLoadingSections)
+        try
         {
-            return;
-        }
+            if (isRefreshing || isLoadingSections || isRebuildingSections || isProgressHydrating)
+            {
+                return;
+            }
 
-        if (sectionsHost.Height <= 0d || campaignScroll.Height <= 0d)
-        {
-            return;
-        }
+            if (sectionsHost.Height <= 0d || campaignScroll.Height <= 0d)
+            {
+                return;
+            }
 
-        if (e.ScrollY + campaignScroll.Height >= sectionsHost.Height - ScrollPrefetchThreshold)
+            if (e.ScrollY + campaignScroll.Height >= sectionsHost.Height - ScrollPrefetchThreshold)
+            {
+                await EnsureSectionsLoadedAsync(loadedSections.Count + SectionBatchSize, animate: true);
+            }
+        }
+        catch (Exception ex)
         {
-            await EnsureSectionsLoadedAsync(loadedSections.Count + SectionBatchSize, animate: true);
+            Debug.WriteLine($"[GameSelectionPage] Scroll load failed: {ex}");
+            SetLoadingState(isActive: false, "Load failed");
         }
     }
 

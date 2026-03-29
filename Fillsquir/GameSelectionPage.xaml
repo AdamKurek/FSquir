@@ -84,9 +84,18 @@
             <Grid ColumnDefinitions="*,Auto,Auto"
                   ColumnSpacing="10">
                 <VerticalStackLayout Spacing="2">
-                    <Label x:Name="statusPillLabel"
-                           Style="{StaticResource ArcadeHeroEyebrow}"
-                           Text="CURRENT" />
+                    <HorizontalStackLayout Spacing="6">
+                        <ActivityIndicator x:Name="headerLoadIndicator"
+                                           IsVisible="False"
+                                           IsRunning="False"
+                                           WidthRequest="12"
+                                           HeightRequest="12"
+                                           Color="{StaticResource ArcadeCyan}" />
+                        <Label x:Name="statusPillLabel"
+                               Style="{StaticResource ArcadeHeroEyebrow}"
+                               Text="CURRENT"
+                               VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
                     <Label x:Name="campaignSummaryLabel"
                            Style="{StaticResource ArcadeSectionTitle}"
                            FontSize="24"
