@@ -381,4 +381,93 @@
         <Setter Property="SelectedTabColor" Value="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource Gray200}}" />
     </Style>
 
+    <Style x:Key="ArcadeHeroEyebrow" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeGold}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="CharacterSpacing" Value="2.4" />
+        <Setter Property="TextTransform" Value="Uppercase" />
+    </Style>
+
+    <Style x:Key="ArcadeHeroTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeText}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="40" />
+        <Setter Property="LineHeight" Value="1.05" />
+    </Style>
+
+    <Style x:Key="ArcadeSectionTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeText}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="24" />
+    </Style>
+
+    <Style x:Key="ArcadeBodyText" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeMutedText}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="1.2" />
+    </Style>
+
+    <Style x:Key="ArcadeCaptionText" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeMutedText}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="CharacterSpacing" Value="1.4" />
+        <Setter Property="TextTransform" Value="Uppercase" />
+    </Style>
+
+    <Style x:Key="ArcadeMetricValue" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeFog}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="26" />
+    </Style>
+
+    <Style x:Key="ArcadeActionTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeText}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="20" />
+    </Style>
+
+    <Style x:Key="ArcadeMicroText" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource ArcadeMutedText}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="1.15" />
+    </Style>
+
+    <Style x:Key="ArcadePrimaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource ArcadeGold}" />
+        <Setter Property="TextColor" Value="{StaticResource ArcadeInk}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="HeightRequest" Value="62" />
+        <Setter Property="Padding" Value="22,14" />
+        <Setter Property="BorderWidth" Value="0" />
+    </Style>
+
+    <Style x:Key="ArcadeSecondaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="#1A2436" />
+        <Setter Property="TextColor" Value="{StaticResource ArcadeText}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="HeightRequest" Value="62" />
+        <Setter Property="Padding" Value="22,14" />
+        <Setter Property="BorderColor" Value="{StaticResource ArcadeStroke}" />
+        <Setter Property="BorderWidth" Value="1" />
+    </Style>
+
+    <Style x:Key="ArcadeChromeButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="#10192B" />
+        <Setter Property="TextColor" Value="{StaticResource ArcadeText}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="BorderColor" Value="{StaticResource ArcadeStroke}" />
+        <Setter Property="BorderWidth" Value="1" />
+    </Style>
+
 </ResourceDictionary>

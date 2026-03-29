@@ -84,6 +84,42 @@ public sealed class JsonFileProgressStore : IProgressStore
         }
     }
 
+    public async Task<IReadOnlyList<LevelProgress>> LoadAllLevelProgressAsync(CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            Directory.CreateDirectory(baseDirectory);
+            string[] files = Directory.GetFiles(baseDirectory, "*.json", SearchOption.TopDirectoryOnly);
+            List<LevelProgress> loadedProgress = new(files.Length);
+
+            foreach (string path in files)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    string json = await File.ReadAllTextAsync(path, cancellationToken);
+                    LevelProgress? progress = JsonSerializer.Deserialize<LevelProgress>(json, JsonOptions);
+                    if (progress is not null && progress.PuzzleKey.Level > 0)
+                    {
+                        loadedProgress.Add(progress);
+                    }
+                }
+                catch
+                {
+                    // Ignore malformed files so a single bad save does not block the selector.
+                }
+            }
+
+            return loadedProgress;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task SaveLevelProgressAsync(LevelProgress progress, CancellationToken cancellationToken = default)
     {
         await gate.WaitAsync(cancellationToken);

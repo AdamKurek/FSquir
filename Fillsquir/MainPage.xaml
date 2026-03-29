@@ -2,13 +2,191 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fillsquir.MainPage"
-             Title="MainPage">
-    <VerticalStackLayout>
-        <Label 
-            Text="Welcome to .NET MAUI!"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-        <Button Text="GoToGameSelection" Clicked ="Button_Clicked" >
-        </Button>
-    </VerticalStackLayout>
+             BackgroundColor="{StaticResource ArcadeInk}">
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#06101B" Offset="0.0" />
+            <GradientStop Color="#11192C" Offset="0.32" />
+            <GradientStop Color="#160D1D" Offset="0.72" />
+            <GradientStop Color="#04070E" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <Grid Padding="24,28,24,20">
+        <Grid InputTransparent="True">
+            <Border HorizontalOptions="Start"
+                    VerticalOptions="Start"
+                    TranslationX="-52"
+                    TranslationY="-18"
+                    WidthRequest="220"
+                    HeightRequest="220"
+                    Background="#1E547D"
+                    Opacity="0.18"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="110" />
+                </Border.StrokeShape>
+            </Border>
+
+            <Border HorizontalOptions="End"
+                    VerticalOptions="Start"
+                    TranslationX="42"
+                    TranslationY="34"
+                    WidthRequest="270"
+                    HeightRequest="270"
+                    Background="#6E3126"
+                    Opacity="0.13"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="135" />
+                </Border.StrokeShape>
+            </Border>
+
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="End"
+                    TranslationY="-42"
+                    Rotation="-10"
+                    WidthRequest="320"
+                    HeightRequest="80"
+                    Background="#0E223A"
+                    Opacity="0.24"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="40" />
+                </Border.StrokeShape>
+            </Border>
+        </Grid>
+
+        <ScrollView>
+            <VerticalStackLayout MaximumWidthRequest="720"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center"
+                                 Spacing="16">
+                <Border x:Name="heroPanel"
+                        Padding="24"
+                        Background="#10192B"
+                        Stroke="#304867"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="32" />
+                    </Border.StrokeShape>
+                    <Border.Shadow>
+                        <Shadow Brush="#0F253F"
+                                Opacity="0.82"
+                                Radius="34"
+                                Offset="0,22" />
+                    </Border.Shadow>
+
+                    <VerticalStackLayout Spacing="14">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Arcade Run"
+                                   Style="{StaticResource ArcadeHeroEyebrow}" />
+                            <Label Text="Fillsquir"
+                                   Style="{StaticResource ArcadeHeroTitle}"
+                                   FontSize="54" />
+                        </VerticalStackLayout>
+
+                        <HorizontalStackLayout x:Name="metricsPanel"
+                                               Spacing="10">
+                            <Border Padding="10,8"
+                                    Background="#142338"
+                                    Stroke="#36587E"
+                                    StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Label Text="Solo"
+                                       Style="{StaticResource ArcadeCaptionText}"
+                                       TextColor="{StaticResource ArcadeCyan}" />
+                            </Border>
+
+                            <Border Padding="10,8"
+                                    Background="#142338"
+                                    Stroke="#36587E"
+                                    StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Label Text="Sequential"
+                                       Style="{StaticResource ArcadeCaptionText}"
+                                       TextColor="{StaticResource ArcadeGold}" />
+                            </Border>
+
+                            <Border Padding="10,8"
+                                    Background="#142338"
+                                    Stroke="#36587E"
+                                    StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+                                <Label Text="Records"
+                                       Style="{StaticResource ArcadeCaptionText}"
+                                       TextColor="{StaticResource ArcadeCoral}" />
+                            </Border>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="runLaunchPanel"
+                        Padding="18"
+                        Background="#121F33"
+                        Stroke="#375273"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26" />
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="16">
+                        <Label Text="Single Player"
+                               Style="{StaticResource ArcadeActionTitle}"
+                               VerticalTextAlignment="Center" />
+                        <Button Grid.Column="1"
+                                Text="Play"
+                                Style="{StaticResource ArcadePrimaryButton}"
+                                Clicked="SinglePlayerButton_Clicked" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="multiplayerPanel"
+                        Padding="18"
+                        Background="#10192B"
+                        Stroke="#2B405F"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="24" />
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="16">
+                        <Label Text="Multiplayer"
+                               Style="{StaticResource ArcadeActionTitle}"
+                               VerticalTextAlignment="Center" />
+                        <Button Grid.Column="1"
+                                Text="Soon"
+                                Style="{StaticResource ArcadeSecondaryButton}"
+                                Clicked="MultiplayerButton_Clicked" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="settingsPanel"
+                        Padding="18"
+                        Background="#10192B"
+                        Stroke="#2B405F"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="24" />
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="16">
+                        <Label Text="Settings"
+                               Style="{StaticResource ArcadeActionTitle}"
+                               VerticalTextAlignment="Center" />
+                        <Button Grid.Column="1"
+                                Text="Open"
+                                Style="{StaticResource ArcadeSecondaryButton}"
+                                Clicked="SettingsButton_Clicked" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

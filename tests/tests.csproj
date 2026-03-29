@@ -28,6 +28,16 @@
     <Compile Include="..\\Fillsquir\\Visuals\\IPuzzleMaterialService.cs" Link="Visuals\\IPuzzleMaterialService.cs" />
     <Compile Include="..\\Fillsquir\\Visuals\\PuzzleMaterialService.cs" Link="Visuals\\PuzzleMaterialService.cs" />
     <Compile Include="..\\Fillsquir\\Domain\\PuzzleKey.cs" Link="Domain\\PuzzleKey.cs" />
+    <Compile Include="..\\Fillsquir\\Domain\\GameRules.cs" Link="Domain\\GameRules.cs" />
+    <Compile Include="..\\Fillsquir\\Services\\IScoreEvaluator.cs" Link="Services\\IScoreEvaluator.cs" />
+    <Compile Include="..\\Fillsquir\\Services\\ScoreEvaluator.cs" Link="Services\\ScoreEvaluator.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\CampaignCatalogState.cs" Link="Campaign\\CampaignCatalogState.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\CampaignLevelCard.cs" Link="Campaign\\CampaignLevelCard.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\CampaignProgressEntry.cs" Link="Campaign\\CampaignProgressEntry.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\CampaignProgressionService.cs" Link="Campaign\\CampaignProgressionService.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\CampaignSectionModel.cs" Link="Campaign\\CampaignSectionModel.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\CampaignSectionTheme.cs" Link="Campaign\\CampaignSectionTheme.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\CampaignThemeResolver.cs" Link="Campaign\\CampaignThemeResolver.cs" />
   </ItemGroup>
 
   <ItemGroup>

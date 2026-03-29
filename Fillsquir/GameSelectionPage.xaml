@@ -2,62 +2,179 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fillsquir.GameSelectionPage"
-             Title="NewPage1">
-    <Grid
-        BackgroundColor="Black"
-        >
-        <Grid.RowDefinitions>
-            <RowDefinition Height="2*"></RowDefinition>
-            <RowDefinition Height="*"></RowDefinition>
-        </Grid.RowDefinitions>
-        
-        
-        <CollectionView  
-            x:Name="levelsView"
-            VerticalScrollBarVisibility="Never" 
-            VerticalOptions="FillAndExpand"
-            ItemsUpdatingScrollMode="KeepScrollOffset"
-            Grid.Row="2"
-            Margin="40,0"
-            >
-            <CollectionView.ItemsLayout
-                >
-                <GridItemsLayout Orientation="Vertical"
-                                 x:Name="ListGrid"
-                                 Span="3" 
-                                 VerticalItemSpacing="50"
-                                 HorizontalItemSpacing="50"
-                                 
-                    />
-            </CollectionView.ItemsLayout
-                 
-                >
-            <CollectionView.ItemTemplate
-                
-                >
-                <DataTemplate
-                    
-                    >
-                        <Button
-                            Clicked="LevelButton_Clicked"
-                            WidthRequest="120"
-                            HeightRequest="50"
-                            HorizontalOptions="FillAndExpand"
-                            VerticalOptions="FillAndExpand"
-                            >
-                            <Button.Text>
-                                <Binding/>
-                            </Button.Text>
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource LevelSelect}" />
-                            </Button.Style>
-                        </Button>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
+             BackgroundColor="{StaticResource ArcadeInk}">
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#060C16" Offset="0.0" />
+            <GradientStop Color="#10192B" Offset="0.36" />
+            <GradientStop Color="#160D1D" Offset="0.78" />
+            <GradientStop Color="#04070E" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
+    <Grid Padding="18,20,18,12"
+          RowDefinitions="Auto,Auto,*,Auto">
+        <Grid InputTransparent="True">
+            <Border HorizontalOptions="Start"
+                    VerticalOptions="Start"
+                    TranslationX="-44"
+                    TranslationY="16"
+                    WidthRequest="210"
+                    HeightRequest="210"
+                    Background="#15476B"
+                    Opacity="0.18"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="105" />
+                </Border.StrokeShape>
+            </Border>
 
-        </CollectionView>
+            <Border HorizontalOptions="End"
+                    VerticalOptions="Start"
+                    TranslationX="48"
+                    TranslationY="96"
+                    WidthRequest="260"
+                    HeightRequest="260"
+                    Background="#6D2E22"
+                    Opacity="0.12"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="130" />
+                </Border.StrokeShape>
+            </Border>
+        </Grid>
 
+        <Grid x:Name="topBarPanel"
+              ColumnDefinitions="Auto,*,Auto"
+              ColumnSpacing="10">
+            <Button Text="Menu"
+                    Style="{StaticResource ArcadeChromeButton}"
+                    Clicked="BackButton_Clicked" />
 
+            <Label Grid.Column="1"
+                   Text="Campaign"
+                   Style="{StaticResource ArcadeSectionTitle}"
+                   FontSize="26"
+                   HorizontalOptions="Center"
+                   VerticalTextAlignment="Center" />
+
+            <Button Grid.Column="2"
+                    Text="Settings"
+                    Style="{StaticResource ArcadeChromeButton}"
+                    Clicked="SettingsButton_Clicked" />
+        </Grid>
+
+        <Border x:Name="heroHeaderPanel"
+                Grid.Row="1"
+                Margin="0,8,0,8"
+                Padding="14,12"
+                Background="#10192B"
+                Stroke="#314B6B"
+                StrokeThickness="1">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="22" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#0F2339"
+                        Opacity="0.72"
+                        Radius="18"
+                        Offset="0,10" />
+            </Border.Shadow>
+
+            <Grid ColumnDefinitions="*,Auto,Auto"
+                  ColumnSpacing="10">
+                <VerticalStackLayout Spacing="2">
+                    <Label x:Name="statusPillLabel"
+                           Style="{StaticResource ArcadeHeroEyebrow}"
+                           Text="CURRENT" />
+                    <Label x:Name="campaignSummaryLabel"
+                           Style="{StaticResource ArcadeSectionTitle}"
+                           FontSize="24"
+                           Text="Level 01" />
+                    <Label x:Name="campaignSubSummaryLabel"
+                           Style="{StaticResource ArcadeCaptionText}"
+                           Text="Sector 01" />
+                </VerticalStackLayout>
+
+                <Border Grid.Column="1"
+                        Padding="10,8"
+                        Background="#142338"
+                        Stroke="#37597E"
+                        StrokeThickness="1"
+                        VerticalOptions="Center">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="18" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="1">
+                        <Label Text="Clear"
+                               Style="{StaticResource ArcadeCaptionText}"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource ArcadeGold}" />
+                        <Label x:Name="clearedCounterLabel"
+                               Style="{StaticResource ArcadeActionTitle}"
+                               FontSize="18"
+                               HorizontalTextAlignment="Center"
+                               Text="0" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Grid.Column="2"
+                        Padding="10,8"
+                        Background="#142338"
+                        Stroke="#37597E"
+                        StrokeThickness="1"
+                        VerticalOptions="Center">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="18" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="1">
+                        <Label Text="Sector"
+                               Style="{StaticResource ArcadeCaptionText}"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource ArcadeCyan}" />
+                        <Label x:Name="sectorCounterLabel"
+                               Style="{StaticResource ArcadeActionTitle}"
+                               FontSize="18"
+                               HorizontalTextAlignment="Center"
+                               Text="12" />
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="2"
+                    x:Name="campaignScroll"
+                    Scrolled="CampaignScroll_Scrolled">
+            <VerticalStackLayout x:Name="sectionsHost"
+                                 MaximumWidthRequest="980"
+                                 HorizontalOptions="Center"
+                                 Spacing="14"
+                                 Padding="0,2,0,20" />
+        </ScrollView>
+
+        <Border x:Name="loadPanel"
+                Grid.Row="3"
+                Padding="10,8"
+                Background="#0E1627"
+                Stroke="#253750"
+                StrokeThickness="1">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="16" />
+            </Border.StrokeShape>
+            <Grid ColumnDefinitions="Auto,*"
+                  ColumnSpacing="8">
+                <ActivityIndicator x:Name="loadMoreIndicator"
+                                   IsVisible="False"
+                                   IsRunning="False"
+                                   WidthRequest="16"
+                                   HeightRequest="16"
+                                   Color="{StaticResource ArcadeGold}" />
+                <Label Grid.Column="1"
+                       x:Name="loadStatusLabel"
+                       Style="{StaticResource ArcadeBodyText}"
+                       FontSize="12"
+                       Text="Ready" />
+            </Grid>
+        </Border>
     </Grid>
 </ContentPage>

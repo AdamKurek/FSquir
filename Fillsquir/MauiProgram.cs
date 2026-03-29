@@ -1,5 +1,6 @@
 using Fillsquir.Services;
 using Fillsquir.Visuals;
+using Fillsquir.Campaign;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace Fillsquir;
@@ -21,6 +22,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IProgressStore, JsonFileProgressStore>();
         builder.Services.AddSingleton<ISyncQueue, JsonFileSyncQueue>();
         builder.Services.AddSingleton<IScoreEvaluator, ScoreEvaluator>();
+        builder.Services.AddSingleton<CampaignProgressionService>();
         builder.Services.AddSingleton<ICoordinateTransformer, CoordinateTransformer>();
         builder.Services.AddSingleton<IRecordSyncService, RecordSyncService>();
         builder.Services.AddSingleton<IVisualSettingsStore, VisualSettingsStore>();

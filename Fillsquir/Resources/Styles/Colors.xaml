@@ -41,4 +41,35 @@
     <Color x:Key="Blue200Accent">#72ACF1</Color>
     <Color x:Key="Blue300Accent">#A7CBF6</Color>
 
+    <Color x:Key="ArcadeInk">#060C16</Color>
+    <Color x:Key="ArcadeNight">#091224</Color>
+    <Color x:Key="ArcadePanel">#121B2D</Color>
+    <Color x:Key="ArcadePanelAlt">#1A2840</Color>
+    <Color x:Key="ArcadeText">#F5F7FF</Color>
+    <Color x:Key="ArcadeMutedText">#9FB0CC</Color>
+    <Color x:Key="ArcadeStroke">#2B405F</Color>
+    <Color x:Key="ArcadeGold">#F7B548</Color>
+    <Color x:Key="ArcadeCyan">#59E0FF</Color>
+    <Color x:Key="ArcadeCoral">#FF7C67</Color>
+    <Color x:Key="ArcadeMint">#6FF0C8</Color>
+    <Color x:Key="ArcadeFog">#DAE6FF</Color>
+    <Color x:Key="ArcadeSteel">#20314A</Color>
+    <Color x:Key="ArcadeSun">#FFD48A</Color>
+    <Color x:Key="ArcadeCherry">#FF8F7A</Color>
+    <SolidColorBrush x:Key="ArcadeInkBrush" Color="{StaticResource ArcadeInk}" />
+    <SolidColorBrush x:Key="ArcadeNightBrush" Color="{StaticResource ArcadeNight}" />
+    <SolidColorBrush x:Key="ArcadePanelBrush" Color="{StaticResource ArcadePanel}" />
+    <SolidColorBrush x:Key="ArcadePanelAltBrush" Color="{StaticResource ArcadePanelAlt}" />
+    <SolidColorBrush x:Key="ArcadeTextBrush" Color="{StaticResource ArcadeText}" />
+    <SolidColorBrush x:Key="ArcadeMutedTextBrush" Color="{StaticResource ArcadeMutedText}" />
+    <SolidColorBrush x:Key="ArcadeStrokeBrush" Color="{StaticResource ArcadeStroke}" />
+    <SolidColorBrush x:Key="ArcadeGoldBrush" Color="{StaticResource ArcadeGold}" />
+    <SolidColorBrush x:Key="ArcadeCyanBrush" Color="{StaticResource ArcadeCyan}" />
+    <SolidColorBrush x:Key="ArcadeCoralBrush" Color="{StaticResource ArcadeCoral}" />
+    <SolidColorBrush x:Key="ArcadeMintBrush" Color="{StaticResource ArcadeMint}" />
+    <SolidColorBrush x:Key="ArcadeFogBrush" Color="{StaticResource ArcadeFog}" />
+    <SolidColorBrush x:Key="ArcadeSteelBrush" Color="{StaticResource ArcadeSteel}" />
+    <SolidColorBrush x:Key="ArcadeSunBrush" Color="{StaticResource ArcadeSun}" />
+    <SolidColorBrush x:Key="ArcadeCherryBrush" Color="{StaticResource ArcadeCherry}" />
+
 </ResourceDictionary>

@@ -2,78 +2,147 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Fillsquir.SettingsPage"
-             BackgroundColor="#101316">
-    <Grid Padding="16" RowDefinitions="Auto,*" RowSpacing="16">
-        <HorizontalStackLayout Grid.Row="0" Spacing="12">
+             BackgroundColor="{StaticResource ArcadeInk}">
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#07101B" Offset="0.0" />
+            <GradientStop Color="#10192B" Offset="0.52" />
+            <GradientStop Color="#04070E" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <Grid Padding="20,24,20,16"
+          RowDefinitions="Auto,*"
+          RowSpacing="14">
+        <Grid ColumnDefinitions="Auto,*"
+              ColumnSpacing="12">
             <Button Text="Back"
+                    Style="{StaticResource ArcadeChromeButton}"
                     Clicked="BackButton_Clicked" />
-            <Label Text="Board Visuals"
-                   TextColor="White"
-                   FontSize="22"
-                   VerticalTextAlignment="Center" />
-        </HorizontalStackLayout>
+
+            <VerticalStackLayout Grid.Column="1"
+                                 Spacing="2">
+                <Label Text="Board Visuals"
+                       Style="{StaticResource ArcadeHeroEyebrow}" />
+                <Label Text="Settings"
+                       Style="{StaticResource ArcadeSectionTitle}"
+                       FontSize="28" />
+            </VerticalStackLayout>
+        </Grid>
 
         <ScrollView Grid.Row="1">
-            <VerticalStackLayout Spacing="14">
-                <Label Text="Skin"
-                       TextColor="White"
-                       FontAttributes="Bold" />
-                <Picker x:Name="skinPicker"
-                        SelectedIndexChanged="AnySettingChanged" />
+            <VerticalStackLayout MaximumWidthRequest="820"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="0,4,0,24">
+                <Border Padding="20"
+                        Background="#121D31"
+                        Stroke="#2B405F"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="24" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Surface"
+                               Style="{StaticResource ArcadeHeroEyebrow}" />
 
-                <Label Text="Quality"
-                       TextColor="White"
-                       FontAttributes="Bold" />
-                <Picker x:Name="qualityPicker"
-                        SelectedIndexChanged="AnySettingChanged" />
+                        <Label Text="Skin"
+                               TextColor="{StaticResource ArcadeText}"
+                               FontFamily="OpenSansSemibold" />
+                        <Picker x:Name="skinPicker"
+                                TextColor="{StaticResource ArcadeText}"
+                                TitleColor="{StaticResource ArcadeMutedText}"
+                                SelectedIndexChanged="AnySettingChanged" />
 
-                <Label Text="Texture Mapping"
-                       TextColor="White"
-                       FontAttributes="Bold" />
-                <Picker x:Name="mappingPicker"
-                        SelectedIndexChanged="AnySettingChanged" />
+                        <Label Text="Quality"
+                               TextColor="{StaticResource ArcadeText}"
+                               FontFamily="OpenSansSemibold" />
+                        <Picker x:Name="qualityPicker"
+                                TextColor="{StaticResource ArcadeText}"
+                                TitleColor="{StaticResource ArcadeMutedText}"
+                                SelectedIndexChanged="AnySettingChanged" />
 
-                <Label Text="Glint Motion"
-                       TextColor="White"
-                       FontAttributes="Bold" />
-                <Picker x:Name="glintMotionPicker"
-                        SelectedIndexChanged="AnySettingChanged" />
+                        <Label Text="Texture Mapping"
+                               TextColor="{StaticResource ArcadeText}"
+                               FontFamily="OpenSansSemibold" />
+                        <Picker x:Name="mappingPicker"
+                                TextColor="{StaticResource ArcadeText}"
+                                TitleColor="{StaticResource ArcadeMutedText}"
+                                SelectedIndexChanged="AnySettingChanged" />
 
-                <HorizontalStackLayout Spacing="12">
-                    <Label Text="Strong Outlines"
-                           TextColor="White"
-                           VerticalTextAlignment="Center"
-                           FontAttributes="Bold" />
-                    <Switch x:Name="outlineSwitch"
-                            Toggled="AnySettingChanged" />
-                </HorizontalStackLayout>
+                        <Label Text="Glint Motion"
+                               TextColor="{StaticResource ArcadeText}"
+                               FontFamily="OpenSansSemibold" />
+                        <Picker x:Name="glintMotionPicker"
+                                TextColor="{StaticResource ArcadeText}"
+                                TitleColor="{StaticResource ArcadeMutedText}"
+                                SelectedIndexChanged="AnySettingChanged" />
+                    </VerticalStackLayout>
+                </Border>
 
-                <Label x:Name="depthValueLabel"
-                       Text="Depth Intensity"
-                       TextColor="White"
-                       FontAttributes="Bold" />
-                <Slider x:Name="depthSlider"
-                        Minimum="0.2"
-                        Maximum="1.0"
-                        ValueChanged="AnySliderChanged" />
+                <Border Padding="20"
+                        Background="#121D31"
+                        Stroke="#2B405F"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="24" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Edges"
+                               Style="{StaticResource ArcadeHeroEyebrow}" />
 
-                <Label x:Name="stripOpacityValueLabel"
-                       Text="Strip Opacity"
-                       TextColor="White"
-                       FontAttributes="Bold" />
-                <Slider x:Name="stripOpacitySlider"
-                        Minimum="0.25"
-                        Maximum="0.9"
-                        ValueChanged="AnySliderChanged" />
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="12">
+                            <Label Text="Strong Outlines"
+                                   TextColor="{StaticResource ArcadeText}"
+                                   FontFamily="OpenSansSemibold"
+                                   VerticalTextAlignment="Center" />
+                            <Switch Grid.Column="1"
+                                    x:Name="outlineSwitch"
+                                    Toggled="AnySettingChanged" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
 
-                <Label x:Name="stripFrostValueLabel"
-                       Text="Strip Frost"
-                       TextColor="White"
-                       FontAttributes="Bold" />
-                <Slider x:Name="stripFrostSlider"
-                        Minimum="0"
-                        Maximum="1"
-                        ValueChanged="AnySliderChanged" />
+                <Border Padding="20"
+                        Background="#121D31"
+                        Stroke="#2B405F"
+                        StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="24" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Depth"
+                               Style="{StaticResource ArcadeHeroEyebrow}" />
+
+                        <Label x:Name="depthValueLabel"
+                               TextColor="{StaticResource ArcadeText}"
+                               FontFamily="OpenSansSemibold"
+                               Text="Depth Intensity" />
+                        <Slider x:Name="depthSlider"
+                                Minimum="0.2"
+                                Maximum="1.0"
+                                ValueChanged="AnySliderChanged" />
+
+                        <Label x:Name="stripOpacityValueLabel"
+                               TextColor="{StaticResource ArcadeText}"
+                               FontFamily="OpenSansSemibold"
+                               Text="Strip Opacity" />
+                        <Slider x:Name="stripOpacitySlider"
+                                Minimum="0.25"
+                                Maximum="0.9"
+                                ValueChanged="AnySliderChanged" />
+
+                        <Label x:Name="stripFrostValueLabel"
+                               TextColor="{StaticResource ArcadeText}"
+                               FontFamily="OpenSansSemibold"
+                               Text="Strip Frost" />
+                        <Slider x:Name="stripFrostSlider"
+                                Minimum="0"
+                                Maximum="1"
+                                ValueChanged="AnySliderChanged" />
+                    </VerticalStackLayout>
+                </Border>
             </VerticalStackLayout>
         </ScrollView>
     </Grid>
