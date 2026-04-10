@@ -12,9 +12,9 @@
         </LinearGradientBrush>
     </ContentPage.Background>
 
-    <Grid Padding="18,20,18,12"
-          RowDefinitions="Auto,Auto,*,Auto">
-        <Grid InputTransparent="True">
+    <Grid>
+        <Grid InputTransparent="True"
+              IsClippedToBounds="True">
             <Border HorizontalOptions="Start"
                     VerticalOptions="Start"
                     TranslationX="-44"
@@ -44,146 +44,137 @@
             </Border>
         </Grid>
 
-        <Grid x:Name="topBarPanel"
-              ColumnDefinitions="Auto,*,Auto"
-              ColumnSpacing="10">
-            <Button Text="Menu"
-                    Style="{StaticResource ArcadeChromeButton}"
-                    Clicked="BackButton_Clicked" />
+        <Grid Padding="18,20,18,12"
+              RowDefinitions="Auto,*,Auto">
+            <Border x:Name="heroHeaderPanel"
+                    Margin="0,0,0,8"
+                    Padding="12,10"
+                    Background="#10192B"
+                    Stroke="#314B6B"
+                    StrokeThickness="1"
+                    VerticalOptions="Start">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="22" />
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="#0F2339"
+                            Opacity="0.72"
+                            Radius="18"
+                            Offset="0,10" />
+                </Border.Shadow>
 
-            <Label Grid.Column="1"
-                   Text="Campaign"
-                   Style="{StaticResource ArcadeSectionTitle}"
-                   FontSize="26"
-                   HorizontalOptions="Center"
-                   VerticalTextAlignment="Center" />
+                <Grid ColumnDefinitions="*,Auto,Auto"
+                      ColumnSpacing="8">
+                    <VerticalStackLayout Spacing="2">
+                        <HorizontalStackLayout Spacing="6">
+                            <ActivityIndicator x:Name="headerLoadIndicator"
+                                               IsVisible="False"
+                                               IsRunning="False"
+                                               WidthRequest="12"
+                                               HeightRequest="12"
+                                               Color="{StaticResource ArcadeCyan}" />
+                            <Label x:Name="statusPillLabel"
+                                   Style="{StaticResource ArcadeHeroEyebrow}"
+                                   Text="CURRENT"
+                                   VerticalTextAlignment="Center" />
+                        </HorizontalStackLayout>
+                        <Label x:Name="campaignSummaryLabel"
+                               Style="{StaticResource ArcadeSectionTitle}"
+                               FontSize="22"
+                               Text="Level 01" />
+                        <Label x:Name="campaignSubSummaryLabel"
+                               Style="{StaticResource ArcadeCaptionText}"
+                               Text="Sector 01" />
+                    </VerticalStackLayout>
 
-            <Button Grid.Column="2"
-                    Text="Settings"
-                    Style="{StaticResource ArcadeChromeButton}"
-                    Clicked="SettingsButton_Clicked" />
+                    <Border Grid.Column="1"
+                            Padding="8,6"
+                            Background="#142338"
+                            Stroke="#37597E"
+                            StrokeThickness="1"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Clear"
+                                   Style="{StaticResource ArcadeCaptionText}"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{StaticResource ArcadeGold}" />
+                            <Label x:Name="clearedCounterLabel"
+                                   Style="{StaticResource ArcadeActionTitle}"
+                                   FontSize="18"
+                                   HorizontalTextAlignment="Center"
+                                   Text="0" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Padding="8,6"
+                            Background="#142338"
+                            Stroke="#37597E"
+                            StrokeThickness="1"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Sector"
+                                   Style="{StaticResource ArcadeCaptionText}"
+                                   HorizontalTextAlignment="Center"
+                                   TextColor="{StaticResource ArcadeCyan}" />
+                            <Label x:Name="sectorCounterLabel"
+                                   Style="{StaticResource ArcadeActionTitle}"
+                                   FontSize="18"
+                                   HorizontalTextAlignment="Center"
+                                   Text="10" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <ScrollView Grid.Row="1"
+                        x:Name="campaignScroll"
+                        Scrolled="CampaignScroll_Scrolled">
+                <VerticalStackLayout x:Name="sectionsHost"
+                                     MaximumWidthRequest="980"
+                                     HorizontalOptions="Center"
+                                     Spacing="14"
+                                     Padding="0,2,0,20" />
+            </ScrollView>
+
+            <Border x:Name="loadPanel"
+                    Grid.Row="2"
+                    Padding="10,8"
+                    Background="#0E1627"
+                    Stroke="#253750"
+                    StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="16" />
+                </Border.StrokeShape>
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      ColumnSpacing="8">
+                    <ActivityIndicator x:Name="loadMoreIndicator"
+                                       IsVisible="False"
+                                       IsRunning="False"
+                                       WidthRequest="16"
+                                       HeightRequest="16"
+                                       Color="{StaticResource ArcadeGold}" />
+                    <Label Grid.Column="1"
+                           x:Name="loadStatusLabel"
+                           Style="{StaticResource ArcadeBodyText}"
+                           FontSize="12"
+                           Text="Ready" />
+                    <Button Grid.Column="2"
+                            Text="Menu"
+                            Style="{StaticResource ArcadeChromeButton}"
+                            FontSize="12"
+                            Padding="14,4"
+                            MinimumHeightRequest="34"
+                            HeightRequest="34"
+                            Clicked="BackButton_Clicked" />
+                </Grid>
+            </Border>
         </Grid>
-
-        <Border x:Name="heroHeaderPanel"
-                Grid.Row="1"
-                Margin="0,8,0,8"
-                Padding="14,12"
-                Background="#10192B"
-                Stroke="#314B6B"
-                StrokeThickness="1">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="22" />
-            </Border.StrokeShape>
-            <Border.Shadow>
-                <Shadow Brush="#0F2339"
-                        Opacity="0.72"
-                        Radius="18"
-                        Offset="0,10" />
-            </Border.Shadow>
-
-            <Grid ColumnDefinitions="*,Auto,Auto"
-                  ColumnSpacing="10">
-                <VerticalStackLayout Spacing="2">
-                    <HorizontalStackLayout Spacing="6">
-                        <ActivityIndicator x:Name="headerLoadIndicator"
-                                           IsVisible="False"
-                                           IsRunning="False"
-                                           WidthRequest="12"
-                                           HeightRequest="12"
-                                           Color="{StaticResource ArcadeCyan}" />
-                        <Label x:Name="statusPillLabel"
-                               Style="{StaticResource ArcadeHeroEyebrow}"
-                               Text="CURRENT"
-                               VerticalTextAlignment="Center" />
-                    </HorizontalStackLayout>
-                    <Label x:Name="campaignSummaryLabel"
-                           Style="{StaticResource ArcadeSectionTitle}"
-                           FontSize="24"
-                           Text="Level 01" />
-                    <Label x:Name="campaignSubSummaryLabel"
-                           Style="{StaticResource ArcadeCaptionText}"
-                           Text="Sector 01" />
-                </VerticalStackLayout>
-
-                <Border Grid.Column="1"
-                        Padding="10,8"
-                        Background="#142338"
-                        Stroke="#37597E"
-                        StrokeThickness="1"
-                        VerticalOptions="Center">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="18" />
-                    </Border.StrokeShape>
-                    <VerticalStackLayout Spacing="1">
-                        <Label Text="Clear"
-                               Style="{StaticResource ArcadeCaptionText}"
-                               HorizontalTextAlignment="Center"
-                               TextColor="{StaticResource ArcadeGold}" />
-                        <Label x:Name="clearedCounterLabel"
-                               Style="{StaticResource ArcadeActionTitle}"
-                               FontSize="18"
-                               HorizontalTextAlignment="Center"
-                               Text="0" />
-                    </VerticalStackLayout>
-                </Border>
-
-                <Border Grid.Column="2"
-                        Padding="10,8"
-                        Background="#142338"
-                        Stroke="#37597E"
-                        StrokeThickness="1"
-                        VerticalOptions="Center">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="18" />
-                    </Border.StrokeShape>
-                    <VerticalStackLayout Spacing="1">
-                        <Label Text="Sector"
-                               Style="{StaticResource ArcadeCaptionText}"
-                               HorizontalTextAlignment="Center"
-                               TextColor="{StaticResource ArcadeCyan}" />
-                        <Label x:Name="sectorCounterLabel"
-                               Style="{StaticResource ArcadeActionTitle}"
-                               FontSize="18"
-                               HorizontalTextAlignment="Center"
-                               Text="12" />
-                    </VerticalStackLayout>
-                </Border>
-            </Grid>
-        </Border>
-
-        <ScrollView Grid.Row="2"
-                    x:Name="campaignScroll"
-                    Scrolled="CampaignScroll_Scrolled">
-            <VerticalStackLayout x:Name="sectionsHost"
-                                 MaximumWidthRequest="980"
-                                 HorizontalOptions="Center"
-                                 Spacing="14"
-                                 Padding="0,2,0,20" />
-        </ScrollView>
-
-        <Border x:Name="loadPanel"
-                Grid.Row="3"
-                Padding="10,8"
-                Background="#0E1627"
-                Stroke="#253750"
-                StrokeThickness="1">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="16" />
-            </Border.StrokeShape>
-            <Grid ColumnDefinitions="Auto,*"
-                  ColumnSpacing="8">
-                <ActivityIndicator x:Name="loadMoreIndicator"
-                                   IsVisible="False"
-                                   IsRunning="False"
-                                   WidthRequest="16"
-                                   HeightRequest="16"
-                                   Color="{StaticResource ArcadeGold}" />
-                <Label Grid.Column="1"
-                       x:Name="loadStatusLabel"
-                       Style="{StaticResource ArcadeBodyText}"
-                       FontSize="12"
-                       Text="Ready" />
-            </Grid>
-        </Border>
     </Grid>
 </ContentPage>

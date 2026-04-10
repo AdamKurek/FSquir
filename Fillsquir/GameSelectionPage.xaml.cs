@@ -9,7 +9,7 @@ namespace Fillsquir;
 
 public partial class GameSelectionPage : ContentPage
 {
-    private const int PageSize = 12;
+    private const int PageSize = 10;
     private const int InitialSectionCount = 2;
     private const int InitialSectionCap = 3;
     private const int SectionBatchSize = 2;
@@ -18,6 +18,7 @@ public partial class GameSelectionPage : ContentPage
     private readonly IProgressStore progressStore;
     private readonly CampaignProgressionService progressionService;
     private readonly List<CampaignSectionModel> loadedSections = new();
+    private readonly Dictionary<int, WeakReference<View>> levelCardViews = new();
 
     private CampaignCatalogState? catalogState;
     private bool hasBootstrappedLayout;
@@ -27,6 +28,7 @@ public partial class GameSelectionPage : ContentPage
     private bool isLoadingSections;
     private bool isRebuildingSections;
     private bool hasAnimatedChrome;
+    private bool pendingScrollToCurrent;
     private int nextSectionIndex;
     private int currentColumnCount = 3;
     private int sectionGeneration;
@@ -43,8 +45,10 @@ public partial class GameSelectionPage : ContentPage
         Shell.SetNavBarIsVisible(this, false);
         InitializeComponent();
         SizeChanged += GameSelectionPage_SizeChanged;
+        TapGestureRecognizer heroTapGesture = new();
+        heroTapGesture.Tapped += HeroHeaderPanel_Tapped;
+        heroHeaderPanel.GestureRecognizers.Add(heroTapGesture);
 
-        PrimeForEntry(topBarPanel, 8, 0.995);
         PrimeForEntry(heroHeaderPanel, 12, 0.995);
         PrimeForEntry(loadPanel, 10, 0.995);
     }
@@ -102,7 +106,7 @@ public partial class GameSelectionPage : ContentPage
             hasResolvedProgress = true;
             currentColumnCount = DetermineColumnCount(Width);
 
-            int currentSectionIndex = (catalogState.CurrentLevel - 1) / PageSize;
+            (int currentSectionIndex, _) = progressionService.ResolveCurrentTarget(catalogState, PageSize);
             int hydratedTargetSectionCount = Math.Min(InitialSectionCap, Math.Max(InitialSectionCount, currentSectionIndex + 1));
 
             isRebuildingSections = true;
@@ -127,6 +131,8 @@ public partial class GameSelectionPage : ContentPage
             {
                 SetLoadingState(isActive: false, "Ready");
             }
+
+            await FlushPendingCurrentScrollAsync();
         }
     }
 
@@ -214,9 +220,10 @@ public partial class GameSelectionPage : ContentPage
             return;
         }
 
-        int activeSector = (catalogState.CurrentLevel - 1) / PageSize + 1;
+        (int currentSectionIndex, int currentLevel) = progressionService.ResolveCurrentTarget(catalogState, PageSize);
+        int activeSector = currentSectionIndex + 1;
         statusPillLabel.Text = "CURRENT";
-        campaignSummaryLabel.Text = $"Level {catalogState.CurrentLevel:00}";
+        campaignSummaryLabel.Text = $"Level {currentLevel:00}";
         campaignSubSummaryLabel.Text = $"Sector {activeSector:00}";
         clearedCounterLabel.Text = $"{catalogState.CompletedLevelCount}";
         sectorCounterLabel.Text = $"{PageSize}";
@@ -245,6 +252,7 @@ public partial class GameSelectionPage : ContentPage
 
     private void RebuildLoadedSections()
     {
+        levelCardViews.Clear();
         sectionsHost.Children.Clear();
         foreach (CampaignSectionModel section in loadedSections)
         {
@@ -274,6 +282,7 @@ public partial class GameSelectionPage : ContentPage
     {
         sectionGeneration++;
         loadedSections.Clear();
+        levelCardViews.Clear();
         nextSectionIndex = 0;
         sectionsHost.Children.Clear();
     }
@@ -686,6 +695,8 @@ public partial class GameSelectionPage : ContentPage
             cardBorder.GestureRecognizers.Add(tapGesture);
         }
 
+        levelCardViews[card.Level] = new WeakReference<View>(cardBorder);
+
         return cardBorder;
     }
 
@@ -798,11 +809,6 @@ public partial class GameSelectionPage : ContentPage
     private async Task AnimateChromeAsync()
     {
         await Task.WhenAll(
-            topBarPanel.FadeToAsync(1, 220, Easing.CubicOut),
-            topBarPanel.TranslateToAsync(0, 0, 260, Easing.CubicOut),
-            topBarPanel.ScaleToAsync(1, 260, Easing.CubicOut));
-
-        await Task.WhenAll(
             heroHeaderPanel.FadeToAsync(1, 240, Easing.CubicOut),
             heroHeaderPanel.TranslateToAsync(0, 0, 280, Easing.CubicOut),
             heroHeaderPanel.ScaleToAsync(1, 280, Easing.CubicOut));
@@ -830,6 +836,65 @@ public partial class GameSelectionPage : ContentPage
             visual.FadeToAsync(1, 220, Easing.CubicOut),
             visual.TranslateToAsync(0, 0, 280, Easing.CubicOut),
             visual.ScaleToAsync(1, 280, Easing.CubicOut));
+    }
+
+    private async void HeroHeaderPanel_Tapped(object? sender, TappedEventArgs e)
+    {
+        pendingScrollToCurrent = true;
+        await FlushPendingCurrentScrollAsync();
+    }
+
+    private async Task FlushPendingCurrentScrollAsync()
+    {
+        if (!pendingScrollToCurrent || catalogState is null)
+        {
+            return;
+        }
+
+        if (isProgressHydrating)
+        {
+            return;
+        }
+
+        pendingScrollToCurrent = false;
+        await ScrollToCurrentLevelAsync(animate: true);
+    }
+
+    private async Task ScrollToCurrentLevelAsync(bool animate)
+    {
+        if (catalogState is null)
+        {
+            return;
+        }
+
+        for (int attempt = 0; attempt < 24 && (isRebuildingSections || isLoadingSections); attempt++)
+        {
+            await Task.Delay(16);
+        }
+
+        (int sectionIndex, int currentLevel) = progressionService.ResolveCurrentTarget(catalogState, PageSize);
+        int targetSectionCount = sectionIndex + 1;
+
+        if (loadedSections.Count < targetSectionCount)
+        {
+            await EnsureSectionsLoadedAsync(targetSectionCount, animate: false);
+        }
+
+        await Task.Yield();
+
+        if (levelCardViews.TryGetValue(currentLevel, out WeakReference<View>? levelViewReference)
+            && levelViewReference.TryGetTarget(out View? levelView))
+        {
+            await campaignScroll.ScrollToAsync(levelView, ScrollToPosition.Center, animate);
+            return;
+        }
+
+        if (sectionIndex >= 0
+            && sectionIndex < sectionsHost.Children.Count
+            && sectionsHost.Children[sectionIndex] is View sectionView)
+        {
+            await campaignScroll.ScrollToAsync(sectionView, ScrollToPosition.Start, animate);
+        }
     }
 
     private async Task NavigateToLevelAsync(int levelNumber)
@@ -876,10 +941,5 @@ public partial class GameSelectionPage : ContentPage
     private async Task NavigateBackAsync()
     {
         await Shell.Current.GoToAsync("//MainPage");
-    }
-
-    private async void SettingsButton_Clicked(object sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync(nameof(SettingsPage));
     }
 }

@@ -50,6 +50,14 @@ internal sealed class CampaignProgressionService
         return new CampaignCatalogState(progressByLevel, clearedLevels, legacyPlayableLevels, currentLevel);
     }
 
+    public (int SectionIndex, int Level) ResolveCurrentTarget(CampaignCatalogState catalog, int pageSize)
+    {
+        int safePageSize = Math.Max(1, pageSize);
+        int currentLevel = Math.Max(1, catalog.CurrentLevel);
+        int sectionIndex = (currentLevel - 1) / safePageSize;
+        return (sectionIndex, currentLevel);
+    }
+
     public CampaignSectionModel BuildSection(int sectionIndex, int pageSize, CampaignCatalogState catalog)
     {
         int safeSectionIndex = Math.Max(0, sectionIndex);
