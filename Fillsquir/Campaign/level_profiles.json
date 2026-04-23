@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "level": 1,
+      "fragments": 1,
+      "snapMultiplier": 1.6,
+      "anchorMode": "none",
+      "enableHint": true,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "Intro — single large piece, teach drag and drop."
+    },
+    {
+      "level": 2,
+      "fragments": 2,
+      "snapMultiplier": 1.4,
+      "anchorMode": "none",
+      "enableHint": false,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "Two-piece puzzle, simple alignment."
+    },
+    {
+      "level": 3,
+      "fragments": 3,
+      "snapMultiplier": 1.25,
+      "anchorMode": "none",
+      "enableHint": false,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "Three pieces, introduce concave edges."
+    },
+    {
+      "level": 4,
+      "fragments": 4,
+      "snapMultiplier": 1.2,
+      "anchorMode": "none",
+      "enableHint": false,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "2x2 grid, introduce bottom strip navigation."
+    },
+    {
+      "level": 5,
+      "fragments": 5,
+      "snapMultiplier": 1.1,
+      "anchorMode": "none",
+      "enableHint": true,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "Smaller pieces, enable visual snap hints."
+    },
+    {
+      "level": 6,
+      "fragments": 6,
+      "snapMultiplier": 1.05,
+      "anchorMode": "lock-first",
+      "enableHint": false,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "Introduce a locked anchor piece to build around."
+    },
+    {
+      "level": 7,
+      "fragments": 7,
+      "snapMultiplier": 0.95,
+      "anchorMode": "none",
+      "enableHint": false,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "Tighter snap tolerance; higher precision required."
+    },
+    {
+      "level": 8,
+      "fragments": 8,
+      "snapMultiplier": 0.9,
+      "anchorMode": "none",
+      "enableHint": true,
+      "singleUseGhostHint": true,
+      "timeLimitSeconds": null,
+      "notes": "Single-use ghost hint available for a single piece."
+    },
+    {
+      "level": 9,
+      "fragments": 9,
+      "snapMultiplier": 0.9,
+      "anchorMode": "none",
+      "enableHint": false,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": 60,
+      "timeTrialOptional": true,
+      "notes": "Optional time trial badge (60s)."
+    },
+    {
+      "level": 10,
+      "fragments": 10,
+      "snapMultiplier": 0.85,
+      "anchorMode": "lock-random-1",
+      "enableHint": false,
+      "singleUseGhostHint": false,
+      "timeLimitSeconds": null,
+      "notes": "Combine smaller pieces + one locked anchor."
+    }
+  ]
+}

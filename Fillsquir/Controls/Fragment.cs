@@ -85,6 +85,7 @@ internal class Fragment : GeometryElement
 #endif
 
     public bool wasTouched = false;
+    public bool IsLocked = false;
 
     protected override void ResizePrecize(float Width, float Height)
     {

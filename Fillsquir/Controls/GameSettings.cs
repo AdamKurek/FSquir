@@ -51,6 +51,12 @@ namespace Fillsquir.Controls
         internal int CurrentStars;
 
         internal bool SnapEnabled = true;
+        // Per-level overrides (loaded from LevelProfile)
+        internal double SnapMultiplier = 1.0;
+        internal bool EnableHint = false;
+        internal bool SingleUseGhostHint = false;
+        internal int? TimeLimitSeconds = null;
+        internal string AnchorMode = "none";
         internal string SkinId = SkinCatalog.DefaultSkinId;
         internal GraphicsQualityTier QualityTier = GraphicsQualityTier.Medium;
         internal TextureMappingMode MappingMode = TextureMappingMode.WorldLocked;

@@ -5,6 +5,10 @@ using Fillsquir.Visuals;
 using Microsoft.Maui.ApplicationModel;
 using SkiaSharp;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using Fillsquir.Campaign;
 
 namespace Fillsquir;
 
@@ -260,6 +264,35 @@ public partial class GamePage : ContentPage, IQueryAttributable
         const int seed = 0;
 
         settings = new(seed, level);
+        // Load optional level profile and apply overrides (best-effort)
+        try
+        {
+            string profilesPath = Path.Combine(AppContext.BaseDirectory, "Campaign", "level_profiles.json");
+            if (File.Exists(profilesPath))
+            {
+                string json = File.ReadAllText(profilesPath);
+                LevelProfiles? levelProfiles = JsonSerializer.Deserialize<LevelProfiles>(json);
+                LevelProfile? profile = levelProfiles?.ForLevel(level);
+                if (profile is not null)
+                {
+                    if (profile.Fragments.HasValue)
+                    {
+                        settings.fragments = Math.Max(1, profile.Fragments.Value);
+                    }
+
+                    settings.SnapMultiplier = profile.SnapMultiplier ?? settings.SnapMultiplier;
+                    settings.EnableHint = profile.EnableHint;
+                    settings.SingleUseGhostHint = profile.SingleUseGhostHint;
+                    settings.TimeLimitSeconds = profile.TimeLimitSeconds;
+                    settings.AnchorMode = profile.AnchorMode ?? settings.AnchorMode;
+                }
+            }
+        }
+        catch
+        {
+            // best-effort only; ignore failures
+        }
+
         puzzleKey = new PuzzleKey(level, seed, GameRules.RulesVersion);
         ApplyVisualSettingsToSettings(settings, currentVisualSettings, invalidateTextureCache: false);
         InitializeSquir(settings);
@@ -327,6 +360,61 @@ public partial class GamePage : ContentPage, IQueryAttributable
         }
         drawables.AddCover(commonArea);
         drawables.Gui = new PercentageDisplay(gameSettings);
+
+        // Apply anchors from level profile (best-effort)
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(gameSettings.AnchorMode) && !string.Equals(gameSettings.AnchorMode, "none", StringComparison.OrdinalIgnoreCase))
+            {
+                var fragmentsList = drawables.drawables.Skip(1).OfType<Fragment>().ToList();
+                if (fragmentsList.Count > 0)
+                {
+                    Fragment? anchor = null;
+                    if (string.Equals(gameSettings.AnchorMode, "lock-first", StringComparison.OrdinalIgnoreCase))
+                    {
+                        anchor = fragmentsList.First();
+                    }
+                    else if (gameSettings.AnchorMode.StartsWith("lock-random", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int idx = Math.Clamp(gameSettings.rand.Next(0, fragmentsList.Count), 0, fragmentsList.Count - 1);
+                        anchor = fragmentsList[idx];
+                    }
+
+                    if (anchor is not null)
+                    {
+                        // Mark as touched and add to center list
+                        TouchFragment(anchor);
+
+                        // Place roughly at board center
+                        try
+                        {
+                            var boardPts = drawa.VisiblePoints;
+                            if (boardPts is not null && boardPts.Length > 0)
+                            {
+                                float minX = boardPts.Min(p => p.X);
+                                float minY = boardPts.Min(p => p.Y);
+                                float maxX = boardPts.Max(p => p.X);
+                                float maxY = boardPts.Max(p => p.Y);
+                                SKPoint center = new SKPoint((minX + maxX) / 2f, (minY + maxY) / 2f);
+                                int finalIndex = Math.Max(0, anchor.PointsP.Length / 2);
+                                anchor.SetPositionToPointLocation(center, finalIndex);
+                            }
+                        }
+                        catch
+                        {
+                            // ignore placement failures
+                        }
+
+                        anchor.IsLocked = true;
+                        gameSettings.ActiveDraggedFragment = null;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // best-effort only
+        }
 
         ResetInteractionStateForNewLevel();
         Invalidate();
@@ -937,6 +1025,14 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     
                     drawables.AddDot(location); Invalidate();
                     moved = drawables.SelectFragmentOnClick(location);
+                    if (moved is not null && moved.IsLocked)
+                    {
+                        // Clicked on a locked anchor — ignore interaction.
+                        movingStatus = moveStatus.none;
+                        gameSettings.ActiveDraggedFragment = null;
+                        SetHoveredFragment(null);
+                        return;
+                    }
                     if (moved == null)
                     {
                         movingStatus = moveStatus.bottomStrip;
@@ -1013,6 +1109,15 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     }
 
                     moved = hoveredAtPress;
+                    if (moved is not null && moved.IsLocked)
+                    {
+                        // Pressed on a locked anchor — ignore movement.
+                        movingStatus = moveStatus.none;
+                        gameSettings.ActiveDraggedFragment = null;
+                        SetHoveredFragment(null);
+                        shouldInvalidate = true;
+                        break;
+                    }
                     if (moved == null)
                     {
                         bottomStripMovePre = gameSettings.bottomStripMove;

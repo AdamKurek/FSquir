@@ -38,6 +38,7 @@
     <Compile Include="..\\Fillsquir\\Campaign\\CampaignSectionModel.cs" Link="Campaign\\CampaignSectionModel.cs" />
     <Compile Include="..\\Fillsquir\\Campaign\\CampaignSectionTheme.cs" Link="Campaign\\CampaignSectionTheme.cs" />
     <Compile Include="..\\Fillsquir\\Campaign\\CampaignThemeResolver.cs" Link="Campaign\\CampaignThemeResolver.cs" />
+    <Compile Include="..\\Fillsquir\\Campaign\\LevelProfile.cs" Link="Campaign\\LevelProfile.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,6 +46,11 @@
     <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
     <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\\Fillsquir\\Campaign\\level_profiles.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

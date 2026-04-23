@@ -1,5 +1,6 @@
 using Fillsquir.Campaign;
 using Fillsquir.Services;
+using System.Linq;
 
 namespace tests;
 
@@ -145,4 +146,6 @@ public class CampaignProgressionTests
         Assert.AreEqual(0, sectionIndex);
         Assert.AreEqual(2, level);
     }
+
+    
 }
