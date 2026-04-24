@@ -9,6 +9,7 @@ public sealed class SubmitScoreRequest
     public decimal CoveragePercent { get; set; }
     public DateTimeOffset AchievedAtUtc { get; set; }
     public Guid ClientAttemptId { get; set; }
+    public List<PlacedFragmentRequest> PlacedFragments { get; set; } = new();
 }
 
 public sealed class SubmitScoreResponse
@@ -27,4 +28,12 @@ public sealed class RecordResponse
     public string? WorldRecordHolderInstallId { get; set; }
     public decimal? PlayerBestCoveragePercent { get; set; }
     public DateTimeOffset? UpdatedAtUtc { get; set; }
+}
+
+public sealed class PlacedFragmentRequest
+{
+    public int FragmentIndex { get; set; }
+    public float PositionXWorld { get; set; }
+    public float PositionYWorld { get; set; }
+    public bool WasTouched { get; set; }
 }

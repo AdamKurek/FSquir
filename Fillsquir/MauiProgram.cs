@@ -31,11 +31,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IPuzzleMaterialService, PuzzleMaterialService>();
 
         builder.Services.AddSingleton<ILeaderboardClient>(_ =>
-            new HttpLeaderboardClient(new HttpClient
-            {
-                BaseAddress = new Uri("http://localhost:5180/"),
-                Timeout = TimeSpan.FromSeconds(2)
-            }));
+            new HttpLeaderboardClient(LeaderboardClientFactory.CreateHttpClient()));
 
         return builder.Build();
     }

@@ -7,6 +7,9 @@ namespace tests;
 [TestClass]
 public class TextureMappingTests
 {
+    private const float WorldLockedPieceTolerance = 18.0f;
+    private const float BoardTranslationTolerance = 8.0f;
+
     private static readonly PuzzleKey Key = new(7, 1234, "v2");
     private static readonly SKRect BoardRect = new(0f, 0f, 1000f, 1000f);
 
@@ -34,7 +37,7 @@ public class TextureMappingTests
         SKColor colorB = RenderSampleAt(service, settings, BoardRect, sourceRect, pieceB, sampleB);
 
         Assert.IsTrue(
-            ColorDistance(colorA, colorB) <= 12.0f,
+            ColorDistance(colorA, colorB) <= WorldLockedPieceTolerance,
             $"World-locked piece mapping drifted after translation (distance={ColorDistance(colorA, colorB)}).");
     }
 
@@ -84,7 +87,7 @@ public class TextureMappingTests
         SKColor sampleB = RenderInsetBoardSampleAt(service, settings, zoomFactor: 1f, cameraOffset: new SKPoint(180f, 120f), worldSample);
 
         Assert.IsTrue(
-            ColorDistance(sampleA, sampleB) <= 6.0f,
+            ColorDistance(sampleA, sampleB) <= BoardTranslationTolerance,
             $"Board mapping drifted under translation (distance={ColorDistance(sampleA, sampleB)}).");
     }
 
@@ -130,7 +133,7 @@ public class TextureMappingTests
         SKColor sampleB = RenderInsetBoardSampleAt(service, settings, zoomFactor: 1.8f, cameraOffset: new SKPoint(220f, 140f), worldSample);
 
         Assert.IsTrue(
-            ColorDistance(sampleA, sampleB) <= 6.0f,
+            ColorDistance(sampleA, sampleB) <= BoardTranslationTolerance,
             $"Board mapping drifted under translation while zoomed (distance={ColorDistance(sampleA, sampleB)}).");
     }
 

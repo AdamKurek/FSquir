@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\\Fillsquir.Core\\Fillsquir.Core.csproj" />
     <ProjectReference Include="..\\FSquir.Api\\FSquir.Api.csproj" />
   </ItemGroup>
 

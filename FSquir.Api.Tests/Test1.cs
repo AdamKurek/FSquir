@@ -1,6 +1,7 @@
 using FSquir.Api.Contracts;
 using FSquir.Api.Data;
 using FSquir.Api.Services;
+using Fillsquir.Controls;
 using Microsoft.EntityFrameworkCore;
 
 namespace FSquir.Api.Tests;
@@ -17,39 +18,73 @@ public sealed class RecordServiceTests
         return new RecordsDbContext(options);
     }
 
+    private static SubmitScoreRequest CreateRequest(
+        int level,
+        string installId,
+        IReadOnlyList<ScoreProofFragment> proof,
+        Guid? clientAttemptId = null)
+    {
+        bool computed = ScoreProofVerifier.TryComputeCoveragePercent(
+            level,
+            seed: 0,
+            proof,
+            out decimal coveragePercent,
+            out string? failureReason);
+        Assert.IsTrue(computed, failureReason);
+
+        return new SubmitScoreRequest
+        {
+            Level = level,
+            Seed = 0,
+            RulesVersion = "v2",
+            InstallId = installId,
+            CoveragePercent = coveragePercent,
+            AchievedAtUtc = DateTimeOffset.UtcNow,
+            ClientAttemptId = clientAttemptId ?? Guid.NewGuid(),
+            PlacedFragments = proof.Select(static fragment => new PlacedFragmentRequest
+            {
+                FragmentIndex = fragment.FragmentIndex,
+                PositionXWorld = fragment.PositionXWorld,
+                PositionYWorld = fragment.PositionYWorld,
+                WasTouched = fragment.WasTouched
+            }).ToList()
+        };
+    }
+
+    private static IReadOnlyList<ScoreProofFragment> EmptyProof()
+    {
+        return Array.Empty<ScoreProofFragment>();
+    }
+
+    private static IReadOnlyList<ScoreProofFragment> CenteredSingleFragmentProof()
+    {
+        return
+        [
+            new ScoreProofFragment
+            {
+                FragmentIndex = 0,
+                PositionXWorld = 500f,
+                PositionYWorld = 500f,
+                WasTouched = true
+            }
+        ];
+    }
+
     [TestMethod]
     public async Task SubmitScoreAsync_UpsertsPlayerBest()
     {
         await using var db = CreateContext();
         RecordService service = new(db);
 
-        SubmitScoreRequest first = new()
-        {
-            Level = 10,
-            Seed = 0,
-            RulesVersion = "v2",
-            InstallId = "playerA",
-            CoveragePercent = 71.1m,
-            AchievedAtUtc = DateTimeOffset.UtcNow,
-            ClientAttemptId = Guid.NewGuid()
-        };
-
-        SubmitScoreRequest second = new()
-        {
-            Level = 10,
-            Seed = 0,
-            RulesVersion = "v2",
-            InstallId = "playerA",
-            CoveragePercent = 82.2m,
-            AchievedAtUtc = DateTimeOffset.UtcNow,
-            ClientAttemptId = Guid.NewGuid()
-        };
+        SubmitScoreRequest first = CreateRequest(10, "playerA", EmptyProof());
+        SubmitScoreRequest second = CreateRequest(10, "playerA", CenteredSingleFragmentProof());
+        Assert.AreEqual(1, decimal.Compare(second.CoveragePercent, first.CoveragePercent));
 
         _ = await service.SubmitScoreAsync(first, CancellationToken.None);
         _ = await service.SubmitScoreAsync(second, CancellationToken.None);
 
         PlayerBestScore? stored = await db.PlayerBestScores.SingleAsync();
-        Assert.AreEqual(82.2m, stored.CoveragePercent);
+        Assert.AreEqual(second.CoveragePercent, stored.CoveragePercent);
     }
 
     [TestMethod]
@@ -58,33 +93,15 @@ public sealed class RecordServiceTests
         await using var db = CreateContext();
         RecordService service = new(db);
 
-        SubmitScoreRequest high = new()
-        {
-            Level = 11,
-            Seed = 0,
-            RulesVersion = "v2",
-            InstallId = "playerA",
-            CoveragePercent = 93.5m,
-            AchievedAtUtc = DateTimeOffset.UtcNow,
-            ClientAttemptId = Guid.NewGuid()
-        };
-
-        SubmitScoreRequest lower = new()
-        {
-            Level = 11,
-            Seed = 0,
-            RulesVersion = "v2",
-            InstallId = "playerB",
-            CoveragePercent = 91.4m,
-            AchievedAtUtc = DateTimeOffset.UtcNow,
-            ClientAttemptId = Guid.NewGuid()
-        };
+        SubmitScoreRequest high = CreateRequest(11, "playerA", CenteredSingleFragmentProof());
+        SubmitScoreRequest lower = CreateRequest(11, "playerB", EmptyProof());
+        Assert.AreEqual(1, decimal.Compare(high.CoveragePercent, lower.CoveragePercent));
 
         _ = await service.SubmitScoreAsync(high, CancellationToken.None);
         _ = await service.SubmitScoreAsync(lower, CancellationToken.None);
 
         WorldRecord? world = await db.WorldRecords.SingleAsync();
-        Assert.AreEqual(93.5m, world.CoveragePercent);
+        Assert.AreEqual(high.CoveragePercent, world.CoveragePercent);
         Assert.AreEqual("playerA", world.HolderInstallId);
     }
 
@@ -95,16 +112,7 @@ public sealed class RecordServiceTests
         RecordService service = new(db);
 
         Guid attemptId = Guid.NewGuid();
-        SubmitScoreRequest request = new()
-        {
-            Level = 12,
-            Seed = 0,
-            RulesVersion = "v2",
-            InstallId = "playerA",
-            CoveragePercent = 88.8m,
-            AchievedAtUtc = DateTimeOffset.UtcNow,
-            ClientAttemptId = attemptId
-        };
+        SubmitScoreRequest request = CreateRequest(12, "playerA", CenteredSingleFragmentProof(), attemptId);
 
         SubmitScoreResponse? first = await service.SubmitScoreAsync(request, CancellationToken.None);
         SubmitScoreResponse? second = await service.SubmitScoreAsync(request, CancellationToken.None);
@@ -135,5 +143,20 @@ public sealed class RecordServiceTests
 
         SubmitScoreResponse? result = await service.SubmitScoreAsync(invalid, CancellationToken.None);
         Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task SubmitScoreAsync_RejectsTamperedCoverage()
+    {
+        await using var db = CreateContext();
+        RecordService service = new(db);
+
+        SubmitScoreRequest request = CreateRequest(13, "playerA", CenteredSingleFragmentProof());
+        request.CoveragePercent += 10m;
+
+        SubmitScoreResponse? result = await service.SubmitScoreAsync(request, CancellationToken.None);
+
+        Assert.IsNull(result);
+        Assert.AreEqual(0, await db.ScoreSubmissionLogs.CountAsync());
     }
 }

@@ -83,7 +83,7 @@ namespace Fillsquir.Controls
         internal SkiaSharp.SKPoint[] WallDirectionsDirected;
         internal float bottomStripRise = 0;
         internal float bottomStripMove = 0;
-        internal Fragment[,] untouchedFragments;
+        internal Fragment?[,] untouchedFragments;
         internal List<Fragment> touchedFragments = new();
 
         internal List<Fragment> CenterFragments = new();
@@ -114,7 +114,7 @@ namespace Fillsquir.Controls
             }
         }
 
-        internal Fragment touchFragment(int row, int col)
+        internal Fragment? touchFragment(int row, int col)
         {
             var curr = untouchedFragments[row, col];
             untouchedFragments[row, col] = null;

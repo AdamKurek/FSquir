@@ -690,7 +690,7 @@ namespace Fillsquir.Controls
             }
 
             // Find convex hull using Gift Wrapping algorithm
-            List<SKPoint> convexHull = GetConvexHull(points);
+            List<SKPoint>? convexHull = GetConvexHull(points);
             if(convexHull == null)
             {
                 return false;
@@ -812,7 +812,7 @@ namespace Fillsquir.Controls
             return Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2));
         }
 
-        private static List<SKPoint> GetConvexHull(List<SKPoint> points)
+        private static List<SKPoint>? GetConvexHull(List<SKPoint> points)
         {
             if (points == null || points.Count < 3)
                 throw new ArgumentException("At least 3 distinct points are required to compute a convex hull.");

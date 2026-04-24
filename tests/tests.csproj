@@ -29,6 +29,11 @@
     <Compile Include="..\\Fillsquir\\Visuals\\PuzzleMaterialService.cs" Link="Visuals\\PuzzleMaterialService.cs" />
     <Compile Include="..\\Fillsquir\\Domain\\PuzzleKey.cs" Link="Domain\\PuzzleKey.cs" />
     <Compile Include="..\\Fillsquir\\Domain\\GameRules.cs" Link="Domain\\GameRules.cs" />
+    <Compile Include="..\\Fillsquir\\Domain\\LevelProgress.cs" Link="Domain\\LevelProgress.cs" />
+    <Compile Include="..\\Fillsquir\\Domain\\LevelSnapshot.cs" Link="Domain\\LevelSnapshot.cs" />
+    <Compile Include="..\\Fillsquir\\Domain\\PlacedFragmentState.cs" Link="Domain\\PlacedFragmentState.cs" />
+    <Compile Include="..\\Fillsquir\\Domain\\SaveCompatibility.cs" Link="Domain\\SaveCompatibility.cs" />
+    <Compile Include="..\\Fillsquir\\Domain\\SaveSchema.cs" Link="Domain\\SaveSchema.cs" />
     <Compile Include="..\\Fillsquir\\Services\\IScoreEvaluator.cs" Link="Services\\IScoreEvaluator.cs" />
     <Compile Include="..\\Fillsquir\\Services\\ScoreEvaluator.cs" Link="Services\\ScoreEvaluator.cs" />
     <Compile Include="..\\Fillsquir\\Campaign\\CampaignCatalogState.cs" Link="Campaign\\CampaignCatalogState.cs" />

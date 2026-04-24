@@ -1,0 +1,34 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_suffix:
+        description: Optional suffix for prerelease builds
+        required: false
+        default: ""
+
+jobs:
+  package:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Build release artifacts
+        shell: pwsh
+        run: ./scripts/build-release.ps1 -VersionSuffix "${{ inputs.version_suffix }}" -SkipWindowsApp
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsquir-api
+          path: artifacts/api

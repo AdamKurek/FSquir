@@ -3,6 +3,7 @@ using FSquir.Api.Contracts;
 using FSquir.Api.Data;
 using FSquir.Api.Services;
 using FSquir.Api.Validation;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,22 +39,34 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddProblemDetails();
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = HttpLoggingFields.RequestMethod
+        | HttpLoggingFields.RequestPath
+        | HttpLoggingFields.ResponseStatusCode
+        | HttpLoggingFields.Duration;
+});
 builder.Services.AddScoped<RecordService>();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+app.UseHttpLogging();
 app.UseRateLimiter();
 
-using (IServiceScope scope = app.Services.CreateScope())
+if (app.Configuration.GetValue("ApplyMigrationsOnStartup", true))
 {
+    using IServiceScope scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<RecordsDbContext>();
+    ILogger<Program> logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     try
     {
         db.Database.Migrate();
+        logger.LogInformation("Records database migrations applied.");
     }
-    catch
+    catch (Exception ex)
     {
-        // API can still start without migration success; caller will receive DB errors until resolved.
+        logger.LogError(ex, "Records database migration failed. Readiness checks and record endpoints may fail until the database is fixed.");
     }
 }
 
@@ -75,5 +88,24 @@ app.MapPost("/api/v1/scores",
     });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health/live", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health/ready",
+    async (RecordsDbContext db, CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            bool canConnect = await db.Database.CanConnectAsync(cancellationToken);
+            return canConnect
+                ? Results.Ok(new { status = "ready" })
+                : Results.Problem("Database is not reachable.", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                ex.Message,
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Database readiness check failed.");
+        }
+    });
 
 app.Run();

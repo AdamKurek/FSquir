@@ -58,25 +58,12 @@ public sealed class JsonFileProgressStore : IProgressStore
             string path = ProgressFilePath(puzzleKey);
             if (!File.Exists(path))
             {
-                return new LevelProgress
-                {
-                    PuzzleKey = puzzleKey,
-                    BestCoveragePercent = 0m
-                };
+                return SaveCompatibility.NormalizeProgress(null, puzzleKey);
             }
 
             string json = await File.ReadAllTextAsync(path, cancellationToken);
             LevelProgress? loaded = JsonSerializer.Deserialize<LevelProgress>(json, JsonOptions);
-            if (loaded is null)
-            {
-                return new LevelProgress
-                {
-                    PuzzleKey = puzzleKey
-                };
-            }
-
-            loaded.PuzzleKey = puzzleKey;
-            return loaded;
+            return SaveCompatibility.NormalizeProgress(loaded, puzzleKey);
         }
         finally
         {
@@ -103,7 +90,7 @@ public sealed class JsonFileProgressStore : IProgressStore
                     LevelProgress? progress = JsonSerializer.Deserialize<LevelProgress>(json, JsonOptions);
                     if (progress is not null && progress.PuzzleKey.Level > 0)
                     {
-                        loadedProgress.Add(progress);
+                        loadedProgress.Add(SaveCompatibility.NormalizeProgress(progress, progress.PuzzleKey));
                     }
                 }
                 catch
@@ -126,6 +113,7 @@ public sealed class JsonFileProgressStore : IProgressStore
         try
         {
             Directory.CreateDirectory(baseDirectory);
+            progress = SaveCompatibility.NormalizeProgress(progress, progress.PuzzleKey);
             string json = JsonSerializer.Serialize(progress, JsonOptions);
             await File.WriteAllTextAsync(ProgressFilePath(progress.PuzzleKey), json, cancellationToken);
         }
@@ -154,8 +142,7 @@ public sealed class JsonFileProgressStore : IProgressStore
                 return null;
             }
 
-            snapshot.PuzzleKey = puzzleKey;
-            return snapshot;
+            return SaveCompatibility.NormalizeSnapshot(snapshot, puzzleKey);
         }
         finally
         {
@@ -169,6 +156,7 @@ public sealed class JsonFileProgressStore : IProgressStore
         try
         {
             Directory.CreateDirectory(snapshotsDirectory);
+            snapshot = SaveCompatibility.NormalizeSnapshot(snapshot, snapshot.PuzzleKey);
             string json = JsonSerializer.Serialize(snapshot, JsonOptions);
             await File.WriteAllTextAsync(SnapshotFilePath(snapshot.PuzzleKey), json, cancellationToken);
         }

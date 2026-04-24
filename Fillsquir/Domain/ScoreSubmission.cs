@@ -7,4 +7,5 @@ public sealed class ScoreSubmission
     public decimal CoveragePercent { get; set; }
     public DateTimeOffset AchievedAtUtc { get; set; }
     public Guid ClientAttemptId { get; set; } = Guid.NewGuid();
+    public List<PlacedFragmentState> PlacedFragments { get; set; } = new();
 }

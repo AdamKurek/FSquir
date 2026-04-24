@@ -6,7 +6,7 @@ internal static class RequestValidation
 {
     internal static bool IsValidPuzzleKey(int level, int seed, string rulesVersion)
     {
-        if (level < 1 || level > 1000)
+        if (level < 1 || level > 100)
         {
             return false;
         }
@@ -36,6 +36,30 @@ internal static class RequestValidation
         return IsValidPuzzleKey(request.Level, request.Seed, request.RulesVersion)
             && IsValidInstallId(request.InstallId)
             && IsValidCoverage(request.CoveragePercent)
-            && request.ClientAttemptId != Guid.Empty;
+            && request.ClientAttemptId != Guid.Empty
+            && IsValidScoreProof(request);
+    }
+
+    private static bool IsValidScoreProof(SubmitScoreRequest request)
+    {
+        if (request.PlacedFragments.Count > request.Level)
+        {
+            return false;
+        }
+
+        foreach (PlacedFragmentRequest placed in request.PlacedFragments)
+        {
+            if (placed.FragmentIndex < 0 || placed.FragmentIndex >= request.Level)
+            {
+                return false;
+            }
+
+            if (!float.IsFinite(placed.PositionXWorld) || !float.IsFinite(placed.PositionYWorld))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

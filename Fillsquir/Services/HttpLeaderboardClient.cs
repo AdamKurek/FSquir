@@ -51,7 +51,14 @@ public sealed class HttpLeaderboardClient : ILeaderboardClient
             InstallId = submission.InstallId,
             CoveragePercent = submission.CoveragePercent,
             AchievedAtUtc = submission.AchievedAtUtc,
-            ClientAttemptId = submission.ClientAttemptId
+            ClientAttemptId = submission.ClientAttemptId,
+            PlacedFragments = submission.PlacedFragments.Select(static fragment => new PlacedFragmentRequestDto
+            {
+                FragmentIndex = fragment.FragmentIndex,
+                PositionXWorld = fragment.PositionXWorld,
+                PositionYWorld = fragment.PositionYWorld,
+                WasTouched = fragment.WasTouched
+            }).ToList()
         };
 
         using HttpResponseMessage response = await httpClient.PostAsJsonAsync("api/v1/scores", payload, cancellationToken);
@@ -114,6 +121,24 @@ public sealed class HttpLeaderboardClient : ILeaderboardClient
 
         [JsonPropertyName("clientAttemptId")]
         public Guid ClientAttemptId { get; set; }
+
+        [JsonPropertyName("placedFragments")]
+        public List<PlacedFragmentRequestDto> PlacedFragments { get; set; } = new();
+    }
+
+    private sealed class PlacedFragmentRequestDto
+    {
+        [JsonPropertyName("fragmentIndex")]
+        public int FragmentIndex { get; set; }
+
+        [JsonPropertyName("positionXWorld")]
+        public float PositionXWorld { get; set; }
+
+        [JsonPropertyName("positionYWorld")]
+        public float PositionYWorld { get; set; }
+
+        [JsonPropertyName("wasTouched")]
+        public bool WasTouched { get; set; }
     }
 
     private sealed class SubmitScoreResponseDto

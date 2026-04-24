@@ -13,38 +13,116 @@
             IgnorePixelScaling="True"
             SizeChanged="squir_SizeChanged" />
 
-        <Grid Margin="12,8"
-              RowSpacing="6"
-              VerticalOptions="Start"
-              HorizontalOptions="Fill"
-              InputTransparent="False">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <Border Margin="12,8"
+                Padding="12,10"
+                VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                BackgroundColor="#D90A101A"
+                Stroke="#32425A"
+                StrokeThickness="1">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="16" />
+            </Border.StrokeShape>
 
-            <HorizontalStackLayout Grid.Row="0" Spacing="12">
-                <Button x:Name="settingsButton"
-                        Text="Gear"
-                        Clicked="SettingsButton_Clicked" />
-                <Label Text="Snap"
-                       TextColor="White"
-                       VerticalTextAlignment="Center" />
-                <Switch x:Name="snapToggle"
-                        IsToggled="True"
-                        Toggled="SnapToggle_Toggled" />
-                <Button x:Name="restoreBestButton"
-                        Text="Restore Best"
-                        IsEnabled="False"
-                        Clicked="RestoreBestButton_Clicked" />
-            </HorizontalStackLayout>
+            <Grid RowDefinitions="Auto,Auto"
+                  RowSpacing="8">
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="10">
+                    <VerticalStackLayout Spacing="2">
+                        <Label x:Name="levelStatusLabel"
+                               Text="Level --"
+                               TextColor="#8FE8FF"
+                               FontSize="11"
+                               FontAttributes="Bold" />
+                        <Label x:Name="coverageStatusLabel"
+                               Text="Coverage 0.00%"
+                               TextColor="White"
+                               FontSize="22"
+                               FontAttributes="Bold" />
+                    </VerticalStackLayout>
 
-            <Label x:Name="recordStatusLabel"
-                   Grid.Row="1"
+                    <HorizontalStackLayout Grid.Column="1"
+                                           Spacing="8"
+                                           VerticalOptions="Center">
+                        <Button x:Name="settingsButton"
+                                Text="Settings"
+                                FontSize="12"
+                                Padding="12,4"
+                                MinimumHeightRequest="34"
+                                HeightRequest="34"
+                                BackgroundColor="#19263A"
+                                BorderColor="#465B78"
+                                BorderWidth="1"
+                                TextColor="White"
+                                Clicked="SettingsButton_Clicked" />
+                        <Label Text="Snap"
+                               TextColor="#C9D7E8"
+                               FontSize="12"
+                               VerticalTextAlignment="Center" />
+                        <Switch x:Name="snapToggle"
+                                IsToggled="True"
+                                Toggled="SnapToggle_Toggled" />
+                        <Button x:Name="restoreBestButton"
+                                Text="Best"
+                                FontSize="12"
+                                Padding="12,4"
+                                MinimumHeightRequest="34"
+                                HeightRequest="34"
+                                BackgroundColor="#19263A"
+                                BorderColor="#465B78"
+                                BorderWidth="1"
+                                TextColor="White"
+                                IsEnabled="False"
+                                Clicked="RestoreBestButton_Clicked" />
+                    </HorizontalStackLayout>
+                </Grid>
+
+                <Grid Grid.Row="1"
+                      RowDefinitions="Auto,Auto"
+                      RowSpacing="5">
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="8">
+                        <Label x:Name="recordStatusLabel"
+                               TextColor="#DCE8F4"
+                               FontSize="12"
+                               LineBreakMode="TailTruncation"
+                               Text="Best -- | World -- | Stars 0/3" />
+                        <Label x:Name="syncStatusLabel"
+                               Grid.Column="1"
+                               Text="Local"
+                               TextColor="#9FB0C4"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               VerticalTextAlignment="Center" />
+                    </Grid>
+                    <ProgressBar x:Name="coverageProgressBar"
+                                 Grid.Row="1"
+                                 Progress="0"
+                                 ProgressColor="#39D5FF"
+                                 BackgroundColor="#223044"
+                                 HeightRequest="4" />
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border x:Name="statusToast"
+                Margin="18"
+                Padding="14,9"
+                VerticalOptions="End"
+                HorizontalOptions="Center"
+                BackgroundColor="#E6121A27"
+                Stroke="#3F5D7C"
+                StrokeThickness="1"
+                IsVisible="False"
+                Opacity="0"
+                InputTransparent="True">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="14" />
+            </Border.StrokeShape>
+            <Label x:Name="statusToastLabel"
                    TextColor="White"
-                   FontSize="12"
-                   LineBreakMode="WordWrap"
-                   Text="Best -- | World -- | Stars 0/3" />
-        </Grid>
+                   FontSize="13"
+                   FontAttributes="Bold" />
+        </Border>
     </Grid>
 </ContentPage>

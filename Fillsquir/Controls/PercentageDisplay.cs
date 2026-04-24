@@ -98,8 +98,11 @@ namespace Fillsquir.Controls
             using SKPaint textPaint = new()
             {
                 Color = skin.KeyLightColor.WithAlpha(236),
-                TextSize = 15,
                 IsAntialias = true
+            };
+            using SKFont textFont = new()
+            {
+                Size = 15
             };
             using SKPaint dividerPaint = new()
             {
@@ -126,7 +129,7 @@ namespace Fillsquir.Controls
                 text = debugString;
             }
 #endif
-            canvas.DrawText(text, 12, 22, textPaint);
+            canvas.DrawText(text, 12, 22, SKTextAlign.Left, textFont, textPaint);
         }
 
         private void DrawStarSlots(SKCanvas canvas, VisualSettings settings, SkinDefinition skin)

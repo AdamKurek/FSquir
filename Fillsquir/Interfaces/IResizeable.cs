@@ -12,7 +12,7 @@ namespace Fillsquir.Interfaces
         internal static float defaultCanvasHeight = 1000;
         internal float canvasWidth = 1000;
         internal float canvasHeight = 1000;
-        internal GameSettings gameSettings;
+        internal GameSettings gameSettings = null!;
 
         private ICoordinateTransformer? coordinateTransformer;
         private IPuzzleMaterialService? puzzleMaterialService;

@@ -11,13 +11,13 @@ namespace Fillsquir.Controls
         private float screenHeight = 1000;
         private readonly DropParticleSystem dropParticleSystem = new();
         public List<GeometryElement> drawables = new();
-        public GeometryElement cover;
+        public GeometryElement cover = null!;
 
         internal DrawableStack(GameSettings settings) : base(settings)
         {
         }
 
-        internal GeometryElement Gui { get; set; }
+        internal GeometryElement Gui { get; set; } = null!;
 
         internal HashSet<SKPoint> allActivePoints(int ignoreIndex)
         {
@@ -30,8 +30,7 @@ namespace Fillsquir.Controls
 
             for (int i = 1; i < drawables.Count; i++)
             {
-                var drawable = drawables[i] as Fragment;
-                if (!drawable.wasTouched)
+                if (drawables[i] is not Fragment drawable || !drawable.wasTouched)
                 {
                     continue;
                 }
@@ -395,7 +394,7 @@ namespace Fillsquir.Controls
             cover?.Resize(width, height);
         }
 
-        internal Fragment SelectFragmentOnClick(SKPoint mousePosition)
+        internal Fragment? SelectFragmentOnClick(SKPoint mousePosition)
         {
             float nearestDistance = float.MaxValue;
             Fragment? nearestFragment = null;

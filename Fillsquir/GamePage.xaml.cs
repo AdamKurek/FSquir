@@ -83,10 +83,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         internal float AverageScore => scoreSum / SupportCount;
     }
 
-    float absolute0x = 0f;
-    float absolute0y = 0f;
-    float absolutemaxx = 1000f;
-    float absolutemaxy = 1000f;
     enum moveStatus
     {
         none = 0,
@@ -121,12 +117,13 @@ public partial class GamePage : ContentPage, IQueryAttributable
     private SKPoint lastPointerGlintInvalidatePosition;
     private bool hasLastPointerGlintInvalidatePosition;
     private bool handlersWired;
+    private GameHudController hud = null!;
 
     private readonly PanGestureRecognizer panGesture = new();
     private readonly PointerGestureRecognizer pointGesture = new();
     private readonly PinchGestureRecognizer zoomGesture = new();
 
-    GameSettings settings;
+    GameSettings settings = null!;
     public GamePage()
     {
         BindingContext = new GamePageViewModel();
@@ -134,7 +131,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
         IServiceProvider? services = App.Services;
         progressStore = services?.GetService(typeof(IProgressStore)) as IProgressStore ?? new JsonFileProgressStore();
         leaderboardClient = services?.GetService(typeof(ILeaderboardClient)) as ILeaderboardClient
-            ?? new HttpLeaderboardClient(new HttpClient { BaseAddress = new Uri("http://localhost:5180/"), Timeout = TimeSpan.FromSeconds(2) });
+            ?? new HttpLeaderboardClient(LeaderboardClientFactory.CreateHttpClient());
         recordSyncService = services?.GetService(typeof(IRecordSyncService)) as IRecordSyncService
             ?? new RecordSyncService(leaderboardClient, progressStore, new JsonFileSyncQueue());
         scoreEvaluator = services?.GetService(typeof(IScoreEvaluator)) as IScoreEvaluator ?? new ScoreEvaluator();
@@ -146,6 +143,14 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
         Shell.SetNavBarIsVisible(this, false);
         InitializeComponent();
+        hud = new GameHudController(
+            levelStatusLabel,
+            coverageStatusLabel,
+            recordStatusLabel,
+            syncStatusLabel,
+            coverageProgressBar,
+            statusToast,
+            statusToastLabel);
         WireInputAndRenderHandlers();
         snapToggle.IsToggled = true;
         UpdateStatusLabel();
@@ -171,6 +176,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
     {
         base.OnDisappearing();
         isPageVisible = false;
+        hud.CancelToast();
         CancelTransientInteractions(restoreDetachedUntouchedFragment: true);
         StopRenderTicker();
         if (!subscribedToVisualSettings)
@@ -213,7 +219,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         fingersMove = default;
         fingersLocked = false;
         currMoveWhenZooming = default;
-        currOffsetOnZooming = default;
         removeFromMoveWhenZooming = default;
         isPanTracking = false;
         previousPanTotal = default;
@@ -300,15 +305,13 @@ public partial class GamePage : ContentPage, IQueryAttributable
         _ = LoadAndApplyVisualSettingsAsync();
     }
 
-    Squir drawa;
-    DrawableStack drawables;
-    double SquirArea;
+    Squir drawa = null!;
+    DrawableStack drawables = null!;
     SKPoint startingPoint = new();
     SKPoint TapPosition = new();
-    Microsoft.Maui.Graphics.Point mousePosition = new();
-    Fragment moved;
-    GameSettings gameSettings;
-    CommonArea commonArea;
+    Fragment? moved;
+    GameSettings gameSettings = null!;
+    CommonArea commonArea = null!;
 
     SKPoint dlocation;
     SKPoint d;
@@ -321,7 +324,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
     SKPoint fingersMoveOnZooming { get { return new(); } }
     SKPoint currMoveWhenZooming;
-    SKPoint currOffsetOnZooming;
     SKPoint removeFromMoveWhenZooming;
 #if DebugClickingLines
 #endif
@@ -576,7 +578,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         fingersMove = default;
         fingersLocked = false;
         currMoveWhenZooming = default;
-        currOffsetOnZooming = default;
         removeFromMoveWhenZooming = default;
         isPanTracking = false;
         previousPanTotal = default;
@@ -770,7 +771,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         }
     }
 
-    SKPoint currentMove;
     private bool isPanTracking;
     private SKPoint previousPanTotal;
     private bool isTouchInteractionActive;
@@ -781,7 +781,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
     private Fragment? pendingStripGrabFragment;
     private float pendingStripGrabRatioX = 0.5f;
     private float pendingStripGrabRatioY = 0.5f;
-    private void PanGesture_PanUpdated(object sender, PanUpdatedEventArgs e)
+    private void PanGesture_PanUpdated(object? sender, PanUpdatedEventArgs e)
     {
         if (isTouchInteractionActive || was2FingerTouched)
         {
@@ -883,7 +883,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (xMoveTotal < 0)
                     {
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooLeftFragments,
-                            drawable => (((drawable.PositionP.X + drawable.sizeP.X) * (squir.Width / 1000)) + gameSettings.xoffset < absolute0x));
+                            drawable => (((drawable.PositionP.X + drawable.sizeP.X) * (squir.Width / 1000)) + gameSettings.xoffset < 0f));
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.TooRightFragments, gameSettings.CenterFragments,
                             drawable => (((drawable.PositionP.X * (squir.Width / 1000))) + gameSettings.xoffset) < (squir.Width / gameSettings.zoomFactor));
                     }
@@ -891,7 +891,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (xMoveTotal > 0)
                     {
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.TooLeftFragments, gameSettings.CenterFragments,
-                            drawable => (((drawable.PositionP.X + drawable.sizeP.X) * (squir.Width / 1000)) + gameSettings.xoffset > absolute0x));
+                            drawable => (((drawable.PositionP.X + drawable.sizeP.X) * (squir.Width / 1000)) + gameSettings.xoffset > 0f));
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooRightFragments,
                             drawable => (((drawable.PositionP.X * (squir.Width / 1000))) + gameSettings.xoffset) > (squir.Width / gameSettings.zoomFactor));
                     }
@@ -899,7 +899,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (yMoveTotal < 0)
                     {
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooTopFragments,
-                            drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset < absolute0y));
+                            drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset < 0f));
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.TooBottomFragments, gameSettings.CenterFragments,
                             drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + gameSettings.yoffset) < (squir.Height / gameSettings.zoomFactor));
                     }
@@ -907,7 +907,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     if (yMoveTotal > 0)
                     {
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.TooTopFragments, gameSettings.CenterFragments,
-                            drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset > absolute0y));
+                            drawable => (((drawable.PositionP.Y + drawable.sizeP.Y) * (squir.Height / 1000)) + gameSettings.yoffset > 0f));
                         GameSettings.MoveFragmentsBetweenLists(gameSettings.CenterFragments, gameSettings.TooBottomFragments,
                             drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + gameSettings.yoffset) > (squir.Height / gameSettings.zoomFactor));
                     }
@@ -959,8 +959,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
     SKPoint zoomPos;
     float prevXOffset;
     float prevYOffset;
-
-    Fragment theonlypuzzleRemoveitlater;
 
     private void squir_Touch(object sender, SkiaSharp.Views.Maui.SKTouchEventArgs e)
         {
@@ -1085,13 +1083,9 @@ public partial class GamePage : ContentPage, IQueryAttributable
         location.Y /= gameSettings.zoomFactor;
 
 #if DebugClicking
-        bool inisde = false;
         SKPoint mp = new SKPoint() { X = location.X, Y = location.Y };
-        if (FSMath.IsPointInShape(mp, ((Squir)drawables[0]).VisiblePoints))
-        {
-            inisde = true;
-        }
-        //drawables.AddDot(mp, inisde);
+        bool inside = FSMath.IsPointInShape(mp, ((Squir)drawables[0]).VisiblePoints);
+        drawables.AddDot(mp, inside);
         Invalidate();
 #endif
         zoomPos = location;
@@ -1552,7 +1546,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         gameSettings.ActiveDraggedFragment = null;
         gameSettings.HoveredFragment = null;
         movingStatus = moveStatus.map;
-        currentMove = new();
     }
 
     private bool IsDroppedOnTargetShape(Fragment fragment)
@@ -1910,6 +1903,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
     private async Task LoadProgressAndRecordsAsync()
     {
         installId = await progressStore.GetOrCreateInstallIdAsync();
+        SetSyncStatus("Loading");
 
         levelProgress = await progressStore.LoadLevelProgressAsync(puzzleKey);
         if (levelProgress.BestSnapshot is null)
@@ -1924,6 +1918,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
         try
         {
+            SetSyncStatus("Syncing");
             RecordSnapshot? remote = await leaderboardClient.GetRecordAsync(puzzleKey, installId);
             if (remote is not null)
             {
@@ -1937,11 +1932,17 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 levelProgress.LastSyncedAtUtc = remote.UpdatedAtUtc ?? DateTimeOffset.UtcNow;
 
                 await progressStore.SaveLevelProgressAsync(levelProgress);
+                SetSyncStatus("Synced");
+            }
+            else
+            {
+                SetSyncStatus("Local");
             }
         }
         catch
         {
             // Offline or unreachable server is expected; local progress remains authoritative until next sync.
+            SetSyncStatus("Local");
         }
 
         UpdateGui(gameSettings.AreaFilled);
@@ -1950,17 +1951,27 @@ public partial class GamePage : ContentPage, IQueryAttributable
 
     private void UpdateStatusLabel()
     {
-        if (recordStatusLabel is null || gameSettings is null)
+        if (hud is null || gameSettings is null)
         {
             return;
         }
 
-        string world = gameSettings.WorldRecordCoveragePercent.HasValue
-            ? $"{gameSettings.WorldRecordCoveragePercent.Value:F2}%"
-            : "--";
+        hud.Update(
+            gameSettings.Level,
+            sessionState.CoveragePercent,
+            gameSettings.BestCoveragePercent,
+            gameSettings.WorldRecordCoveragePercent,
+            gameSettings.CurrentStars);
+    }
 
-        recordStatusLabel.Text =
-            $"Best {gameSettings.BestCoveragePercent:F2}% | World {world} | Stars {gameSettings.CurrentStars}/3";
+    private void SetSyncStatus(string status)
+    {
+        hud.SetSyncStatus(status);
+    }
+
+    private Task ShowStatusToastAsync(string message)
+    {
+        return hud.ShowToastAsync(message);
     }
 
     private async Task SaveBestIfImprovedAsync()
@@ -1988,6 +1999,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
         await progressStore.SaveLevelProgressAsync(levelProgress);
 
         restoreBestButton.IsEnabled = true;
+        SetSyncStatus("Queued");
+        _ = ShowStatusToastAsync($"New best {currentCoverage:F2}%");
 
         if (!string.IsNullOrWhiteSpace(installId))
         {
@@ -1996,7 +2009,8 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 PuzzleKey = puzzleKey,
                 InstallId = installId,
                 CoveragePercent = currentCoverage,
-                AchievedAtUtc = DateTimeOffset.UtcNow
+                AchievedAtUtc = DateTimeOffset.UtcNow,
+                PlacedFragments = snapshot.PlacedFragments
             };
             await recordSyncService.EnqueueBestScoreAsync(submission);
         }
@@ -2100,6 +2114,7 @@ public partial class GamePage : ContentPage, IQueryAttributable
         }
 
         ApplySnapshot(snapshot);
+        _ = ShowStatusToastAsync($"Restored best {snapshot.CoveragePercent:F2}%");
     }
 
     private async void SettingsButton_Clicked(object sender, EventArgs e)
@@ -2117,6 +2132,10 @@ public partial class GamePage : ContentPage, IQueryAttributable
         }
 
         UpdateStatusLabel();
+        if (isPageVisible)
+        {
+            _ = ShowStatusToastAsync(e.Value ? "Snap on" : "Snap off");
+        }
     }
    
 }

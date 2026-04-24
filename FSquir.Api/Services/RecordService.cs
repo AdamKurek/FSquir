@@ -1,6 +1,7 @@
 using FSquir.Api.Contracts;
 using FSquir.Api.Data;
 using FSquir.Api.Validation;
+using Fillsquir.Controls;
 using Microsoft.EntityFrameworkCore;
 
 namespace FSquir.Api.Services;
@@ -61,21 +62,30 @@ public sealed class RecordService
             return null;
         }
 
-        ScoreSubmissionLog? existingLog = await db.ScoreSubmissionLogs
-            .AsNoTracking()
-            .SingleOrDefaultAsync(x => x.ClientAttemptId == request.ClientAttemptId, cancellationToken);
-
-        if (existingLog is not null)
-        {
-            return new SubmitScoreResponse
+        ScoreProofVerificationResult verification = ScoreProofVerifier.VerifyCoverage(
+            request.Level,
+            request.Seed,
+            request.CoveragePercent,
+            request.PlacedFragments.Select(static fragment => new ScoreProofFragment
             {
-                IsNewWorldRecord = existingLog.IsNewWorldRecord,
-                IsNewPersonalBest = existingLog.IsNewPersonalBest,
-                WorldRecordCoveragePercent = existingLog.WorldRecordCoveragePercent,
-                WorldRecordHolderInstallId = existingLog.WorldRecordHolderInstallId,
-                PlayerBestCoveragePercent = existingLog.PlayerBestCoveragePercent,
-                UpdatedAtUtc = existingLog.ProcessedAtUtc
-            };
+                FragmentIndex = fragment.FragmentIndex,
+                PositionXWorld = fragment.PositionXWorld,
+                PositionYWorld = fragment.PositionYWorld,
+                WasTouched = fragment.WasTouched
+            }).ToList());
+        if (!verification.IsValid)
+        {
+            return null;
+        }
+
+        request.CoveragePercent = verification.VerifiedCoveragePercent;
+
+        SubmitScoreResponse? existingResponse = await GetExistingSubmissionResponseAsync(
+            request.ClientAttemptId,
+            cancellationToken);
+        if (existingResponse is not null)
+        {
+            return existingResponse;
         }
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -171,7 +181,47 @@ public sealed class RecordService
             PlayerBestCoveragePercent = response.PlayerBestCoveragePercent
         });
 
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            existingResponse = await GetExistingSubmissionResponseAsync(
+                request.ClientAttemptId,
+                cancellationToken);
+            if (existingResponse is not null)
+            {
+                return existingResponse;
+            }
+
+            throw;
+        }
+
         return response;
+    }
+
+    private async Task<SubmitScoreResponse?> GetExistingSubmissionResponseAsync(
+        Guid clientAttemptId,
+        CancellationToken cancellationToken)
+    {
+        ScoreSubmissionLog? existingLog = await db.ScoreSubmissionLogs
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.ClientAttemptId == clientAttemptId, cancellationToken);
+
+        if (existingLog is null)
+        {
+            return null;
+        }
+
+        return new SubmitScoreResponse
+        {
+            IsNewWorldRecord = existingLog.IsNewWorldRecord,
+            IsNewPersonalBest = existingLog.IsNewPersonalBest,
+            WorldRecordCoveragePercent = existingLog.WorldRecordCoveragePercent,
+            WorldRecordHolderInstallId = existingLog.WorldRecordHolderInstallId,
+            PlayerBestCoveragePercent = existingLog.PlayerBestCoveragePercent,
+            UpdatedAtUtc = existingLog.ProcessedAtUtc
+        };
     }
 }
