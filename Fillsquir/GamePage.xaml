@@ -63,7 +63,7 @@
                                 IsToggled="True"
                                 Toggled="SnapToggle_Toggled" />
                         <Button x:Name="restoreBestButton"
-                                Text="Best"
+                                Text="Restore Best"
                                 FontSize="12"
                                 Padding="12,4"
                                 MinimumHeightRequest="34"

@@ -249,7 +249,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         {
             drawables.Resize(width, height);
             drawables.cover.Resize(width, height);
-            drawables.Gui.Resize(width, height);
         }
 
         Invalidate();
@@ -361,7 +360,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         //    drawables.AddDrawable(fragment);
         }
         drawables.AddCover(commonArea);
-        drawables.Gui = new PercentageDisplay(gameSettings);
 
         // Apply anchors from level profile (best-effort)
         try
@@ -508,11 +506,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 currMoveWhenZooming.Y /= gameSettings.zoomFactor;
                 SetCameraToZoomAndMove(currMoveWhenZooming);
 
-                if (drawables.Gui is PercentageDisplay percentageDisplay)
-                {
-                    percentageDisplay.debugString = e.Scale.ToString();
-                }
-
                 break;
             }
             case GestureStatus.Completed:
@@ -644,10 +637,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 coveragePercent,
                 gameSettings.WorldRecordCoveragePercent,
                 gameSettings.BestCoveragePercent > 0m ? gameSettings.BestCoveragePercent : null);
-            if (drawables?.Gui is PercentageDisplay percentageDisplay)
-            {
-                percentageDisplay.SyncStars(gameSettings.CurrentStars);
-            }
             UpdateStatusLabel();
         }
 
@@ -752,7 +741,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
                 //drawa.Resize(squir.Width, squir.Height);
                 drawables.Resize(width, height);
                 drawables.cover.Resize(width, height);
-                drawables.Gui.Resize(width, height);
                 Invalidate();
             }
         //(sender as SKCanvasView).ScaleX.ToString();
@@ -912,7 +900,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
                             drawable => (((drawable.PositionP.Y * (squir.Height / 1000))) + gameSettings.yoffset) > (squir.Height / gameSettings.zoomFactor));
                     }
 
-                    ((PercentageDisplay)drawables.Gui).debugString = gameSettings.CenterFragments.Count.ToString();
                     break;
                 }
             case moveStatus.fragment:
@@ -1014,7 +1001,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
                     return;
                 }
 #if DebugString
-                //((PercentageDisplay)(drawables.Gui)).debugString = selectedCell.ToString();
 #endif
                 if (moved == null)
                 {
@@ -1611,11 +1597,6 @@ public partial class GamePage : ContentPage, IQueryAttributable
         }
 
         if (drawables.HasActiveDropParticles)
-        {
-            return true;
-        }
-
-        if (drawables.HasActiveGuiAnimations)
         {
             return true;
         }
